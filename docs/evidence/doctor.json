@@ -1,0 +1,33 @@
+{
+  "ready": true,
+  "mode": "fixture",
+  "checks": [
+    {
+      "check": "API credentials configured and distinct",
+      "ok": true,
+      "required": true
+    },
+    {
+      "check": "Allowed repository roots exist",
+      "ok": true,
+      "required": true
+    },
+    {
+      "check": "Research credential configured",
+      "ok": false,
+      "required": false
+    },
+    {
+      "check": "Research package catalog configured",
+      "ok": false,
+      "required": false
+    },
+    {
+      "check": "Docker executable available",
+      "ok": false,
+      "required": false
+    }
+  ],
+  "live_provider_verified": false,
+  "note": "Checks do not call model or research APIs; no secret values are displayed"
+}

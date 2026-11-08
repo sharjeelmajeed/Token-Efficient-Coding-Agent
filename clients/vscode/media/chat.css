@@ -1,0 +1,22 @@
+:root { color-scheme: light dark; }
+body { margin: 0; padding: 20px; color: var(--vscode-foreground); background: var(--vscode-editor-background); font: var(--vscode-font-size)/1.5 var(--vscode-font-family); }
+header { padding-bottom: 18px; border-bottom: 1px solid var(--vscode-panel-border); }
+h1 { margin: 0; font-size: 20px; font-weight: 600; }
+#status, .hint { color: var(--vscode-descriptionForeground); }
+.toolbar, .composer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+button { padding: 7px 11px; border: 1px solid transparent; border-radius: 3px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); cursor: pointer; font: inherit; }
+button:hover { background: var(--vscode-button-hoverBackground); }
+button:focus-visible, textarea:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 2px; }
+button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
+button:disabled { opacity: .5; cursor: default; }
+article { padding: 13px 0; border-bottom: 1px solid var(--vscode-panel-border); }
+article strong { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--vscode-descriptionForeground); }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; font: inherit; }
+.tool { color: var(--vscode-descriptionForeground); }
+.warning, .approval { border-left: 3px solid var(--vscode-editorWarning-foreground); padding-left: 12px; }
+.approval { margin: 18px 0; padding-top: 10px; padding-bottom: 10px; background: var(--vscode-textBlockQuote-background); }
+.approval pre { font-family: var(--vscode-editor-font-family); max-height: 240px; overflow: auto; }
+form { margin-top: 20px; }
+textarea { box-sizing: border-box; width: 100%; margin: 7px 0 10px; padding: 10px; resize: vertical; font: inherit; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--vscode-panel-border)); border-radius: 3px; }
+.composer { justify-content: space-between; }
+.hint { font-size: 11px; }

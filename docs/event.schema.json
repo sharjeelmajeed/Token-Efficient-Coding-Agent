@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "id": {
+      "title": "Id",
+      "type": "integer"
+    },
+    "session_id": {
+      "title": "Session Id",
+      "type": "string"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Run Id"
+    },
+    "type": {
+      "title": "Type",
+      "type": "string"
+    },
+    "timestamp": {
+      "title": "Timestamp",
+      "type": "string"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "id",
+    "session_id",
+    "run_id",
+    "type",
+    "timestamp",
+    "payload"
+  ],
+  "title": "Event",
+  "type": "object"
+}

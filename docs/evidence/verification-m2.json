@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-02",
+  "application_version": "0.2.0",
+  "milestone": "M2 core/integration increment; live acceptance pending",
+  "python": "3.12.14",
+  "tests": {
+    "tests": "107",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "time": "21.621"
+  },
+  "test_transport": "Real loopback API/CLI; Bifrost/Tavily HTTP mocked; Docker process transport mocked",
+  "dependency_audit": {
+    "tool_version": "2.10.1",
+    "known_vulnerabilities": 0,
+    "reported_entries": 52,
+    "editable_project_skipped": true
+  },
+  "source_fsd_sha256": "7ce7e214e5b4257f4e47368ca9342476c639e758f84fb188234e03cea96be1a3",
+  "coverage": {
+    "tool_version": "7.17.0",
+    "policy_line_and_branch_percent": 100.0,
+    "policy_statements": 51,
+    "policy_branches": 24,
+    "overall_line_and_branch_percent": 81.1,
+    "cli_subprocess_coverage_collected": false
+  },
+  "live_bifrost_verified": false,
+  "tavily_implemented": true,
+  "live_tavily_verified": false,
+  "docker_adapter_implemented": true,
+  "docker_installed": false,
+  "live_docker_verified": false,
+  "github_ci_executed": false,
+  "benchmark_results_available": false,
+  "gateway_costs_reconciled": false,
+  "ruff_check": "passed",
+  "ruff_format": "passed",
+  "pip_check": "passed",
+  "doctor_cli": {
+    "exit_code": 0,
+    "output_json_valid": true,
+    "live_provider_verified": false
+  },
+  "interactive_demo": {
+    "exit_code": 0,
+    "independent_behavior_checks": 3,
+    "passed": true,
+    "real_provider": false
+  }
+}

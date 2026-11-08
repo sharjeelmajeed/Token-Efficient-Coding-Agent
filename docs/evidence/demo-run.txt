@@ -1,0 +1,47 @@
+Offline integration fixture. No API keys, cloud calls or benchmark claims.
+Session created: 05cc6f8c-2173-4a3b-99fd-d1b628db6c06
+Mode: fixture
+                Agent status                
+┌───────────────────────┬──────────────────┐
+│ Mode                  │ fixture          │
+│ Repository            │ standard         │
+│ Run                   │ waiting_approval │
+│ Model                 │ fixture/local    │
+│ Steps                 │ 2                │
+│ Budget remaining      │ $1.0000          │
+│ Input / output tokens │ 2182 / 70        │
+└───────────────────────┴──────────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+Exact file change requires your approval
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
+
+Approve once / deny / deny with feedback [a/d/f] (d): Tool: read_file (read)
+Tool: apply_patch (gated)
+Tool: syntax_check (read)
+Fixture completed. Python syntax was checked; run the repository tests 
+separately to verify behavior.
+run_complete: {"outcome": "completed_unverified", "note": "No complete set of 
+configured behavior checks passed"}
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ completed     │
+│ Model                 │ fixture/local │
+│ Steps                 │ 4             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 5087 / 121    │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+Running independent behavior checks on the authored demo fixture:
+Demo behavior verified. These three checks are not the hackathon benchmark.
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK

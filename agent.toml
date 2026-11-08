@@ -1,0 +1,17 @@
+# Paths are relative to this file. Start with the explicit offline fixture.
+mode = "fixture"
+database = ".agent/state.sqlite3"
+gateway_url = "http://127.0.0.1:8080/v1/chat/completions"
+max_steps = 12
+max_output_tokens = 2048
+approval_timeout_seconds = 120
+context_chars = 40000
+output_chars = 8000
+
+[[users]]
+id = "developer"
+token_env = "AGENT_API_TOKEN"
+repo_roots = ["sandbox-repos"]
+budget_micro_usd = 1000000
+bifrost_key_env = "BIFROST_VIRTUAL_KEY"
+local_key_env = "BIFROST_LOCAL_VIRTUAL_KEY"
