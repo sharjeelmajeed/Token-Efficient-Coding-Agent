@@ -1,4 +1,5 @@
 import hmac
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -21,8 +22,9 @@ from .models import (
     WebResearch,
     WriteFile,
 )
-from .repo import PolicyError
+from .repo import BLOCKED_PARTS, PolicyError
 
+MAX_CLASSIFICATION_DIRECTORIES = 5000
 TOOL_CLASSES = {
     ListTree: "read",
     ReadFile: "read",
@@ -68,7 +70,32 @@ def authenticate(token: str, tokens: dict[str, str]) -> str | None:
     return identity
 
 
-def resolve_repository(path: str, user: UserConfig, settings: Settings) -> tuple[str, bool]:
+def confidential_sources(repo: Path, settings: Settings) -> list[str]:
+    """Return every confidential location overlapping this directory tree.
+
+    A session can read everything below its directory, so a marker below it counts as
+    well as one on it or above it. Failing to finish the scan must not mean "standard".
+    """
+    wanted = settings.confidential_marker.casefold()
+    found = {
+        str(directory)
+        for directory in repo.parents
+        if os.path.exists(directory / settings.confidential_marker)
+    }
+    for visited, (directory, dirs, files) in enumerate(os.walk(repo, followlinks=False)):
+        if visited >= MAX_CLASSIFICATION_DIRECTORIES:
+            raise PolicyError("Directory is too large to classify; open a smaller repository")
+        if any(name.casefold() == wanted for name in (*files, *dirs)):
+            found.add(directory)
+        dirs[:] = [name for name in dirs if name not in BLOCKED_PARTS]
+    for root in settings.confidential_roots:
+        resolved = Path(root).resolve()
+        if repo.is_relative_to(resolved) or resolved.is_relative_to(repo):
+            found.add(str(resolved))
+    return sorted(found)
+
+
+def resolve_repository(path: str, user: UserConfig, settings: Settings) -> tuple[str, list[str]]:
     try:
         repo = Path(path).resolve(strict=True)
     except (OSError, ValueError) as exc:
@@ -77,10 +104,7 @@ def resolve_repository(path: str, user: UserConfig, settings: Settings) -> tuple
         repo.is_relative_to(Path(r).resolve()) for r in user.repo_roots
     ):
         raise PolicyError("Repository is outside your allowed roots")
-    confidential = (repo / settings.confidential_marker).exists() or any(
-        repo.is_relative_to(Path(r).resolve()) for r in settings.confidential_roots
-    )
-    return str(repo), confidential
+    return str(repo), confidential_sources(repo, settings)
 
 
 def classify(action) -> str:
@@ -102,6 +126,23 @@ def model_policy(settings: Settings, confidential: bool) -> tuple[str, list[str]
     if settings.standard_model not in settings.standard_allowlist:
         raise PolicyError("Standard model is not allowlisted")
     return settings.standard_model, settings.standard_allowlist
+
+
+BUDGET_WARNING_PERCENT = 80
+
+
+def budget_warning_active(limit: int, remaining: int) -> bool:
+    """True once at least BUDGET_WARNING_PERCENT of a nonzero budget is committed."""
+    return limit > 0 and remaining * 100 <= limit * (100 - BUDGET_WARNING_PERCENT)
+
+
+def budget_payload(limit: int, remaining: int, options: list[str]) -> dict:
+    return {
+        "remaining_micro_usd": remaining,
+        "limit_micro_usd": limit,
+        "warning_percent": BUDGET_WARNING_PERCENT,
+        "options": options,
+    }
 
 
 def cost_ceiling(settings: Settings, incoming: int, outgoing: int, local: bool) -> int:

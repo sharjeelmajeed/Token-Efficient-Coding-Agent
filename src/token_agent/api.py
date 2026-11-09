@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .config import Settings, load_tokens
 from .engine import Engine
 from .models import ApplyPatch, ApprovalDecision, SessionCreate, TaskRequest, WriteFile
-from .policy import authenticate, resolve_repository
+from .policy import authenticate, budget_warning_active, resolve_repository
 from .repo import PolicyError
 from .store import Store
 
@@ -103,9 +103,11 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
     @app.post("/sessions", status_code=201)
     async def create_session(body: SessionCreate, identity: str = Depends(owner)):
         user = next(u for u in settings.users if u.id == identity)
-        repo, confidential = resolve_repository(body.repo_path, user, settings)
+        repo, sources = resolve_repository(body.repo_path, user, settings)
+        for source in sources:
+            store.mark_confidential(source)
         session = store.create_session(
-            identity, repo, confidential, user.read_only or body.mode == "read_only"
+            identity, repo, bool(sources), user.read_only or body.mode == "read_only"
         )
         store.event(
             session["id"],
@@ -129,6 +131,8 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
     async def status(session_id: str, identity: str = Depends(owner)):
         session = owned(session_id, identity)
         run = store.latest_run(session_id)
+        user = next(u for u in settings.users if u.id == identity)
+        remaining = store.remaining(identity)
         with store.connection() as db:
             rows = db.execute(
                 "SELECT id FROM approvals WHERE session_id=? AND status='pending'", (session_id,)
@@ -138,14 +142,13 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
             "mode": settings.mode,
             "confidential": bool(session["confidential"]),
             "run": run,
-            "budget_remaining_micro_usd": store.remaining(identity),
+            "budget_remaining_micro_usd": remaining,
+            "budget_limit_micro_usd": user.budget_micro_usd,
+            "budget_warning": budget_warning_active(user.budget_micro_usd, remaining),
             "pending_approvals": [store.approval(row["id"]) for row in rows],
             "usage": store.usage(run["id"]) if run else [],
             "research_usage": store.research_usage(run["id"]) if run else [],
-            "read_only": bool(
-                session["read_only"]
-                or next(u for u in settings.users if u.id == identity).read_only
-            ),
+            "read_only": bool(session["read_only"] or user.read_only),
         }
 
     @app.get("/sessions/{session_id}/approvals/{approval_id}/preview")

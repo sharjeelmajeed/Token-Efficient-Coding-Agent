@@ -33,15 +33,32 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `approval_decision` | `approval_id`, `decision`, authenticated `user`, `feedback` |
 | `approval_consumed`, `approval_expired` | `approval_id` |
 | `model_switched` | `from`, `to`, `reason` (no unverified outage cause invented) |
-| `budget_warning` | `remaining_micro_usd` |
-| `policy_block`, `budget_hit` | `reason` |
+| `budget_warning` | `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
+| `budget_hit` | `reason`, `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
+| `policy_block` | `reason` |
 | `session_paused` | `reason`, optional `resume` instructions |
-| `message_delta` | `text` (emits a final message, not token streaming) |
+| `message_delta` | `text`; with `streaming = true` also `partial` (see below) |
 | `run_complete` | `outcome`, optional verification `note` |
+
+`streaming` is a trusted configuration setting and is off by default. When off, each
+`message_delta` is one complete message with no `partial` field. When on, a finish summary
+arrives as zero or more `partial: true` pieces followed by exactly one `partial: false`
+piece, whose `text` may be empty. Join them in order to get the summary. If `session_paused`
+arrives instead of the last piece, the reply failed validation, so treat the text so far as
+incomplete. Only the finish summary streams; tool actions are never shown as text.
 
 On reconnect, request status first. A pending approval may exist even if the client
 already stored its event cursor. Submit a decision once; a 409 means it is no longer
 valid. Never fabricate local approval state or re-submit an old approval automatically.
+
+Status also includes `budget_limit_micro_usd` and `budget_warning`, which the core works out
+from the user's budget on every request. Show the warning from these fields rather than
+storing it in the client: the budget belongs to the user, not the session, so the value stays
+right across new sessions and when an operator changes the budget. `budget_warning` is emitted
+at most once per run. Amounts include held and uncertain spend, so they are not final billing.
+Current `options` values are `continue` and `cancel` on a warning, and
+`raise_budget_then_resubmit` on a budget hit. Automatic downgrade to a local model is not
+implemented, because the confirmed default at the limit is to pause.
 
 Session creation and status include effective `read_only`. An operator's read-only
 identity cannot be upgraded by a request. The backend blocks every gated proposal

@@ -13,6 +13,8 @@ from .context import build_context, enabled_tools
 from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
 from .policy import (
+    budget_payload,
+    budget_warning_active,
     check_git_action,
     classify,
     cost_ceiling,
@@ -25,6 +27,7 @@ from .repo import PolicyError, Repository
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
+from .streaming import TextStream
 
 logger = logging.getLogger("token_agent")
 ERROR_NAMES = re.compile(
@@ -85,11 +88,11 @@ class Engine:
     def refresh_session(self, session_id: str) -> dict:
         session = self.store.session(session_id)
         user = next(u for u in self.settings.users if u.id == session["owner"])
-        path, confidential = resolve_repository(session["repo"], user, self.settings)
+        path, sources = resolve_repository(session["repo"], user, self.settings)
         if path != session["repo"]:
             raise PolicyError("Repository location changed; create a new session")
-        if confidential:
-            self.store.mark_confidential(session["repo"])
+        for source in sources:
+            self.store.mark_confidential(source)
         if user.read_only:
             self.store.restrict_session(session_id)
         return self.store.session(session_id)
@@ -220,6 +223,7 @@ class Engine:
         required_checks = {tuple(cmd) for cmd in self.settings.sandbox.verification_commands}
         verified_snapshot = None
         inspected = False
+        warned = False
         step, reservation, previous_model = 0, None, None
         try:
             repo = self.repository(session)
@@ -273,8 +277,23 @@ class Engine:
                     else "pricing_ceiling_pending_reconciliation",
                 )
                 request_context["request_id"] = reservation
+                stream, stream_options = None, {}
+                if self.settings.streaming:
+                    stream = TextStream(
+                        repo.check_secrets,
+                        lambda text: self.emit(
+                            session_id, run_id, "message_delta", {"text": text, "partial": True}
+                        ),
+                        repo.secrets,
+                    )
+                    stream_options["on_text"] = stream.feed
                 result = await self.provider.complete(
-                    messages, model, user, confidential, request_context=request_context
+                    messages,
+                    model,
+                    user,
+                    confidential,
+                    request_context=request_context,
+                    **stream_options,
                 )
                 if self.refresh_session(session_id)["confidential"] and not confidential:
                     raise PolicyError(
@@ -331,9 +350,13 @@ class Engine:
                     )
                 previous_model = result.model
                 remaining = self.store.remaining(user.id)
-                if user.budget_micro_usd and remaining <= user.budget_micro_usd // 5:
+                if not warned and budget_warning_active(user.budget_micro_usd, remaining):
+                    warned = True
                     self.emit(
-                        session_id, run_id, "budget_warning", {"remaining_micro_usd": remaining}
+                        session_id,
+                        run_id,
+                        "budget_warning",
+                        budget_payload(user.budget_micro_usd, remaining, ["continue", "cancel"]),
                     )
                 repo.check_secrets(result.content)
                 reply = AgentReply.model_validate_json(result.content)
@@ -355,7 +378,12 @@ class Engine:
                         and repo.snapshot(self.settings.sandbox.max_snapshot_bytes)[1]
                         == verified_snapshot
                     )
-                    self.emit(session_id, run_id, "message_delta", {"text": action.summary})
+                    final = (
+                        {"text": stream.remainder(action.summary), "partial": False}
+                        if stream
+                        else {"text": action.summary}
+                    )
+                    self.emit(session_id, run_id, "message_delta", final)
                     self.complete(session_id, run_id, step, verified)
                     return
                 self.emit(
@@ -439,12 +467,22 @@ class Engine:
                 else str(exc)
             )
             self.store.update_run(run_id, "paused", step, reason)
-            self.emit(
-                session_id,
-                run_id,
-                "budget_hit" if reason == "budget_hit" else "policy_block",
-                {"reason": reason},
-            )
+            if reason == "budget_hit":
+                self.emit(
+                    session_id,
+                    run_id,
+                    "budget_hit",
+                    {
+                        "reason": reason,
+                        **budget_payload(
+                            user.budget_micro_usd,
+                            self.store.remaining(user.id),
+                            ["raise_budget_then_resubmit"],
+                        ),
+                    },
+                )
+            else:
+                self.emit(session_id, run_id, "policy_block", {"reason": reason})
             self.emit(
                 session_id,
                 run_id,
@@ -462,7 +500,15 @@ class Engine:
                     }
                 )
             )
-            self.emit(session_id, run_id, "session_paused", {"reason": "internal_error"})
+            self.emit(
+                session_id,
+                run_id,
+                "session_paused",
+                {
+                    "reason": "internal_error",
+                    "resume": "Inspect changes, then submit a new instruction",
+                },
+            )
         finally:
             if reservation:
                 self.store.uncertain(reservation)

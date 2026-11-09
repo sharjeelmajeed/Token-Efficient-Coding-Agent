@@ -11,6 +11,10 @@ Confidential classification is sticky across sessions and checked before model
 requests. Private mode requires a loopback gateway and an explicitly local allowlist,
 including fallbacks. Marker detection during an in-flight request pauses further
 processing; it cannot undo data already sent before the marker existed.
+A session is confidential when its directory overlaps a marked directory or configured
+confidential root, whether that location is above, on or below it. Unrelated sibling
+directories stay standard. A tree above the directory-scan limit is refused, not assumed
+standard.
 
 Reads reject traversal, protected paths, links, binary/oversized content and obvious
 or known secrets. Writes require a one-use approval tied to the exact hash/diff.
