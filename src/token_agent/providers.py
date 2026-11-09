@@ -1,7 +1,9 @@
+import asyncio
 import hashlib
 import json
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -30,6 +32,21 @@ class ProviderResult:
     is_fallback: bool = False
 
 
+def serving_model(metadata: dict, reported, extra: dict) -> str:
+    """The model that actually answered, qualified by provider when one is known."""
+    actual = metadata.get("x-bifrost-routing-info-model") or reported
+    if not isinstance(actual, str) or not actual:
+        return ""
+    provider = (
+        metadata.get("x-bifrost-routing-info-provider")
+        or extra.get("provider")
+        or metadata.get("x-bifrost-provider")
+    )
+    if isinstance(provider, str) and provider and not actual.startswith(provider + "/"):
+        return provider + "/" + actual
+    return actual
+
+
 class FixtureProvider:
     """Offline scripted integration fixture. Never used as benchmark evidence."""
 
@@ -40,6 +57,7 @@ class FixtureProvider:
         user: UserConfig,
         confidential: bool,
         request_context: dict | None = None,
+        on_text: Callable[[str], None] | None = None,
     ) -> ProviderResult:
         if not any(m["content"] == DEMO_TASK for m in messages if m["role"] == "user"):
             raise ProviderError(f"Fixture mode only supports: {DEMO_TASK}")
@@ -75,6 +93,10 @@ class FixtureProvider:
                     "run the repository tests separately to verify behavior.",
                 }
         text = json.dumps({"action": action})
+        if on_text:
+            for start in range(0, len(text), 16):
+                on_text(text[start : start + 16])
+                await asyncio.sleep(0)
         return ProviderResult(
             text,
             model,
@@ -96,6 +118,7 @@ class BifrostProvider:
         user: UserConfig,
         confidential: bool,
         request_context: dict | None = None,
+        on_text: Callable[[str], None] | None = None,
     ) -> ProviderResult:
         key_env = user.local_key_env if confidential else user.bifrost_key_env
         virtual_key = os.environ.get(key_env, "")
@@ -134,8 +157,48 @@ class BifrostProvider:
         }
         if not caching:
             headers["x-bf-cache-no-store"] = "true"
+        if on_text:
+            payload["stream"] = True
+            payload["stream_options"] = {"include_usage": True}
         response_metadata = {}
         started = time.perf_counter()
+
+        async def read_stream(response: httpx.Response) -> dict:
+            parts, pending, usage, reported, extra, size = [], [], None, "", {}, 0
+            async for line in response.aiter_lines():
+                size += len(line)
+                if size > 2000000:
+                    raise ProviderError("Gateway response exceeded the size limit")
+                if not line.startswith("data:"):
+                    continue
+                body = line[5:].strip()
+                if body == "[DONE]":
+                    break
+                chunk = json.loads(body)
+                if not isinstance(chunk, dict) or chunk.get("error"):
+                    raise ProviderError("Gateway stream reported an error; session paused")
+                reported = chunk.get("model") or reported
+                usage = chunk.get("usage") or usage
+                if isinstance(chunk.get("extra_fields"), dict):
+                    extra.update(chunk["extra_fields"])
+                choices = chunk.get("choices")
+                first = choices[0] if isinstance(choices, list) and choices else {}
+                delta = first.get("delta") if isinstance(first, dict) else None
+                text = delta.get("content") if isinstance(delta, dict) else None
+                if isinstance(text, str) and text:
+                    parts.append(text)
+                    pending.append(text)
+                # Text from an unconfirmed model stays hidden; the engine's check is final.
+                if pending and serving_model(response_metadata, reported, extra) in allowed:
+                    for piece in pending:
+                        on_text(piece)
+                    pending.clear()
+            result = {"choices": [{"message": {"content": "".join(parts)}}], "extra_fields": extra}
+            if usage:
+                result["usage"] = usage
+            if reported:
+                result["model"] = reported
+            return result
 
         async def request(client: httpx.AsyncClient) -> dict:
             try:
@@ -162,6 +225,8 @@ class BifrostProvider:
                             ]
                         }
                     )
+                    if on_text and "text/event-stream" in response.headers.get("content-type", ""):
+                        return await read_stream(response)
                     chunks = bytearray()
                     async for chunk in response.aiter_bytes():
                         chunks.extend(chunk)
@@ -181,18 +246,12 @@ class BifrostProvider:
         try:
             usage = data["usage"]
             content = data["choices"][0]["message"]["content"]
-            actual_model = response_metadata.get("x-bifrost-routing-info-model") or data["model"]
             extra = data.get("extra_fields", {})
             if not isinstance(extra, dict):
                 extra = {}
-            provider = (
-                response_metadata.get("x-bifrost-routing-info-provider")
-                or extra.get("provider")
-                or response_metadata.get("x-bifrost-provider")
-            )
-            if isinstance(provider, str) and provider and isinstance(actual_model, str):
-                if not actual_model.startswith(provider + "/"):
-                    actual_model = provider + "/" + actual_model
+            actual_model = serving_model(response_metadata, data.get("model"), extra)
+            if not actual_model:
+                raise ValueError("Missing serving model")
             incoming, outgoing = usage["prompt_tokens"], usage["completion_tokens"]
             if (
                 type(incoming) is not int

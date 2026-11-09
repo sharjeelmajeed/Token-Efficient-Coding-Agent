@@ -36,8 +36,15 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `budget_warning` | `remaining_micro_usd` |
 | `policy_block`, `budget_hit` | `reason` |
 | `session_paused` | `reason`, optional `resume` instructions |
-| `message_delta` | `text` (emits a final message, not token streaming) |
+| `message_delta` | `text`; with `streaming = true` also `partial` (see below) |
 | `run_complete` | `outcome`, optional verification `note` |
+
+`streaming` is a trusted configuration setting and is off by default. When off, each
+`message_delta` is one complete message with no `partial` field. When on, a finish summary
+arrives as zero or more `partial: true` pieces followed by exactly one `partial: false`
+piece, whose `text` may be empty. Join them in order to get the summary. If `session_paused`
+arrives instead of the last piece, the reply failed validation, so treat the text so far as
+incomplete. Only the finish summary streams; tool actions are never shown as text.
 
 On reconnect, request status first. A pending approval may exist even if the client
 already stored its event cursor. Submit a decision once; a 409 means it is no longer

@@ -29,6 +29,14 @@ sandbox prerequisites. Required live evidence remains tracked in [STATUS](STATUS
 - No core retry after a possibly billed error; configured gateway fallback owns retry
   behavior. Failure causes are not guessed when the gateway supplies only an outcome.
 
+## Streaming
+
+With `streaming = true` the adapter sends `stream: true` and asks for usage in the final
+chunk. Text stays hidden until the serving model is confirmed as allowlisted. A stream with
+no usage pauses and keeps the reservation as uncertain, and the core never retries it. A
+non-event-stream response is read as a normal JSON reply. Whether Bifrost sends routing
+headers, usage and fallbacks this way on a stream is untested against a live gateway.
+
 ## Service status
 
 The current environment has no configured Bifrost/Tavily keys, Ollama or Docker.

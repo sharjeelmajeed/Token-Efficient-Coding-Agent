@@ -17,6 +17,7 @@ from .repo import PolicyError, Repository
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
+from .streaming import TextStream
 
 logger = logging.getLogger("token_agent")
 ERROR_NAMES = re.compile(
@@ -249,8 +250,23 @@ class Engine:
                     else "pricing_ceiling_pending_reconciliation",
                 )
                 request_context["request_id"] = reservation
+                stream, stream_options = None, {}
+                if self.settings.streaming:
+                    stream = TextStream(
+                        repo.check_secrets,
+                        lambda text: self.emit(
+                            session_id, run_id, "message_delta", {"text": text, "partial": True}
+                        ),
+                        repo.secrets,
+                    )
+                    stream_options["on_text"] = stream.feed
                 result = await self.provider.complete(
-                    messages, model, user, confidential, request_context=request_context
+                    messages,
+                    model,
+                    user,
+                    confidential,
+                    request_context=request_context,
+                    **stream_options,
                 )
                 if self.refresh_session(session_id)["confidential"] and not confidential:
                     raise PolicyError(
@@ -331,7 +347,12 @@ class Engine:
                         and repo.snapshot(self.settings.sandbox.max_snapshot_bytes)[1]
                         == verified_snapshot
                     )
-                    self.emit(session_id, run_id, "message_delta", {"text": action.summary})
+                    final = (
+                        {"text": stream.remainder(action.summary), "partial": False}
+                        if stream
+                        else {"text": action.summary}
+                    )
+                    self.emit(session_id, run_id, "message_delta", final)
                     self.complete(session_id, run_id, step, verified)
                     return
                 self.emit(
@@ -434,7 +455,15 @@ class Engine:
                     }
                 )
             )
-            self.emit(session_id, run_id, "session_paused", {"reason": "internal_error"})
+            self.emit(
+                session_id,
+                run_id,
+                "session_paused",
+                {
+                    "reason": "internal_error",
+                    "resume": "Inspect changes, then submit a new instruction",
+                },
+            )
         finally:
             if reservation:
                 self.store.uncertain(reservation)

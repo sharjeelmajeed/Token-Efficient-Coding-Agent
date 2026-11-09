@@ -87,6 +87,7 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)
     optimization: OptimizationSettings = Field(default_factory=OptimizationSettings)
