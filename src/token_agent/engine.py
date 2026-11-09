@@ -11,7 +11,15 @@ from pydantic import ValidationError
 from .config import Settings
 from .context import build_context, enabled_tools
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
-from .policy import classify, cost_ceiling, model_policy, resolve_repository, routed_model
+from .policy import (
+    budget_payload,
+    budget_warning_active,
+    classify,
+    cost_ceiling,
+    model_policy,
+    resolve_repository,
+    routed_model,
+)
 from .providers import BifrostProvider, FixtureProvider, ProviderError
 from .repo import PolicyError, Repository
 from .research import Research
@@ -198,6 +206,7 @@ class Engine:
         required_checks = {tuple(cmd) for cmd in self.settings.sandbox.verification_commands}
         verified_snapshot = None
         inspected = False
+        warned = False
         step, reservation, previous_model = 0, None, None
         try:
             repo = self.repository(session)
@@ -307,9 +316,13 @@ class Engine:
                     )
                 previous_model = result.model
                 remaining = self.store.remaining(user.id)
-                if user.budget_micro_usd and remaining <= user.budget_micro_usd // 5:
+                if not warned and budget_warning_active(user.budget_micro_usd, remaining):
+                    warned = True
                     self.emit(
-                        session_id, run_id, "budget_warning", {"remaining_micro_usd": remaining}
+                        session_id,
+                        run_id,
+                        "budget_warning",
+                        budget_payload(user.budget_micro_usd, remaining, ["continue", "cancel"]),
                     )
                 repo.check_secrets(result.content)
                 reply = AgentReply.model_validate_json(result.content)
@@ -411,12 +424,22 @@ class Engine:
                 else str(exc)
             )
             self.store.update_run(run_id, "paused", step, reason)
-            self.emit(
-                session_id,
-                run_id,
-                "budget_hit" if reason == "budget_hit" else "policy_block",
-                {"reason": reason},
-            )
+            if reason == "budget_hit":
+                self.emit(
+                    session_id,
+                    run_id,
+                    "budget_hit",
+                    {
+                        "reason": reason,
+                        **budget_payload(
+                            user.budget_micro_usd,
+                            self.store.remaining(user.id),
+                            ["raise_budget_then_resubmit"],
+                        ),
+                    },
+                )
+            else:
+                self.emit(session_id, run_id, "policy_block", {"reason": reason})
             self.emit(
                 session_id,
                 run_id,
