@@ -44,6 +44,16 @@ class Repository:
         self.secrets = [s for s in secrets if s]
         self.output_chars = output_chars
 
+    def protected(self, part: str) -> bool:
+        name = part.casefold()
+        return (
+            name in BLOCKED_PARTS
+            or name == self.marker.casefold()
+            or name.startswith(".env")
+            or name in {".npmrc", ".pypirc", "id_rsa", "id_ed25519", "credentials"}
+            or name.endswith((".pem", ".key", ".p12"))
+        )
+
     def path(self, relative: str) -> Path:
         if (
             "\x00" in relative
@@ -55,22 +65,22 @@ class Repository:
         parts = PurePosixPath(relative).parts
         if not parts or any(p in {"..", "."} for p in parts):
             raise PolicyError("Path traversal is forbidden")
-        for part in parts:
-            if (
-                part in BLOCKED_PARTS
-                or part == self.marker
-                or part.startswith(".env")
-                or part in {".npmrc", ".pypirc", "id_rsa", "id_ed25519", "credentials"}
-                or part.lower().endswith((".pem", ".key", ".p12"))
-            ):
-                raise PolicyError("Protected repository path")
+        # Windows ignores trailing dots/spaces and reads alternate streams after a colon.
+        if ":" in relative or any(p != p.rstrip(". ") for p in parts):
+            raise PolicyError("Ambiguous path names are not permitted")
+        if any(self.protected(part) for part in parts):
+            raise PolicyError("Protected repository path")
         current = self.root
         for part in parts:
             current = current / part
             if current.is_symlink():
                 raise PolicyError("Symbolic links are not followed")
-        if not current.resolve().is_relative_to(self.root):
+        resolved = current.resolve()
+        if not resolved.is_relative_to(self.root):
             raise PolicyError("Path leaves the repository")
+        # The name on disk also counts: a short name such as SERVER~1.PEM hides the real one.
+        if any(self.protected(part) for part in resolved.relative_to(self.root).parts):
+            raise PolicyError("Protected repository path")
         if current.exists() and current.is_file() and current.stat().st_nlink != 1:
             raise PolicyError("Hard-linked files are not accessible")
         return current

@@ -103,9 +103,11 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None) -
     @app.post("/sessions", status_code=201)
     async def create_session(body: SessionCreate, identity: str = Depends(owner)):
         user = next(u for u in settings.users if u.id == identity)
-        repo, confidential = resolve_repository(body.repo_path, user, settings)
+        repo, sources = resolve_repository(body.repo_path, user, settings)
+        for source in sources:
+            store.mark_confidential(source)
         session = store.create_session(
-            identity, repo, confidential, user.read_only or body.mode == "read_only"
+            identity, repo, bool(sources), user.read_only or body.mode == "read_only"
         )
         store.event(
             session["id"],

@@ -15,6 +15,11 @@ def timestamp() -> str:
     return datetime.now(UTC).isoformat()
 
 
+def overlaps(first: str, second: str) -> bool:
+    a, b = Path(first), Path(second)
+    return a.is_relative_to(b) or b.is_relative_to(a)
+
+
 class Store:
     def __init__(self, path: str):
         self.path = path
@@ -25,6 +30,9 @@ class Store:
         os.close(descriptor)
         Path(path).chmod(0o600)
         with self.connection() as db:
+            migrated = db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='confidential_paths'"
+            ).fetchone()
             db.executescript("""
             PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS accounts (
@@ -70,6 +78,7 @@ class Store:
               id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES sessions(id),
               run_id TEXT NOT NULL REFERENCES runs(id), query TEXT NOT NULL,
               status TEXT NOT NULL, credits INTEGER);
+            CREATE TABLE IF NOT EXISTS confidential_paths (path TEXT PRIMARY KEY);
             """)
             for table, column, definition in [
                 ("runs", "options", "TEXT NOT NULL DEFAULT '{}'"),
@@ -80,6 +89,12 @@ class Store:
                 columns = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
                 if column not in columns:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+            if not migrated:
+                # Older databases only know whole sessions; keep all of them restricted.
+                db.execute(
+                    "INSERT OR IGNORE INTO confidential_paths "
+                    "SELECT DISTINCT repo FROM sessions WHERE confidential=1"
+                )
 
     @contextmanager
     def connection(self, transaction: bool = False):
@@ -112,10 +127,10 @@ class Store:
     ) -> dict:
         session_id = str(uuid4())
         with self.connection(True) as db:
-            # Once observed confidential, a repository cannot be silently downgraded.
-            prior = db.execute(
-                "SELECT 1 FROM sessions WHERE repo=? AND confidential=1", (repo,)
-            ).fetchone()
+            # Once observed confidential, a location cannot be silently downgraded.
+            prior = any(
+                overlaps(repo, row[0]) for row in db.execute("SELECT path FROM confidential_paths")
+            )
             db.execute(
                 "INSERT INTO sessions(id,owner,repo,confidential,created,read_only) "
                 "VALUES (?,?,?,?,?,?)",
@@ -123,13 +138,13 @@ class Store:
                     session_id,
                     owner,
                     repo,
-                    int(confidential or bool(prior)),
+                    int(confidential or prior),
                     timestamp(),
                     int(read_only),
                 ),
             )
-            if confidential or prior:
-                db.execute("UPDATE sessions SET confidential=1 WHERE repo=?", (repo,))
+            if confidential and not prior:
+                self._record_confidential(db, repo)
         return self.session(session_id)
 
     def session(self, session_id: str) -> dict:
@@ -139,9 +154,18 @@ class Store:
             raise KeyError(session_id)
         return dict(row)
 
-    def mark_confidential(self, repo: str):
+    def mark_confidential(self, path: str):
         with self.connection(True) as db:
-            db.execute("UPDATE sessions SET confidential=1 WHERE repo=?", (repo,))
+            self._record_confidential(db, path)
+
+    @staticmethod
+    def _record_confidential(db, path: str):
+        db.execute("INSERT OR IGNORE INTO confidential_paths VALUES (?)", (path,))
+        rows = db.execute("SELECT id,repo FROM sessions WHERE confidential=0").fetchall()
+        db.executemany(
+            "UPDATE sessions SET confidential=1 WHERE id=?",
+            [(row["id"],) for row in rows if overlaps(row["repo"], path)],
+        )
 
     def restrict_session(self, session_id: str):
         with self.connection(True) as db:
