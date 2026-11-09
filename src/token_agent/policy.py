@@ -7,6 +7,12 @@ from .config import Settings, UserConfig
 from .models import (
     ApplyPatch,
     Finish,
+    GitCheckout,
+    GitCommit,
+    GitDiff,
+    GitLog,
+    GitPush,
+    GitStatus,
     Grep,
     ListTree,
     ReadFile,
@@ -28,9 +34,32 @@ TOOL_CLASSES = {
     ApplyPatch: "gated",
     WriteFile: "gated",
     RunShell: "gated",
+    GitStatus: "read",
+    GitDiff: "read",
+    GitLog: "read",
+    GitCommit: "gated",
+    GitCheckout: "gated",
+    GitPush: "gated",
     WebResearch: "read_external",
     Finish: "finish",
 }
+
+
+def check_git_action(action, settings: Settings, confidential: bool, repository) -> None:
+    """Rules the core enforces before a git action is run or offered for approval."""
+    for path in getattr(action, "paths", []):
+        if path.startswith("-"):
+            raise PolicyError("Git paths may not look like command options")
+        repository.path(path)
+    if isinstance(action, GitCommit):
+        repository.check_secrets(action.message)
+    if isinstance(action, GitPush):
+        if action.remote not in settings.git.push_remotes:
+            raise PolicyError("Push remote is not configured as trusted")
+        if action.branch in settings.git.protected_branches:
+            raise PolicyError("Pushing to a protected branch is not permitted")
+        if confidential and action.remote not in settings.git.confidential_push_remotes:
+            raise PolicyError("Confidential repositories cannot push to this remote")
 
 
 def authenticate(token: str, tokens: dict[str, str]) -> str | None:
