@@ -74,11 +74,11 @@ class Engine:
     def refresh_session(self, session_id: str) -> dict:
         session = self.store.session(session_id)
         user = next(u for u in self.settings.users if u.id == session["owner"])
-        path, confidential = resolve_repository(session["repo"], user, self.settings)
+        path, sources = resolve_repository(session["repo"], user, self.settings)
         if path != session["repo"]:
             raise PolicyError("Repository location changed; create a new session")
-        if confidential:
-            self.store.mark_confidential(session["repo"])
+        for source in sources:
+            self.store.mark_confidential(source)
         if user.read_only:
             self.store.restrict_session(session_id)
         return self.store.session(session_id)
