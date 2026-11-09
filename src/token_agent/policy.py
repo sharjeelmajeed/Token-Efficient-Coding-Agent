@@ -99,6 +99,23 @@ def model_policy(settings: Settings, confidential: bool) -> tuple[str, list[str]
     return settings.standard_model, settings.standard_allowlist
 
 
+BUDGET_WARNING_PERCENT = 80
+
+
+def budget_warning_active(limit: int, remaining: int) -> bool:
+    """True once at least BUDGET_WARNING_PERCENT of a nonzero budget is committed."""
+    return limit > 0 and remaining * 100 <= limit * (100 - BUDGET_WARNING_PERCENT)
+
+
+def budget_payload(limit: int, remaining: int, options: list[str]) -> dict:
+    return {
+        "remaining_micro_usd": remaining,
+        "limit_micro_usd": limit,
+        "warning_percent": BUDGET_WARNING_PERCENT,
+        "options": options,
+    }
+
+
 def cost_ceiling(settings: Settings, incoming: int, outgoing: int, local: bool) -> int:
     if local or settings.mode == "fixture":
         return 0
