@@ -18,10 +18,18 @@ BASE_PROMPT = (
 )
 
 
-def enabled_tools(settings: Settings, inspected: bool, read_only: bool = False) -> set[str]:
+def enabled_tools(
+    settings: Settings, inspected: bool, read_only: bool = False, git: bool = False
+) -> set[str]:
     names = {"list_tree", "read_file", "grep", "repo_map", "syntax_check", "finish"}
     if not read_only and (inspected or not settings.optimization.tool_pruning):
         names |= {"apply_patch", "write_file"}
+    if git and settings.git.enabled:
+        names |= {"git_status", "git_diff", "git_log"}
+        if not read_only:
+            names |= {"git_commit", "git_checkout"}
+            if settings.git.push_remotes:
+                names.add("git_push")
     if settings.sandbox.enabled and not read_only:
         names.add("run_shell")
     if settings.research.enabled:

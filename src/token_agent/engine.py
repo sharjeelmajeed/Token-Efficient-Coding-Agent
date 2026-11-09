@@ -10,8 +10,16 @@ from pydantic import ValidationError
 
 from .config import Settings
 from .context import build_context, enabled_tools
+from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
-from .policy import classify, cost_ceiling, model_policy, resolve_repository, routed_model
+from .policy import (
+    check_git_action,
+    classify,
+    cost_ceiling,
+    model_policy,
+    resolve_repository,
+    routed_model,
+)
 from .providers import BifrostProvider, FixtureProvider, ProviderError
 from .repo import PolicyError, Repository
 from .research import Research
@@ -34,8 +42,11 @@ class Engine:
         provider=None,
         research=None,
         sandbox=None,
+        git: GitExecutor | None = None,
     ):
         self.settings, self.store, self.tokens = settings, store, tokens
+        # No git executor ships yet, so git tools stay off unless one is supplied.
+        self.git = git
         self.provider = provider or (
             FixtureProvider() if settings.mode == "fixture" else BifrostProvider(settings)
         )
@@ -103,14 +114,21 @@ class Engine:
         self,
         session_id: str,
         run_id: str,
-        action: ApplyPatch | WriteFile | RunShell,
+        action: ApplyPatch | WriteFile | RunShell | GitGated,
         repository: Repository,
         step: int,
     ) -> dict:
-        if self.refresh_session(session_id)["read_only"]:
+        session = self.refresh_session(session_id)
+        if session["read_only"]:
             raise PolicyError("Read-only sessions cannot request gated actions")
         binding = action.model_dump()
-        if isinstance(action, RunShell):
+        if isinstance(action, GIT_GATED_TYPES):
+            check_git_action(action, self.settings, bool(session["confidential"]), repository)
+            preview = await self.git.prepare(repository, action)
+            repository.check_secrets(preview.diff)
+            binding["git"] = dict(preview.state)
+            diff = preview.diff
+        elif isinstance(action, RunShell):
             if not self.sandbox.available():
                 raise PolicyError("Docker sandbox is unavailable; host execution is forbidden")
             _, snapshot = repository.snapshot(self.settings.sandbox.max_snapshot_bytes)
@@ -161,7 +179,11 @@ class Engine:
                 if not self.store.claim_approval(approval["id"]):
                     raise PolicyError("Approval could not be consumed safely")
                 self.emit(session_id, run_id, "approval_consumed", {"approval_id": approval["id"]})
-                if isinstance(action, RunShell):
+                if isinstance(action, GIT_GATED_TYPES):
+                    # The executor rechecks every bound state value before it changes anything.
+                    result = await self.git.apply(repository, action, binding["git"])
+                    repository.check_secrets(json.dumps(result))
+                elif isinstance(action, RunShell):
                     result = await self.sandbox.run(repository, action, snapshot)
                 else:
                     # No await between single-use approval consumption and the checked write.
@@ -220,7 +242,9 @@ class Engine:
                 model, allowlist = routed_model(
                     self.settings, confidential, inspected, sum(failures.values())
                 )
-                names = enabled_tools(self.settings, inspected, bool(session["read_only"]))
+                names = enabled_tools(
+                    self.settings, inspected, bool(session["read_only"]), self.git is not None
+                )
                 messages, context_metrics = build_context(
                     self.store.messages(session_id), self.settings, names
                 )
@@ -337,8 +361,12 @@ class Engine:
                 self.emit(
                     session_id, run_id, "tool_call", {"action": action.model_dump(), "class": kind}
                 )
-                if isinstance(action, (ApplyPatch, WriteFile, RunShell)):
+                if isinstance(action, (ApplyPatch, WriteFile, RunShell, *GIT_GATED_TYPES)):
                     output = await self.wait_for_approval(session_id, run_id, action, repo, step)
+                elif isinstance(action, GIT_READ_TYPES):
+                    check_git_action(action, self.settings, confidential, repo)
+                    output = await self.git.read(repo, action)
+                    repo.check_secrets(json.dumps(output))
                 elif isinstance(action, WebResearch):
                     output = await self.research.search(
                         action,

@@ -44,11 +44,11 @@ class BodyLimit:
         return await self.app(scope, replay, send)
 
 
-def create_app(settings: Settings, provider=None, research=None, sandbox=None) -> FastAPI:
+def create_app(settings: Settings, provider=None, research=None, sandbox=None, git=None) -> FastAPI:
     tokens = load_tokens(settings)
     store = Store(settings.database)
     store.register_accounts(settings.users)
-    engine = Engine(settings, store, tokens, provider, research, sandbox)
+    engine = Engine(settings, store, tokens, provider, research, sandbox, git)
 
     @asynccontextmanager
     async def lifespan(app):

@@ -54,6 +54,32 @@ class SandboxSettings(BaseModel):
         return self
 
 
+class GitSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    enabled: bool = False
+    # Remote name -> the exact URL it must have. An empty map means push is never allowed.
+    push_remotes: dict[str, str] = Field(default_factory=dict)
+    # Remotes a confidential repository may push to; they must also be in push_remotes.
+    confidential_push_remotes: list[str] = Field(default_factory=list)
+    protected_branches: list[str] = Field(default_factory=lambda: ["main", "master"])
+
+    @model_validator(mode="after")
+    def trusted_remotes(self):
+        for name, url in self.push_remotes.items():
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", name):
+                raise ValueError("Git remote names must be plain identifiers")
+            parts = urlsplit(url)
+            if parts.scheme not in {"https", "ssh"} or not parts.hostname:
+                raise ValueError("Git push remotes need an https:// or ssh:// URL")
+            if parts.password or parts.query or parts.fragment:
+                raise ValueError("Git remote URLs may not contain secrets, query or fragment")
+            if parts.scheme == "https" and parts.username:
+                raise ValueError("Git remote URLs may not contain credentials")
+        if any(name not in self.push_remotes for name in self.confidential_push_remotes):
+            raise ValueError("Confidential push remotes must also be push remotes")
+        return self
+
+
 class OptimizationSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     history_compaction: bool = True
@@ -89,6 +115,7 @@ class Settings(BaseModel):
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)
+    git: GitSettings = Field(default_factory=GitSettings)
     optimization: OptimizationSettings = Field(default_factory=OptimizationSettings)
     confidential_roots: list[str] = Field(default_factory=list)
     confidential_marker: str = ".agent-confidential"
