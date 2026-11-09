@@ -14,6 +14,8 @@ BASE_PROMPT = (
     "Use run_shell purpose=verification only for a configured verification command. "
     "Syntax checks do not prove correctness. Research can only use configured package IDs "
     "and generic error names. Cite research source URLs when using their guidance. "
+    "read_file text is the exact file content starting at start_line; copy patch text from it. "
+    "A tool_result with an error changed nothing: correct the input and try again. "
     "Finish honestly, distinguishing checks actually executed from proposed checks.\n"
 )
 

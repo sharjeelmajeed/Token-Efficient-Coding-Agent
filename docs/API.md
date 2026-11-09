@@ -28,7 +28,7 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `context_prepared` | `before_chars`, `after_chars`, `compacted`, `available_tools` |
 | `research_used` | Sanitized `query`, `cache_hit`, `credits`, context byte/token upper bounds |
 | `tool_call` | `action` (validated tagged tool input), `class` |
-| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable) |
+| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable; a correctable mistake gives `{"error", "recoverable": true, "changed": false}`) |
 | `approval_request` | `approval_id`, exact `action`, full bounded `diff`, `deadline`, `tool_class` |
 | `approval_decision` | `approval_id`, `decision`, authenticated `user`, `feedback` |
 | `approval_consumed`, `approval_expired` | `approval_id` |
