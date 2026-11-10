@@ -12,6 +12,8 @@ import httpx
 from .config import Settings, UserConfig
 
 DEMO_TASK = "demo: fix calculator addition"
+# Reason used when the gateway refuses a request because its virtual-key budget is spent.
+GATEWAY_BUDGET_HIT = "gateway_budget_hit"
 
 
 class ProviderError(Exception):
@@ -213,6 +215,11 @@ class BifrostProvider:
                     json=payload,
                     follow_redirects=False,
                 ) as response:
+                    if response.status_code == 402:
+                        body = (await response.aread())[:4096].decode(errors="replace")
+                        if "budget_exceeded" in body:
+                            # The gateway's own spend limit; nothing was sent to a provider.
+                            raise ProviderError(GATEWAY_BUDGET_HIT)
                     if response.status_code != 200:
                         raise ProviderError(
                             f"Gateway returned HTTP {response.status_code}; session paused"

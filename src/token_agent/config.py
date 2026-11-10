@@ -128,6 +128,8 @@ class Settings(BaseModel):
     # Longest wait for the gateway's next bytes. Raise it for slow local models on CPU,
     # which can take minutes before the first token of a long prompt.
     gateway_timeout_seconds: int = Field(default=60, ge=5, le=900)
+    # Largest per-direction token difference accepted when reconciling with gateway logs.
+    reconciliation_token_tolerance: int = Field(default=0, ge=0, le=1000)
     streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)

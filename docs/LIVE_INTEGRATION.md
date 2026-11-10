@@ -19,9 +19,26 @@ sandbox prerequisites. Required live evidence remains tracked in [STATUS](STATUS
 - The reservation covers configured input/output ceilings multiplied by the maximum
   gateway attempt count. Multi-attempt requests retain the complete reservation even
   after a successful final response, because failed attempts may also have costs.
-- Gateway billing-log reconciliation is pending. Held/uncertain amounts cannot yet
-  be safely released by an automatic reconciliation command. Do not edit the database
-  to manufacture spend or benchmark numbers.
+- Reconcile with `python -m token_agent.reconcile --config agent.toml --gateway-log
+  <Bifrost logs.db or JSON export> [--report report.json]`. Each held, uncertain or
+  accounted usage row is matched to gateway log rows by request ID, including fallback
+  attempts linked by `parent_request_id`. Only proven costs replace a hold:
+  - one successful attempt whose tokens match within `reconciliation_token_tolerance`
+    (default 0): the amount becomes the gateway's cost of every attempt, rounded up
+    to whole micro-USD, and the row becomes `reconciled`;
+  - an uncertain row whose request finished at the gateway adopts the gateway record;
+  - attempts all refused by gateway governance before any provider was called
+    (`budget_exceeded`, `model_blocked`, `provider_blocked`, `virtual_key_required`)
+    reconcile to zero;
+  - anything else stays held: a token mismatch, a success with no recorded cost or more
+    than one success becomes `discrepancy`, and no record or no successful attempt is
+    left unchanged. A gateway cost above the price ceiling is charged and flagged.
+  Run it from the single core process host. Do not edit the database to manufacture
+  spend or benchmark numbers.
+- A gateway virtual-key budget refusal (HTTP 402 `budget_exceeded`) pauses the run with a
+  `budget_hit` event, reason `gateway_budget_hit`, option `raise_gateway_budget_then_resubmit`.
+  Bifrost checks the budget before a request and charges after it, so its cap can be
+  exceeded by up to one request; the core's own reservation cannot.
 - Optional direct-cache partitioning includes session identity, repository snapshot
   hash and request payload. Private/default-disabled caching uses a fresh partition,
   direct-cache mode and `x-bf-cache-no-store`. Enforce equivalent gateway policy;

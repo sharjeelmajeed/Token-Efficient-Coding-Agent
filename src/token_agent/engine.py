@@ -31,7 +31,7 @@ from .policy import (
     resolve_repository,
     routed_model,
 )
-from .providers import BifrostProvider, FixtureProvider, ProviderError
+from .providers import GATEWAY_BUDGET_HIT, BifrostProvider, FixtureProvider, ProviderError
 from .repo import (
     ABSOLUTE_OUTPUT_CHARS,
     MAX_FILE_BYTES,
@@ -545,7 +545,7 @@ class Engine:
                 else str(exc)
             )
             self.store.update_run(run_id, "paused", step, reason)
-            if reason == "budget_hit":
+            if reason in ("budget_hit", GATEWAY_BUDGET_HIT):
                 self.emit(
                     session_id,
                     run_id,
@@ -555,7 +555,9 @@ class Engine:
                         **budget_payload(
                             user.budget_micro_usd,
                             self.store.remaining(user.id),
-                            ["raise_budget_then_resubmit"],
+                            ["raise_budget_then_resubmit"]
+                            if reason == "budget_hit"
+                            else ["raise_gateway_budget_then_resubmit"],
                         ),
                     },
                 )

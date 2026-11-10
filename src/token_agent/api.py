@@ -288,12 +288,20 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
         except KeyError:
             raise HTTPException(404, "Run not found") from None
         owned(run["session_id"], identity)
+        usage = store.usage(run_id)
+        states: dict[str, int] = {}
+        for row in usage:
+            states[row["state"]] = states.get(row["state"], 0) + 1
+        reconciled = bool(usage) and set(states) == {"reconciled"}
         return {
             "run": run,
-            "usage": store.usage(run_id),
+            "usage": usage,
             "research_usage": store.research_usage(run_id),
-            "token_attribution": token_attribution(store.usage(run_id)),
-            "cost_basis": "Conservative configured ceilings; not reconciled Bifrost log cost",
+            "token_attribution": token_attribution(usage),
+            "cost_basis": "Reconciled against gateway log cost"
+            if reconciled
+            else "Conservative configured ceilings; not fully reconciled with gateway logs",
+            "reconciliation": {"complete": reconciled, "usage_states": states},
             "benchmark_evidence": False,
         }
 

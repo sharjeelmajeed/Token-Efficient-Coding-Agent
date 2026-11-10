@@ -84,6 +84,10 @@ Status/metrics include `research_usage` separately from LLM `usage`. Usage `deta
 is an object containing cache tokens/hit, latency, request ID, source, attempt ceiling and
 `tool_output_char_limit` (the character limit applied to that step's tool output).
 Amounts in `held_for_reconciliation`/`uncertain` are conservative holds, not final costs.
+After gateway reconciliation a row is `reconciled` (gateway cost) or `discrepancy` (still
+held), and its `details.reconciliation` holds the evidence. Metrics add `reconciliation`:
+`{"complete": bool, "usage_states": {state: count}}`; `complete` is true only when every
+usage row of the run is `reconciled`. `budget_hit` may have reason `gateway_budget_hit`.
 
 Each usage row's `details` also records where that request's prompt tokens went:
 `prompt_chars_by_part` and `prompt_tokens_by_part`, with parts such as `system_prompt`,
