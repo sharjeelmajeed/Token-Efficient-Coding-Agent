@@ -26,7 +26,7 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `session_created` | `mode`, `confidential` |
 | `run_started` | `model`, `mode`, `confidential`, `budget_remaining_micro_usd` |
 | `context_prepared` | `before_chars`, `after_chars`, `compacted`, `available_tools` |
-| `research_used` | Sanitized `query`, `cache_hit`, `credits`, context byte/token upper bounds |
+| `research_used` | Sanitized `query`, `trigger` (`user_permission`, `repeated_error`, `unknown_dependency` or `newer_version`), `cache_hit`, `credits`, context byte/token upper bounds |
 | `tool_call` | `action` (validated tagged tool input), `class` |
 | `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable) |
 | `approval_request` | `approval_id`, exact `action`, full bounded `diff`, `deadline`, `tool_class` |

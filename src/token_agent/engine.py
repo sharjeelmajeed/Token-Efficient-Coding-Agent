@@ -449,6 +449,7 @@ class Engine:
                             k: output[k]
                             for k in (
                                 "query",
+                                "trigger",
                                 "cache_hit",
                                 "credits",
                                 "content_utf8_bytes",
