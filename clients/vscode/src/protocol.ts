@@ -137,11 +137,18 @@ export function noticeText(kind: string, payload: Record<string, unknown>): stri
     case 'policy_block': return [`Blocked by policy: ${field('reason', 'no reason given')}`];
     case 'approval_expired': return [`Approval ${field('approval_id')} expired - the action was not run`];
     case 'research_used':
-      return [`Public research: ${field('query', 'unknown query')} (${payload.cache_hit === true ? 'cached' : 'new'})`];
+    {
+      const query = field('query', 'unknown query');
+      const cached = payload.cache_hit === true ? 'cached' : 'new';
+      // The trigger says why research ran (e.g. unknown_dependency); shown as the core sent it.
+      const trigger = field('trigger');
+      return [trigger ? `Public research (${trigger}, ${cached}): ${query}` : `Public research: ${query} (${cached})`];
+    }
     case 'tool_result': {
       const result = payload.result;
       if (record(result) && result.recoverable === true) {
-        return [`Tool error (agent will retry): ${safeText(result.error || 'invalid tool input', 500)}`];
+        // Not "will retry": the model may choose another action, and three mistakes in a row pause the run.
+        return [`Tool error (the agent can correct this): ${safeText(result.error || 'invalid tool input', 500)}`];
       }
       return [];
     }
