@@ -28,11 +28,11 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `context_prepared` | `before_chars`, `after_chars`, `compacted`, `available_tools` |
 | `research_used` | Sanitized `query`, `trigger` (`user_permission`, `repeated_error`, `unknown_dependency` or `newer_version`), `cache_hit`, `credits`, context byte/token upper bounds |
 | `tool_call` | `action` (validated tagged tool input), `class` |
-| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable; a correctable mistake gives `{"error", "recoverable": true, "changed": false}`) |
+| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable; a correctable mistake gives `{"error", "recoverable": true, "changed": false}`; a reply that is not a valid action gives the same with `tool` `invalid_reply` and counts toward the same limit of three mistakes in a row, after which the run pauses) |
 | `approval_request` | `approval_id`, exact `action`, full bounded `diff`, `deadline`, `tool_class` |
 | `approval_decision` | `approval_id`, `decision`, authenticated `user`, `feedback` |
 | `approval_consumed`, `approval_expired` | `approval_id` |
-| `model_switched` | `from`, `to`, `reason` (no unverified outage cause invented) |
+| `model_switched` | `from`, `to`, `reason`: `configured_step_routing`, `gateway_fallback`, `gateway_returned_different_allowed_model` or `gateway_primary_restored`. Sent only when the model really changes: a lasting fallback is reported once (no unverified outage cause invented) |
 | `budget_warning` | `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
 | `budget_hit` | `reason`, `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
 | `policy_block` | `reason` |

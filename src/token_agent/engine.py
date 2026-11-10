@@ -279,6 +279,59 @@ class Engine:
             return output
         return repo.execute_read(action)
 
+    def notify_switches(
+        self, session_id, run_id, requested, result, previous_requested, previous_served
+    ):
+        """Emit model_switched only when the model really changes (FR-23, TC-FO-01).
+
+        Routing compares requested models step to step. A gateway substitute is reported once,
+        when it starts or changes, and again when the requested model serves once more.
+        """
+        if previous_requested and requested != previous_requested:
+            self.emit(
+                session_id,
+                run_id,
+                "model_switched",
+                {"from": previous_requested, "to": requested, "reason": "configured_step_routing"},
+            )
+        substituted = result.model != requested or result.is_fallback
+        if substituted and result.model != previous_served:
+            self.emit(
+                session_id,
+                run_id,
+                "model_switched",
+                {
+                    "from": requested,
+                    "to": result.model,
+                    "reason": "gateway_fallback"
+                    if result.is_fallback
+                    else "gateway_returned_different_allowed_model",
+                },
+            )
+        elif not substituted and previous_served:
+            self.emit(
+                session_id,
+                run_id,
+                "model_switched",
+                {"from": previous_served, "to": result.model, "reason": "gateway_primary_restored"},
+            )
+
+    def reject_reply(self, session_id: str, run_id: str):
+        """Tell the model its reply was not a valid action; nothing was executed."""
+        error = {
+            "error": "Reply did not match the action schema. Return exactly one JSON object "
+            "with an action using only the listed tools and fields.",
+            "recoverable": True,
+            "changed": False,
+        }
+        self.store.add_message(
+            session_id,
+            "user",
+            json.dumps({"tool": "invalid_reply", "tool_result": error}),
+            "observation",
+        )
+        self.emit(session_id, run_id, "tool_result", {"tool": "invalid_reply", "result": error})
+
     async def execute(self, session_id: str, run_id: str):
         session = self.store.session(session_id)
         user = next(u for u in self.settings.users if u.id == session["owner"])
@@ -297,6 +350,8 @@ class Engine:
         tool_errors = 0
         warned = False
         step, reservation, previous_model = 0, None, None
+        # The gateway's substitute model while a fallback is in effect, otherwise None.
+        previous_served: str | None = None
         try:
             repo = self.repository(session)
             confidential = bool(session["confidential"])
@@ -418,27 +473,13 @@ class Engine:
                     ),
                 )
                 reservation = None
-                if previous_model and model != previous_model:
-                    self.emit(
-                        session_id,
-                        run_id,
-                        "model_switched",
-                        {"from": previous_model, "to": model, "reason": "configured_step_routing"},
-                    )
-                if result.model != model or result.is_fallback:
-                    self.emit(
-                        session_id,
-                        run_id,
-                        "model_switched",
-                        {
-                            "from": model,
-                            "to": result.model,
-                            "reason": "gateway_fallback"
-                            if result.is_fallback
-                            else "gateway_returned_different_allowed_model",
-                        },
-                    )
-                previous_model = result.model
+                self.notify_switches(
+                    session_id, run_id, model, result, previous_model, previous_served
+                )
+                previous_model = model
+                previous_served = (
+                    result.model if result.model != model or result.is_fallback else None
+                )
                 remaining = self.store.remaining(user.id)
                 if not warned and budget_warning_active(user.budget_micro_usd, remaining):
                     warned = True
@@ -449,7 +490,18 @@ class Engine:
                         budget_payload(user.budget_micro_usd, remaining, ["continue", "cancel"]),
                     )
                 repo.check_secrets(result.content)
-                reply = AgentReply.model_validate_json(result.content)
+                try:
+                    reply = AgentReply.model_validate_json(result.content)
+                except ValidationError:
+                    # Text already streamed to the client cannot be withdrawn, so pause then.
+                    if stream and stream.released:
+                        raise
+                    tool_errors += 1
+                    if tool_errors >= MAX_TOOL_ERRORS:
+                        raise
+                    self.reject_reply(session_id, run_id)
+                    self.store.update_run(run_id, "running", step)
+                    continue
                 action = reply.action
                 kind = classify(action)
                 if session["read_only"] and kind == "gated":
