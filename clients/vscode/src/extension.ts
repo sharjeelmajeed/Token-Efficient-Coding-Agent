@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { CoreClient } from './client';
-import { AgentEvent, SessionState, Status, budgetWarningPercent, coreOrigin, id, noticeText, record, safeText,
-  statusLabel, usd } from './protocol';
+import { AgentEvent, ReplyJoiner, SessionState, Status, TimelineEntry, budgetWarningPercent, coreOrigin, id,
+  noticeText, record, safeText, statusLabel, usd } from './protocol';
 import { webviewHtml } from './webview';
 
 class Documents implements vscode.TextDocumentContentProvider {
@@ -23,7 +23,8 @@ class AgentController implements vscode.Disposable {
   private stream: AbortController | undefined;
   private state: SessionState | undefined;
   private currentStatus: Status | undefined;
-  private readonly timeline: { kind: string; text: string }[] = [];
+  private readonly timeline: TimelineEntry[] = [];
+  private readonly replies = new ReplyJoiner(entry => this.push(entry));
   private readonly decisions = new Set<string>();
   private readonly documents = new Documents();
   private readonly bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 20);
@@ -71,8 +72,9 @@ class AgentController implements vscode.Disposable {
     }
     return this.state;
   }
-  private add(kind: string, text: string): void {
-    this.timeline.push({ kind, text: safeText(text) });
+  private add(kind: string, text: string): void { this.push({ kind, text: safeText(text) }); }
+  private push(entry: TimelineEntry): void {
+    this.timeline.push(entry);
     if (this.timeline.length > 200) { this.timeline.shift(); }
     this.render();
   }
@@ -128,7 +130,7 @@ class AgentController implements vscode.Disposable {
     this.stream?.abort();
     this.state = { sessionId: id(result.session_id), cursor: 0, coreUrl: client.origin, repoPath: folder.uri.fsPath };
     await this.context.workspaceState.update('session', this.state);
-    this.timeline.length = 0;
+    this.timeline.length = 0; this.replies.reset();
     this.open();
     this.add('notice', `Session started for ${folder.name}.`);
     await this.refresh();
@@ -170,7 +172,9 @@ class AgentController implements vscode.Disposable {
   private async receive(event: AgentEvent, state: SessionState): Promise<void> {
     if (this.state !== state) { return; }
     const p = event.payload;
-    if (event.type === 'message_delta') { this.add('assistant', safeText(p.text)); }
+    // Only the final streamed piece completes a reply; any other event first marks it incomplete.
+    if (event.type !== 'message_delta') { this.replies.interrupt(); }
+    if (event.type === 'message_delta') { this.replies.delta(p); this.render(); }
     else if (event.type === 'tool_call' && record(p.action)) {
       this.add('tool', `Tool: ${safeText(p.action.tool, 100)}`);
     } else {
