@@ -9,32 +9,37 @@ from token_agent.providers import ProviderResult
 from .conftest import live_client
 
 
+def cli_env(environment, http, tmp_path) -> dict:
+    return {
+        **os.environ,
+        "AGENT_API_TOKEN": environment["first"]["Authorization"].split()[1],
+        "AGENT_CORE_URL": str(http.base_url),
+        "AGENT_CLIENT_STATE": str(tmp_path / "cli-state.json"),
+        # Rich prints box-drawing characters; keep the child and the reader on UTF-8
+        # so the test does not depend on the Windows console code page.
+        "PYTHONIOENCODING": "utf-8",
+    }
+
+
+def cli(env: dict, *args: str, stdin: str | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "-m", "token_agent.cli", *args],
+        env=env,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=10,
+    )
+
+
 def test_cli_complete_interactive_flow(environment, tmp_path):
     app = create_app(environment["settings"])
     with live_client(app, environment["first"]) as http:
-        env = {
-            **os.environ,
-            "AGENT_API_TOKEN": environment["first"]["Authorization"].split()[1],
-            "AGENT_CORE_URL": str(http.base_url),
-            "AGENT_CLIENT_STATE": str(tmp_path / "cli-state.json"),
-        }
-        command = [sys.executable, "-m", "token_agent.cli"]
-        initial = subprocess.run(
-            [*command, "init", "--repo", str(environment["repo"])],
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        env = cli_env(environment, http, tmp_path)
+        initial = cli(env, "init", "--repo", str(environment["repo"]))
         assert initial.returncode == 0, initial.stderr
-        run = subprocess.run(
-            [*command, "run", "demo: fix calculator addition"],
-            env=env,
-            input="a\n",
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        run = cli(env, "run", "demo: fix calculator addition", stdin="a\n")
         assert run.returncode == 0, run.stderr
         assert "OFFLINE FIXTURE" in run.stdout
         assert "completed_unverified" in run.stdout
@@ -56,7 +61,8 @@ class FinishingProvider:
         )
 
 
-def test_cli_shows_and_persists_budget_warning(environment, tmp_path):
+def priced_app(environment, input_tokens: int):
+    """A core whose user has a 6000 micro-USD budget and 1 micro-USD per token."""
     users = [u.model_copy(update={"budget_micro_usd": 6000}) for u in environment["settings"].users]
     settings = environment["settings"].model_copy(
         update={
@@ -69,40 +75,51 @@ def test_cli_shows_and_persists_budget_warning(environment, tmp_path):
             "users": users,
         }
     )
-    app = create_app(settings, FinishingProvider(input_tokens=5000, output_tokens=0))
-    with live_client(app, environment["first"]) as http:
-        env = {
-            **os.environ,
-            "AGENT_API_TOKEN": environment["first"]["Authorization"].split()[1],
-            "AGENT_CORE_URL": str(http.base_url),
-            "AGENT_CLIENT_STATE": str(tmp_path / "cli-state.json"),
-        }
-        command = [sys.executable, "-m", "token_agent.cli"]
-        initial = subprocess.run(
-            [*command, "init", "--repo", str(environment["repo"])],
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        assert initial.returncode == 0, initial.stderr
-        run = subprocess.run(
-            [*command, "run", "any task"],
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        assert run.returncode == 0, run.stderr
-        assert "BUDGET WARNING" in run.stdout
+    return create_app(settings, FinishingProvider(input_tokens=input_tokens, output_tokens=0))
 
-        status = subprocess.run(
-            [*command, "status"],
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+
+def test_cli_budget_warning_comes_from_core_status(environment, tmp_path):
+    # 5000 of 6000 micro-USD used: past the core's 80% warning threshold.
+    with live_client(priced_app(environment, 5000), environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "any task")
+        assert run.returncode == 0, run.stderr
+        assert "Budget warning:" in run.stdout
+        assert "options: continue, cancel" in run.stdout
+        assert "BUDGET WARNING" in run.stdout
+        assert "remaining of $0.0060" in run.stdout
+
+        # The warning is never stored by the client.
+        assert "budget_warning" not in (tmp_path / "cli-state.json").read_text()
+
+        status = cli(env, "status")
         assert status.returncode == 0, status.stderr
         assert "BUDGET WARNING" in status.stdout
-        assert env["AGENT_API_TOKEN"] not in run.stdout + run.stderr + status.stdout + status.stderr
+
+        # The budget belongs to the user: a brand-new session still shows the warning.
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        fresh = cli(env, "status")
+        assert fresh.returncode == 0, fresh.stderr
+        assert "BUDGET WARNING" in fresh.stdout
+        for output in (run, status, fresh):
+            assert env["AGENT_API_TOKEN"] not in output.stdout + output.stderr
+
+
+def test_cli_no_budget_warning_below_threshold_or_from_stale_state(environment, tmp_path):
+    # 1000 of 6000 micro-USD used: well below 80%.
+    with live_client(priced_app(environment, 1000), environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "any task")
+        assert run.returncode == 0, run.stderr
+        assert "BUDGET WARNING" not in run.stdout
+        assert "Budget warning:" not in run.stdout
+
+        # A client file written by the old CLI must not bring the banner back.
+        state_path = tmp_path / "cli-state.json"
+        state = json.loads(state_path.read_text())
+        state_path.write_text(json.dumps({**state, "budget_warning": True}))
+        status = cli(env, "status")
+        assert status.returncode == 0, status.stderr
+        assert "BUDGET WARNING" not in status.stdout

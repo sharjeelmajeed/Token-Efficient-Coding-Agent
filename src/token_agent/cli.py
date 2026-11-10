@@ -84,7 +84,22 @@ def request(http: httpx.Client, method: str, path: str, **kwargs):
         ) from None
 
 
-def show_status(data: dict, state: dict | None = None):
+def usd(micro: int) -> str:
+    return f"${micro / 1000000:.4f}"
+
+
+def budget_line(payload: dict) -> str:
+    """Readable budget event text built only from the core's event payload."""
+    parts = [
+        f"{usd(payload.get('remaining_micro_usd', 0))} remaining"
+        f" of {usd(payload.get('limit_micro_usd', 0))}"
+    ]
+    if payload.get("options"):
+        parts.append("options: " + ", ".join(str(o) for o in payload["options"]))
+    return clean("; ".join(parts))
+
+
+def show_status(data: dict):
     run = data.get("run") or {}
     usage = data.get("usage", [])
     table = Table(title="Agent status", show_header=False)
@@ -108,10 +123,14 @@ def show_status(data: dict, state: dict | None = None):
         console.print(
             "OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.", style="yellow"
         )
-    if state and state.get("budget_warning"):
+    # The core works out the warning for the user's budget on every request; the
+    # client never stores it. An older core without the field shows no warning.
+    limit = data.get("budget_limit_micro_usd")
+    if data.get("budget_warning") is True and isinstance(limit, int) and limit > 0:
+        remaining = data["budget_remaining_micro_usd"]
+        used = (limit - remaining) * 100 // limit
         console.print(
-            "BUDGET WARNING: 80% of budget used "
-            f"(${data['budget_remaining_micro_usd'] / 1000000:.4f} remaining)",
+            f"BUDGET WARNING: {used}% of budget used ({usd(remaining)} remaining of {usd(limit)})",
             style="bold red",
         )
 
@@ -141,7 +160,7 @@ def decide(http: httpx.Client, session_id: str, approval: dict):
 def watch(http: httpx.Client, state: dict):
     session_id = state["session_id"]
     status = request(http, "GET", f"/sessions/{session_id}/status")
-    show_status(status, state)
+    show_status(status)
     for approval in status["pending_approvals"]:
         decide(http, session_id, approval)
     try:
@@ -168,22 +187,28 @@ def watch(http: httpx.Client, state: dict):
                         f"Tool: {payload['action']['tool']} ({payload['class']})", markup=False
                     )
                 elif kind == "budget_warning":
-                    state["budget_warning"] = True
-                    save_state(state)
                     console.print(
-                        clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="bold red"
+                        f"Budget warning: {budget_line(payload)}", markup=False, style="bold red"
                     )
-                    show_status(request(http, "GET", f"/sessions/{session_id}/status"), state)
-                elif kind in {"model_switched", "budget_hit", "session_paused", "run_complete"}:
+                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+                elif kind == "budget_hit":
+                    reason = clean(str(payload.get("reason", "budget limit reached")))
+                    console.print(
+                        f"Budget limit reached: {reason}; {budget_line(payload)}",
+                        markup=False,
+                        style="bold red",
+                    )
+                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+                elif kind in {"model_switched", "session_paused", "run_complete"}:
                     console.print(
                         clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow"
                     )
-                    show_status(request(http, "GET", f"/sessions/{session_id}/status"), state)
+                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
                 elif kind in {"policy_block", "approval_expired", "research_used"}:
                     console.print(
                         clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow"
                     )
-        show_status(request(http, "GET", f"/sessions/{session_id}/status"), state)
+        show_status(request(http, "GET", f"/sessions/{session_id}/status"))
     except KeyboardInterrupt:
         request(http, "POST", f"/sessions/{session_id}/cancel")
         console.print("Run cancelled.")
@@ -247,7 +272,7 @@ def status():
     """Show persisted run, budget and usage state."""
     state = read_state()
     with client() as http:
-        show_status(request(http, "GET", f"/sessions/{state['session_id']}/status"), state)
+        show_status(request(http, "GET", f"/sessions/{state['session_id']}/status"))
 
 
 @app.command()

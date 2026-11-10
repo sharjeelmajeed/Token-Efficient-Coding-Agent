@@ -26,9 +26,9 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `session_created` | `mode`, `confidential` |
 | `run_started` | `model`, `mode`, `confidential`, `budget_remaining_micro_usd` |
 | `context_prepared` | `before_chars`, `after_chars`, `compacted`, `available_tools` |
-| `research_used` | Sanitized `query`, `cache_hit`, `credits`, context byte/token upper bounds |
+| `research_used` | Sanitized `query`, `trigger` (`user_permission`, `repeated_error`, `unknown_dependency` or `newer_version`), `cache_hit`, `credits`, context byte/token upper bounds |
 | `tool_call` | `action` (validated tagged tool input), `class` |
-| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable) |
+| `tool_result` | `tool`, `result` (bounded text and truncation flag when applicable; a correctable mistake gives `{"error", "recoverable": true, "changed": false}`) |
 | `approval_request` | `approval_id`, exact `action`, full bounded `diff`, `deadline`, `tool_class` |
 | `approval_decision` | `approval_id`, `decision`, authenticated `user`, `feedback` |
 | `approval_consumed`, `approval_expired` | `approval_id` |
@@ -81,8 +81,25 @@ This object is display-only; clients approve the existing ID and cannot edit it.
 `diff` is empty for commands. File approvals still contain a full bounded diff.
 
 Status/metrics include `research_usage` separately from LLM `usage`. Usage `details`
-is an object containing cache tokens/hit, latency, request ID, source and attempt ceiling.
+is an object containing cache tokens/hit, latency, request ID, source, attempt ceiling and
+`tool_output_char_limit` (the character limit applied to that step's tool output).
 Amounts in `held_for_reconciliation`/`uncertain` are conservative holds, not final costs.
+After gateway reconciliation a row is `reconciled` (gateway cost) or `discrepancy` (still
+held), and its `details.reconciliation` holds the evidence. Metrics add `reconciliation`:
+`{"complete": bool, "usage_states": {state: count}}`; `complete` is true only when every
+usage row of the run is `reconciled`. `budget_hit` may have reason `gateway_budget_hit`.
+
+Each usage row's `details` also records where that request's prompt tokens went:
+`prompt_chars_by_part` and `prompt_tokens_by_part`, with parts such as `system_prompt`,
+`instructions`, `model_actions`, `history_digest` and `tool:<name>`. The tokens are the
+model's real `input_tokens` for the request, shared out by each part's character count, so
+they always sum to the real total; the split itself is an estimate, because code, prose and
+JSON use different numbers of characters per token. Metrics add `token_attribution` with run
+totals: `input_tokens_total`, `output_tokens_total`, `input_tokens_by_part`,
+`research_input_tokens` and `requests_without_attribution`. Text that stays in the context,
+such as a research result, is counted in every request that resends it, so
+`research_input_tokens` is the real prompt-token cost of research for the run (FR-62). The
+`research_used` event's `content_token_upper_bound` remains a UTF-8 byte bound for one result.
 `run.options` is the persisted JSON string of typed run options, not model permissions.
 
 `completed_verified` requires every operator-configured verification command to pass
