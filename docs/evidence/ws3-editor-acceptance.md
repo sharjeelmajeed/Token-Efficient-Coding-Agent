@@ -9,7 +9,7 @@ git approvals in the editor (Item 6b).
 | --- | --- |
 | Date | 2026-11-10 |
 | Client commit | `523618d` (branch `feature/clients-vscode-streaming`: Items 4 + 5) |
-| VSIX | `token-efficient-coding-agent-0.3.0.vsix`, SHA-256 prefix `ACF5BAD2B75F00A7`, built locally from `523618d` (not committed). It does not include `af82bfd` (PR #11: model/budget notices no longer end a streamed reply), and the version stays `0.3.0`, so a VSIX built from `main` has the same version number. The 7 and 8 re-run used this same VSIX |
+| VSIX | `token-efficient-coding-agent-0.3.0.vsix`, SHA-256 prefix `ACF5BAD2B75F00A7`, built locally from `523618d` (not committed), which is older than the client now on `main`. It does not include `af82bfd` (PR #11: model/budget notices no longer end a streamed reply) or PR #19 (budget options in plain words). Neither affects this fixture run, which has no model switches or budget hits; real model switches are covered by WS2's live streaming test through both clients. The version stays `0.3.0`, so a VSIX built from `main` has the same version number. The 7 and 8 re-run used this same VSIX |
 | Core config | `.agent/acceptance.toml` (git-ignored): `agent.toml` + `streaming = true`, fixture mode |
 | OS | Windows 10 Pro 10.0.19045 |
 | Tester | Areeba |
