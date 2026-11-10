@@ -15,6 +15,10 @@ class PolicyError(Exception):
 
 
 MAX_FILE_BYTES = 128000
+# Fixed ceiling for tool output when optimization truncation is off. It is a resource
+# safety limit, not an optimization, so it applies in every configuration.
+ABSOLUTE_OUTPUT_CHARS = MAX_FILE_BYTES
+MAX_READ_LINES = 200
 MAX_FILES = 500
 SECRET_PATTERN = re.compile(
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----|"
@@ -33,7 +37,14 @@ def bounded(text: str, limit: int) -> dict:
 
 
 class Repository:
-    def __init__(self, root: str, marker: str, secrets: list[str], output_chars: int):
+    def __init__(
+        self,
+        root: str,
+        marker: str,
+        secrets: list[str],
+        output_chars: int,
+        max_read_lines: int | None = MAX_READ_LINES,
+    ):
         try:
             self.root = Path(root).resolve(strict=True)
         except OSError as exc:
@@ -43,6 +54,8 @@ class Repository:
         self.marker = marker
         self.secrets = [s for s in secrets if s]
         self.output_chars = output_chars
+        # None means whole-file reads (targeted reads switched off).
+        self.max_read_lines = max_read_lines
 
     def protected(self, part: str) -> bool:
         name = part.casefold()
@@ -261,14 +274,17 @@ class Repository:
 
     def execute_read(self, action) -> dict:
         if isinstance(action, ReadFile):
-            if action.end_line < action.start_line or action.end_line - action.start_line >= 200:
-                raise PolicyError("Read at most 200 lines in ascending order")
+            start, end = action.start_line, action.end_line
+            if self.max_read_lines is not None and (
+                end < start or end - start >= self.max_read_lines
+            ):
+                raise PolicyError(f"Read at most {self.max_read_lines} lines in ascending order")
             content = self.read(action.path)
             lines = content.splitlines()
+            if self.max_read_lines is None:
+                start, end = 1, len(lines)  # Whole-file read; size is still capped by read().
             body = "\n".join(
-                f"{i + 1}: {line}"
-                for i, line in enumerate(lines)
-                if action.start_line <= i + 1 <= action.end_line
+                f"{i + 1}: {line}" for i, line in enumerate(lines) if start <= i + 1 <= end
             )
             return {
                 "path": action.path,

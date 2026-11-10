@@ -23,7 +23,7 @@ from .policy import (
     routed_model,
 )
 from .providers import BifrostProvider, FixtureProvider, ProviderError
-from .repo import PolicyError, Repository
+from .repo import ABSOLUTE_OUTPUT_CHARS, MAX_READ_LINES, PolicyError, Repository
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
@@ -63,8 +63,13 @@ class Engine:
             secrets.extend(
                 [os.environ.get(user.bifrost_key_env, ""), os.environ.get(user.local_key_env, "")]
             )
+        optimization = self.settings.optimization
         return Repository(
-            session["repo"], self.settings.confidential_marker, secrets, self.settings.output_chars
+            session["repo"],
+            self.settings.confidential_marker,
+            secrets,
+            self.settings.output_chars if optimization.output_truncation else ABSOLUTE_OUTPUT_CHARS,
+            MAX_READ_LINES if optimization.targeted_reads else None,
         )
 
     def emit(self, session_id: str, run_id: str, kind: str, payload: dict):
@@ -238,6 +243,8 @@ class Engine:
                     "mode": self.settings.mode,
                     "confidential": confidential,
                     "budget_remaining_micro_usd": self.store.remaining(user.id),
+                    # Recorded so every result can be traced to its ablation configuration.
+                    "optimization": self.settings.optimization.model_dump(),
                 },
             )
             for step in range(1, self.settings.max_steps + 1):
