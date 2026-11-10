@@ -32,7 +32,7 @@ team gateway or paid provider in this environment.
 
 ## Frozen benchmark suite
 
-The benchmark task suite is frozen in [`benchmarks/tasks/`](benchmarks/tasks/) at commit `7d00bc4` on branch `test/evaluation-freeze`.
+The benchmark task suite is frozen in [`benchmarks/tasks/`](benchmarks/tasks/) at commit `0ecb417` on branch `test/evaluation-freeze`.
 It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja`, and `expressjs/express`)
 and 2 languages (Python, JavaScript), covering bug fixes, small features, refactors, and test additions.
 Each task specifies a pinned commit, exact prompt, target files, and automated pass/fail command.
