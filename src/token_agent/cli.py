@@ -140,12 +140,15 @@ def notice(kind: str, payload: dict) -> list[str]:
         return [f"Approval {field('approval_id', '')} expired - the action was not run"]
     if kind == "research_used":
         cached = "cached" if payload.get("cache_hit") is True else "new"
-        return [f"Public research: {field('query', 'unknown query')} ({cached})"]
+        # The trigger says why research ran (e.g. unknown_dependency); shown as the core sent it.
+        why = f"; trigger: {field('trigger')}" if field("trigger") else ""
+        return [f"Public research: {field('query', 'unknown query')} ({cached}{why})"]
     if kind == "tool_result":
         result = payload.get("result")
         if isinstance(result, dict) and result.get("recoverable") is True:
             error = clean(str(result.get("error") or "invalid tool input"))
-            return [f"Tool error (agent will retry): {error}"]
+            # Not "will retry": after three mistakes in a row the core pauses the run.
+            return [f"Tool error (the agent can correct this): {error}"]
     return []
 
 

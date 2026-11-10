@@ -231,6 +231,16 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
             {"query": "httpx timeout", "cache_hit": False},
             ["Public research: httpx timeout (new)"],
         ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": False, "trigger": "unknown_dependency"},
+            ["Public research: httpx timeout (new; trigger: unknown_dependency)"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": True, "trigger": "repeated_error"},
+            ["Public research: httpx timeout (cached; trigger: repeated_error)"],
+        ),
         # Shape from the recoverable tool error change (PR #6).
         (
             "tool_result",
@@ -238,7 +248,7 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
                 "tool": "read_file",
                 "result": {"error": "No such file", "recoverable": True, "changed": False},
             },
-            ["Tool error (agent will retry): No such file"],
+            ["Tool error (the agent can correct this): No such file"],
         ),
         ("tool_result", {"tool": "read_file", "result": {"text": "contents"}}, []),
         ("tool_result", {"tool": "read_file", "result": "plain text"}, []),
@@ -271,6 +281,7 @@ def test_cli_notice_never_crashes_on_missing_or_odd_fields(kind):
         "outcome": {},
         "result": None,
         "query": "\x1b[31mred\x1b[0m",
+        "trigger": "\x1b[31mwhy\x1b[0m",
     }
     lines = notice(kind, odd)
     assert all("\x1b" not in line for line in lines)
