@@ -50,6 +50,55 @@ def system_prompt(names: set[str]) -> str:
     return BASE_PROMPT + json.dumps(schema, separators=(",", ":"), sort_keys=True)
 
 
+ATTRIBUTION_METHOD = (
+    "Actual prompt tokens reported for the request, shared out by each part's character count"
+)
+
+
+def prompt_part(message: dict) -> str:
+    """Name the part of a model prompt that one message belongs to."""
+    if message["role"] == "system":
+        return "system_prompt"
+    if message["role"] == "assistant":
+        return "model_actions"
+    try:
+        item = json.loads(message["content"])
+    except (ValueError, TypeError):
+        return "instructions"
+    if isinstance(item, dict) and isinstance(item.get("tool_result"), dict):
+        return f"tool:{item.get('tool', 'unknown')}"
+    if isinstance(item, dict) and "untrusted_history_digest" in item:
+        return "history_digest"
+    return "instructions"
+
+
+def prompt_parts(messages: list[dict]) -> dict[str, int]:
+    """Characters per prompt part, used to share out the request's real token count."""
+    parts: dict[str, int] = {}
+    for message in messages:
+        part = prompt_part(message)
+        parts[part] = parts.get(part, 0) + len(message.get("content") or "")
+    return parts
+
+
+def attribute_tokens(parts: dict[str, int], total_tokens: int) -> dict[str, int]:
+    """Share a real token total across parts by character share; the shares sum exactly.
+
+    The total is the model's own count. The split is an estimate, because different kinds
+    of text (code, prose, JSON) use different numbers of characters per token.
+    """
+    characters = sum(parts.values())
+    if characters <= 0 or total_tokens <= 0:
+        return {}
+    exact = {name: total_tokens * size / characters for name, size in parts.items()}
+    shares = {name: int(value) for name, value in exact.items()}
+    # Largest remainder: hand out what rounding down left over, biggest fractions first.
+    left = total_tokens - sum(shares.values())
+    for name in sorted(exact, key=lambda n: (exact[n] - shares[n], n), reverse=True)[:left]:
+        shares[name] += 1
+    return shares
+
+
 def observation(message: dict) -> dict | None:
     if message["role"] != "user" or message.get("kind") != "observation":
         return None

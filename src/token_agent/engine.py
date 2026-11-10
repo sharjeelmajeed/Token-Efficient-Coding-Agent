@@ -9,7 +9,13 @@ from collections import Counter
 from pydantic import ValidationError
 
 from .config import Settings
-from .context import build_context, enabled_tools
+from .context import (
+    ATTRIBUTION_METHOD,
+    attribute_tokens,
+    build_context,
+    enabled_tools,
+    prompt_parts,
+)
 from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
 from .policy import (
@@ -253,6 +259,7 @@ class Engine:
                     self.store.messages(session_id), self.settings, names
                 )
                 self.emit(session_id, run_id, "context_prepared", context_metrics)
+                parts = prompt_parts(messages)
                 request_context = {"session_id": session_id, "run_id": run_id}
                 if self.settings.optimization.gateway_direct_cache and not confidential:
                     _, request_context["snapshot_sha256"] = repo.snapshot(
@@ -317,6 +324,10 @@ class Engine:
                         "request_id": result.request_id,
                         "usage_source": result.source,
                         "attempt_ceiling": self.settings.gateway_attempt_ceiling,
+                        # Where the request's real prompt tokens went (FR-62, ablation analysis).
+                        "prompt_chars_by_part": parts,
+                        "prompt_tokens_by_part": attribute_tokens(parts, result.input_tokens),
+                        "attribution": ATTRIBUTION_METHOD,
                     },
                     retain_reservation=(
                         self.settings.mode != "fixture"
