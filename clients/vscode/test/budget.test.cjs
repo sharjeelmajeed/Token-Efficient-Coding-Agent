@@ -49,8 +49,19 @@ test('notices use the same readable wording as the CLI', () => {
     ['approval_expired', { approval_id: 'abc' }, ['Approval abc expired - the action was not run']],
     ['research_used', { query: 'httpx timeout', cache_hit: true }, ['Public research: httpx timeout (cached)']],
     ['research_used', { query: 'httpx timeout', cache_hit: false }, ['Public research: httpx timeout (new)']],
+    // Each trigger the core sends (docs/API.md); a missing or empty trigger keeps the line above.
+    ...['user_permission', 'repeated_error', 'unknown_dependency', 'newer_version'].map(trigger =>
+      ['research_used', { query: 'httpx timeout', cache_hit: false, trigger }, [`Public research (${trigger}, new): httpx timeout`]]),
+    ['research_used', { query: 'httpx timeout', cache_hit: true, trigger: 'repeated_error' },
+      ['Public research (repeated_error, cached): httpx timeout']],
+    ['research_used', { query: 'httpx timeout', cache_hit: true, trigger: '' }, ['Public research: httpx timeout (cached)']],
+    ['research_used', { query: 'httpx timeout', cache_hit: false, trigger: null }, ['Public research: httpx timeout (new)']],
     ['tool_result', { tool: 'read_file', result: { error: 'No such file', recoverable: true, changed: false } },
-      ['Tool error (agent will retry): No such file']],
+      ['Tool error (the agent can correct this): No such file']],
+    // A reply that is not a valid action (PR #18) uses the same recoverable shape.
+    ['tool_result', { tool: 'invalid_reply',
+      result: { error: 'Reply did not match the action schema.', recoverable: true, changed: false } },
+      ['Tool error (the agent can correct this): Reply did not match the action schema.']],
     ['tool_result', { tool: 'read_file', result: { text: 'contents' } }, []],
     ['unknown_future_event', { anything: 1 }, []],
   ];
@@ -59,11 +70,19 @@ test('notices use the same readable wording as the CLI', () => {
 
 test('notices never throw on missing or odd fields and strip control characters', () => {
   const odd = { from: null, to: 5, reason: ['x'], resume: null, outcome: {}, result: null, options: 'continue',
-    remaining_micro_usd: 'lots', query: '\x1b[31mred\x1b[0m' };
+    remaining_micro_usd: 'lots', query: '\x1b[31mred\x1b[0m', trigger: '\x1b[31mwhy\x1b[0m' };
   for (const kind of ['budget_warning', 'budget_hit', 'model_switched', 'session_paused', 'run_complete',
     'policy_block', 'approval_expired', 'research_used', 'tool_result']) {
     assert.ok(Array.isArray(noticeText(kind, {})));
     for (const line of noticeText(kind, odd)) { assert.doesNotMatch(line, /\x1b/); }
+  }
+});
+
+test('a research trigger that is not a string does not throw', () => {
+  for (const trigger of [['unknown_dependency'], 5, { why: 1 }, true]) {
+    const [line, ...rest] = noticeText('research_used', { query: 'httpx timeout', trigger });
+    assert.equal(rest.length, 0);
+    assert.match(line, /^Public research \(.+, new\): httpx timeout$/);
   }
 });
 
