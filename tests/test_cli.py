@@ -3,7 +3,10 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 from token_agent.api import create_app
+from token_agent.cli import notice
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
@@ -152,5 +155,101 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
     lines = run.stdout.splitlines()
     marker = lines.index("(reply incomplete)")
     assert lines[marker - 1].startswith("Fixed the calculator.")
-    assert "session_paused" in "\n".join(lines[marker + 1 :])
+    after = "\n".join(lines[marker + 1 :])
+    assert "Blocked by policy: Model action did not match the permitted schema" in after
+    assert "Paused: Model action did not match the permitted schema" in after
+    assert "Next step: Resolve the cause, then submit a new instruction" in after
     assert run.stdout.count("(reply incomplete)") == 1
+    # Readable lines only: no raw event names or JSON payloads.
+    assert "session_paused" not in run.stdout
+    assert '"reason"' not in run.stdout
+
+
+@pytest.mark.parametrize(
+    ("kind", "payload", "expected"),
+    [
+        (
+            "model_switched",
+            {"from": "cloud/a", "to": "cloud/b", "reason": "fallback"},
+            ["Model switched: cloud/a -> cloud/b (fallback)"],
+        ),
+        (
+            "model_switched",
+            {"from": "cloud/a", "to": "cloud/b"},
+            ["Model switched: cloud/a -> cloud/b"],
+        ),
+        (
+            "session_paused",
+            {"reason": "All providers failed", "resume": "Submit a new instruction"},
+            ["Paused: All providers failed", "Next step: Submit a new instruction"],
+        ),
+        ("session_paused", {"reason": "Budget"}, ["Paused: Budget"]),
+        (
+            "run_complete",
+            {"outcome": "completed_unverified", "note": "No checks configured"},
+            ["Run finished: completed_unverified", "Note: No checks configured"],
+        ),
+        ("run_complete", {"outcome": "completed_verified"}, ["Run finished: completed_verified"]),
+        (
+            "policy_block",
+            {"reason": "Path outside repository"},
+            ["Blocked by policy: Path outside repository"],
+        ),
+        (
+            "approval_expired",
+            {"approval_id": "abc"},
+            ["Approval abc expired - the action was not run"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": True},
+            ["Public research: httpx timeout (cached)"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": False},
+            ["Public research: httpx timeout (new)"],
+        ),
+        # Shape from the recoverable tool error change (PR #6).
+        (
+            "tool_result",
+            {
+                "tool": "read_file",
+                "result": {"error": "No such file", "recoverable": True, "changed": False},
+            },
+            ["Tool error (agent will retry): No such file"],
+        ),
+        ("tool_result", {"tool": "read_file", "result": {"text": "contents"}}, []),
+        ("tool_result", {"tool": "read_file", "result": "plain text"}, []),
+        ("unknown_future_event", {"anything": 1}, []),
+    ],
+)
+def test_cli_notice_text(kind, payload, expected):
+    assert notice(kind, payload) == expected
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "model_switched",
+        "session_paused",
+        "run_complete",
+        "policy_block",
+        "approval_expired",
+        "research_used",
+        "tool_result",
+    ],
+)
+def test_cli_notice_never_crashes_on_missing_or_odd_fields(kind):
+    assert isinstance(notice(kind, {}), list)
+    odd = {
+        "from": None,
+        "to": 5,
+        "reason": ["x"],
+        "resume": None,
+        "outcome": {},
+        "result": None,
+        "query": "\x1b[31mred\x1b[0m",
+    }
+    lines = notice(kind, odd)
+    assert all("\x1b" not in line for line in lines)
