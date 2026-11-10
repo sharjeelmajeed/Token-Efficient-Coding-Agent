@@ -144,6 +144,49 @@ export function noticeText(kind: string, payload: Record<string, unknown>): stri
   }
 }
 
+export interface TimelineEntry { kind: string; text: string }
+/**
+ * Notices the core sends after a reply's streamed pieces but before its final piece
+ * (model_switched and budget_warning come right after the model call is settled).
+ * They do not end the reply.
+ */
+export const MID_REPLY_EVENTS: ReadonlySet<string> = new Set(['model_switched', 'budget_warning']);
+/**
+ * Joins streamed message_delta pieces into one assistant entry. With streaming on, the core
+ * sends partial: true pieces and then exactly one partial: false piece. Any other event before
+ * that final piece, except the MID_REPLY_EVENTS notices, means the reply is incomplete. Without
+ * a partial field, each delta is one whole message, as before.
+ */
+export class ReplyJoiner {
+  private open: TimelineEntry | undefined;
+  constructor(private readonly push: (entry: TimelineEntry) => void) {}
+  delta(payload: Record<string, unknown>): void {
+    const text = safeText(payload.text ?? '');
+    if (this.open) {
+      this.open.text = safeText(this.open.text + text);
+      if (payload.partial !== true) { this.open = undefined; }
+    } else if (payload.partial === true) {
+      this.open = { kind: 'assistant', text };
+      this.push(this.open);
+    } else {
+      this.push({ kind: 'assistant', text });
+    }
+  }
+  /** Call for every non-delta event. Mid-reply notices keep the reply open; others interrupt it. */
+  event(type: string): void {
+    if (!MID_REPLY_EVENTS.has(type)) { this.interrupt(); }
+  }
+  /** Closes an open reply and marks it incomplete. */
+  interrupt(): void {
+    if (this.open) {
+      this.open = undefined;
+      this.push({ kind: 'warning', text: '(reply incomplete)' });
+    }
+  }
+  /** Forget an open reply without marking it, e.g. when the timeline is cleared. */
+  reset(): void { this.open = undefined; }
+}
+
 export class SSEDecoder {
   private buffer = '';
   push(chunk: string): AgentEvent[] {
