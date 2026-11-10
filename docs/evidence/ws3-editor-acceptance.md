@@ -36,8 +36,8 @@ Screenshots must not show the token.
 | 4 | Send `demo: fix calculator addition` | Tool lines appear; approval card `apply_patch` | ✅ | |
 | 5 | Click **Review and decide** | Native diff opens: `return a - b` → `return a + b` | ✅ | |
 | 6 | Choose **Reject with feedback**, type a reason | File unchanged; run continues or pauses with a readable message (no raw JSON) | ✅ | |
-| 7 | Click **New session**, send the task again; while it waits for approval, click **Cancel run** | `Run finished: user_cancelled`; the approval card disappears; file unchanged | ✅ | |
-| 8 | Click **New session**, send the task again, choose **Accept once** | File shows `return a + b`; the final reply appears as **one** assistant bubble (streaming) | ✅ | |
+| 7 | In the **same session**, send the task again; the approval card appears again; while it waits, click **Cancel run** | `Run finished: user_cancelled`; the approval card disappears; file unchanged | ✅ | Re-run in the same session (see "Steps 7 and 8 re-run"). First run used **New session** (F1) and also passed |
+| 8 | In the **same session**, send the task again, choose **Accept once** | File shows `return a + b`; the final reply appears as **one** assistant bubble (streaming) | ✅ | Re-run in the same session. First run used **New session** and also passed |
 | 9 | Status bar | Model, `$…` remaining, `standard`; no budget warning (fixture budget is large) | ✅ | |
 | 10 | **Run report** button | Read-only JSON report opens; shows `benchmark_evidence: false` | ✅ | |
 | 11 | Close the chat panel, run **Token Agent: Reconnect** | Chat reopens; nothing is repeated or sent again | ✅ | |
@@ -46,6 +46,13 @@ Screenshots must not show the token.
 | 14 | Stop the core (Ctrl+C), click **Reconnect** | Readable error, no crash; it works again once the core restarts | ✅ | Core restarted in the same PowerShell window (same token) |
 
 **Result: 14/14 pass** (Areeba, 2026-11-10, fixture mode). No issues reported.
+
+**Steps 7 and 8 re-run (2026-11-10, Areeba), same session, no workaround.** Core restarted
+from branch `feature/clients-vscode-acceptance` @ `b61ecab` (`main` with PR #12), demo reset
+with `scripts/make_demo.py`, same installed VSIX. In one session: reject with feedback → task
+sent again, the approval card appeared again → **Cancel run**: `user_cancelled`, card gone,
+file still `return a - b` (7 ✅) → task sent a third time → **Accept once**: `return a + b`,
+reply in one bubble (8 ✅).
 
 ## How to run
 
@@ -79,9 +86,8 @@ account for it.
 
 **F1 status: fixed by WS1 in PR #12** (`feature/core-fixture-repeatable`, merged to `main`).
 The fixture now reads only the current run's results, so each new run reads the file and
-offers the patch again. This run used the "New session" workaround in steps 7 and 8, as
-recorded above. Later runs on a `main` that includes #12 can send the task again in the
-same session.
+offers the patch again. Confirmed in the editor: steps 7 and 8 re-run in the same session
+pass (above), so the "New session" workaround is removed from the checklist.
 
 **Manual editor run (2026-11-10, Areeba):** all 14 steps pass in the installed VSIX on
-VS Code 1.145.2. No new client bugs. F1 still applies (fixture only).
+VS Code 1.145.2. No new client bugs. F1 is fixed by PR #12.
