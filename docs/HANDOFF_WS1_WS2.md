@@ -111,6 +111,7 @@ recorded tokens equal Bifrost's log exactly.
 | Tool-output token budget | `tool-output-token-budget.json` | 300-token budget, measured 3.68 characters per token, file cut to 1,104 characters |
 | **Final run on `main`**, standard repo | `final-main-standard.json`, `final-main-standard-reconciliation.json` | Every step fell back to Groq. Correct fix applied once, summary streamed. Reconciled 4 of 4: $0.2103 held, **$0.000947** real |
 | **Final run on `main`**, confidential repo | `final-main-confidential.json`, `final-main-confidential-reconciliation.json` | Local 7B, correct fix first time. **0 non-local requests**, 3 of 3 matched |
+| **Streaming through both clients**, notices mid-reply | `live-streaming-clients.json` | On `main` `f453112`, two `model_switched` notices (routing, then Gemini to Groq fallback) arrived between the pieces of one streamed reply. The real CLI printed one paragraph; the VS Code client's compiled code joined it into one chat bubble. No "(reply incomplete)". 2 of 2 matched, $0.000979 real cost. The editor window itself was not driven |
 
 Bifrost's log shows what the gateway sent. It is not network-level egress capture.
 
@@ -124,8 +125,8 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
   request. `reconcile` replaces a hold only on proof from the gateway log, and never on a token
   mismatch.
 - **Streaming.** Text is released only after the serving model is confirmed as allowed.
-  `model_switched` and `budget_warning` can arrive between streamed pieces. The VS Code client
-  handles this (#11); the CLI fix is in #20.
+  `model_switched` and `budget_warning` can arrive between streamed pieces. Both clients
+  handle this (#11, #20), confirmed live in `live-streaming-clients.json`.
 - **Switches.** `docs/OPTIMIZATIONS.md` lists all nine, the naive baseline and the safety limits
   that no switch turns off.
 - **Contracts.** `docs/API.md`, `docs/openapi.json` and `docs/event.schema.json`. Additive changes
@@ -160,7 +161,6 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 
 | Item | Owner | Depends on |
 |---|---|---|
-| Live streaming test through VS Code and the CLI | Usman | Areeba's CLI streaming PR #20 |
 | Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
 | `GitExecutor` and the Docker sandbox | Sharjeel | — |
