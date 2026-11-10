@@ -3,13 +3,17 @@ import os
 import subprocess
 import sys
 
+import httpx
 import pytest
 
+import token_agent.cli as cli_module
 from token_agent.api import create_app
-from token_agent.cli import notice
+from token_agent.cli import git_summary, notice
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
+from .test_git_contract import PUSH as CONTRACT_PUSH
+from .test_git_contract import FakeGit, run_app
 from .test_streaming import FINISH, SUMMARY, StreamingProvider, streaming_settings
 
 
@@ -253,3 +257,112 @@ def test_cli_notice_never_crashes_on_missing_or_odd_fields(kind):
     }
     lines = notice(kind, odd)
     assert all("\x1b" not in line for line in lines)
+
+
+HEAD = "a" * 40
+PUSH = {
+    "tool": "git_push",
+    "remote": "origin",
+    "branch": "feature/x",
+    "expected_head": HEAD,
+    "git": {"head": HEAD, "remote_url": "https://github.com/team/repo.git"},
+}
+COMMIT = {
+    "tool": "git_commit",
+    "message": "Fix calculator",
+    "paths": ["calculator.py", "tests/test_calc.py"],
+    "expected_head": HEAD,
+}
+
+
+def test_cli_git_summary_shows_only_core_fields():
+    assert git_summary(PUSH) == [
+        "Exact git action requires your approval: git_push",
+        "  branch: feature/x",
+        "  remote: origin",
+        f"  expected_head: {HEAD}",
+        "  checked by core before running:",
+        f"    head: {HEAD}",
+        "    remote_url: https://github.com/team/repo.git",
+    ]
+    assert git_summary(COMMIT)[1:] == [
+        f"  expected_head: {HEAD}",
+        "  message: Fix calculator",
+        "  paths: calculator.py, tests/test_calc.py",
+    ]
+    checkout = {
+        "tool": "git_checkout",
+        "branch": "fix\x1b[31m",
+        "create": True,
+        "expected_head": HEAD,
+    }
+    assert git_summary(checkout)[1:3] == ["  branch: fix[31m", "  create: True"]
+
+
+@pytest.mark.parametrize(
+    ("action", "diff", "answers", "decision", "shown"),
+    [
+        (
+            PUSH,
+            "abc123 Fix calculator\nto https://github.com/team/repo.git",
+            ["a"],
+            "approve_once",
+            ["Exact git action requires your approval: git_push", "abc123 Fix calculator"],
+        ),
+        (
+            COMMIT,
+            "--- a/calculator.py\n+++ b/calculator.py\n-    return a - b\n+    return a + b",
+            ["f", "Split the test change"],
+            "deny_with_feedback",
+            ["Exact git action requires your approval: git_commit", "+    return a + b"],
+        ),
+        (
+            {"tool": "future_tool", "x": "[bold]y[/bold]"},
+            "",
+            ["d"],
+            "deny",
+            ["Exact action requires your approval: future_tool", "[bold]y[/bold]"],
+        ),
+    ],
+)
+def test_cli_decide_shows_git_preview_and_posts_to_the_core_approval_id(
+    monkeypatch, capsys, action, diff, answers, decision, shown
+):
+    sent = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append((request.url.path, json.loads(request.content)))
+        return httpx.Response(200, json={})
+
+    replies = iter(answers)
+    monkeypatch.setattr(cli_module.Prompt, "ask", lambda *a, **k: next(replies))
+    approval = {"id": "approval-1", "action": action, "diff": diff, "deadline": 0}
+    with httpx.Client(base_url="http://core.test", transport=httpx.MockTransport(handler)) as http:
+        cli_module.decide(http, "session-1", approval)
+    output = capsys.readouterr().out
+    for text in shown:
+        assert text in output
+    assert "Exact file change" not in output
+    feedback = answers[1] if len(answers) > 1 else ""
+    assert sent == [
+        ("/sessions/session-1/approvals/approval-1", {"decision": decision, "feedback": feedback})
+    ]
+
+
+@pytest.mark.parametrize(("answer", "applied"), [("a\n", True), ("d\n", False)])
+def test_cli_git_push_approval_end_to_end_with_core(environment, tmp_path, answer, applied):
+    # Real core and policy; only the git executor is the contract test double.
+    git = FakeGit(diff="abc1234 Fix add\npush to https://github.com/example/repo.git\n")
+    app, executor, _ = run_app(environment, [CONTRACT_PUSH], git=git)
+    with live_client(app, environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "push the fix", stdin=answer)
+    assert run.returncode == 0, run.stderr
+    assert "Exact git action requires your approval: git_push" in run.stdout
+    assert "remote: origin" in run.stdout
+    assert "branch: feature/fix" in run.stdout
+    assert "checked by core before running:" in run.stdout
+    assert "push to https://github.com/example/repo.git" in run.stdout
+    assert "Exact file change" not in run.stdout
+    assert bool(executor.applied) is applied
