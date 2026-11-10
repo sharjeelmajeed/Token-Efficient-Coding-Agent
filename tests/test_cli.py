@@ -8,7 +8,7 @@ import pytest
 
 import token_agent.cli as cli_module
 from token_agent.api import create_app
-from token_agent.cli import git_summary, notice
+from token_agent.cli import budget_line, git_summary, notice
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
@@ -383,3 +383,15 @@ def test_cli_git_push_approval_end_to_end_with_core(environment, tmp_path, answe
     assert "push to https://github.com/example/repo.git" in run.stdout
     assert "Exact file change" not in run.stdout
     assert bool(executor.applied) is applied
+
+
+def test_budget_options_use_plain_words_and_keep_unknown_codes():
+    payload = {"remaining_micro_usd": 0, "limit_micro_usd": 6000}
+    gateway = budget_line({**payload, "options": ["raise_gateway_budget_then_resubmit"]})
+    assert gateway.endswith("options: raise the gateway budget, then resend")
+    user = budget_line({**payload, "options": ["raise_budget_then_resubmit", "new_option"]})
+    assert user.endswith("options: raise your budget, then resend, new_option")
+    assert budget_line({**payload, "options": ["continue", "cancel"]}).endswith(
+        "options: continue, cancel"
+    )
+    assert "options" not in budget_line({**payload, "options": "continue"})
