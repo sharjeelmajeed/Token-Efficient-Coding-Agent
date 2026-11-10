@@ -1,0 +1,741 @@
+{
+  "captured_at": "2026-11-10T12:08:54.759654+00:00",
+  "code": "main e97dd67 (all PRs through #17 merged)",
+  "scenario": "standard repo; gemini/gemini-2.5-flash refused for this key so every request falls back to groq/openai/gpt-oss-120b; streaming on",
+  "events": [
+    {
+      "id": 1,
+      "run_id": null,
+      "type": "session_created",
+      "timestamp": "2026-11-10T12:07:41.933173+00:00",
+      "payload": {
+        "mode": "bifrost",
+        "confidential": false
+      }
+    },
+    {
+      "id": 2,
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "type": "run_started",
+      "timestamp": "2026-11-10T12:07:42.016129+00:00",
+      "payload": {
+        "model": "gemini/gemini-2.5-flash",
+        "mode": "bifrost",
+        "confidential": false,
+        "budget_remaining_micro_usd": 5000000,
+        "optimization": {
+          "repo_map": true,
+          "targeted_reads": true,
+          "output_truncation": true,
+          "diff_edits": true,
+          "history_compaction": true,
+          "tool_pruning": true,
+          "tiered_routing": false,
+          "gateway_direct_cache": false,
+          "early_termination": true
+        }
+      }
+    },
+    {
+      "id": 3,
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:07:42.066555+00:00",
+      "payload": {
+        "before_chars": 3868,
+        "after_chars": 3845,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:07:44.119829+00:00",
+      "payload": {
+        "from": "gemini/gemini-2.5-flash",
+        "to": "groq/openai/gpt-oss-120b",
+        "reason": "gateway_fallback"
+      }
+    },
+    {
+      "id": 5,
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "type": "policy_block",
+      "timestamp": "2026-11-10T12:07:44.159540+00:00",
+      "payload": {
+        "reason": "Model action did not match the permitted schema"
+      }
+    },
+    {
+      "id": 6,
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "type": "session_paused",
+      "timestamp": "2026-11-10T12:07:44.180005+00:00",
+      "payload": {
+        "reason": "Model action did not match the permitted schema",
+        "resume": "Resolve the cause, then submit a new instruction"
+      }
+    },
+    {
+      "id": 7,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "run_started",
+      "timestamp": "2026-11-10T12:07:56.241732+00:00",
+      "payload": {
+        "model": "gemini/gemini-2.5-flash",
+        "mode": "bifrost",
+        "confidential": false,
+        "budget_remaining_micro_usd": 4951852,
+        "optimization": {
+          "repo_map": true,
+          "targeted_reads": true,
+          "output_truncation": true,
+          "diff_edits": true,
+          "history_compaction": true,
+          "tool_pruning": true,
+          "tiered_routing": false,
+          "gateway_direct_cache": false,
+          "early_termination": true
+        }
+      }
+    },
+    {
+      "id": 8,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:07:56.293673+00:00",
+      "payload": {
+        "before_chars": 4068,
+        "after_chars": 4022,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:07:58.052794+00:00",
+      "payload": {
+        "from": "gemini/gemini-2.5-flash",
+        "to": "groq/openai/gpt-oss-120b",
+        "reason": "gateway_fallback"
+      }
+    },
+    {
+      "id": 10,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "tool_call",
+      "timestamp": "2026-11-10T12:07:58.107586+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 11,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "tool_result",
+      "timestamp": "2026-11-10T12:07:58.159730+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "start_line": 1,
+          "end_line": 2,
+          "text": "def add(a, b):\n    return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:07:58.262271+00:00",
+      "payload": {
+        "before_chars": 5821,
+        "after_chars": 5734,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:08:00.413159+00:00",
+      "payload": {
+        "from": "groq/openai/gpt-oss-120b",
+        "to": "gemini/gemini-2.5-flash",
+        "reason": "configured_step_routing"
+      }
+    },
+    {
+      "id": 14,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:08:00.436386+00:00",
+      "payload": {
+        "from": "gemini/gemini-2.5-flash",
+        "to": "groq/openai/gpt-oss-120b",
+        "reason": "gateway_fallback"
+      }
+    },
+    {
+      "id": 15,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "tool_call",
+      "timestamp": "2026-11-10T12:08:00.497208+00:00",
+      "payload": {
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "    return a - b",
+          "new": "    return a + b"
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 16,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "approval_request",
+      "timestamp": "2026-11-10T12:08:00.585608+00:00",
+      "payload": {
+        "approval_id": "f9102236-6fd7-4214-8797-c666d2cce68a",
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "    return a - b",
+          "new": "    return a + b"
+        },
+        "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,2 @@\n def add(a, b):\n-    return a - b\n+    return a + b\n",
+        "deadline": 1794314280.541585,
+        "tool_class": "gated"
+      }
+    },
+    {
+      "id": 17,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "approval_decision",
+      "timestamp": "2026-11-10T12:08:14.053530+00:00",
+      "payload": {
+        "approval_id": "f9102236-6fd7-4214-8797-c666d2cce68a",
+        "decision": "approve_once",
+        "user": "usman",
+        "feedback": ""
+      }
+    },
+    {
+      "id": 18,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "approval_consumed",
+      "timestamp": "2026-11-10T12:08:14.097414+00:00",
+      "payload": {
+        "approval_id": "f9102236-6fd7-4214-8797-c666d2cce68a"
+      }
+    },
+    {
+      "id": 19,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "tool_result",
+      "timestamp": "2026-11-10T12:08:14.164611+00:00",
+      "payload": {
+        "tool": "apply_patch",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+          "applied": true
+        }
+      }
+    },
+    {
+      "id": 20,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:08:14.224332+00:00",
+      "payload": {
+        "before_chars": 6322,
+        "after_chars": 6194,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "message_delta",
+      "timestamp": "2026-11-10T12:08:15.997662+00:00",
+      "payload": {
+        "text": "Updated the add function in calculator.py to correctly return the sum of a and b by changing the operation from subtraction t",
+        "partial": true
+      }
+    },
+    {
+      "id": 22,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:08:16.044690+00:00",
+      "payload": {
+        "from": "groq/openai/gpt-oss-120b",
+        "to": "gemini/gemini-2.5-flash",
+        "reason": "configured_step_routing"
+      }
+    },
+    {
+      "id": 23,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "model_switched",
+      "timestamp": "2026-11-10T12:08:16.056145+00:00",
+      "payload": {
+        "from": "gemini/gemini-2.5-flash",
+        "to": "groq/openai/gpt-oss-120b",
+        "reason": "gateway_fallback"
+      }
+    },
+    {
+      "id": 24,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "message_delta",
+      "timestamp": "2026-11-10T12:08:16.103160+00:00",
+      "payload": {
+        "text": "o addition. This fixes the incorrect result previously returned.",
+        "partial": false
+      }
+    },
+    {
+      "id": 25,
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "type": "run_complete",
+      "timestamp": "2026-11-10T12:08:16.139885+00:00",
+      "payload": {
+        "outcome": "completed_unverified",
+        "note": "No complete set of configured behavior checks passed"
+      }
+    }
+  ],
+  "core_usage_after_reconciliation": [
+    {
+      "id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+      "owner": "usman",
+      "run_id": "79fed500-828b-4c0c-9ad7-2dd663062df7",
+      "amount": 159,
+      "state": "reconciled",
+      "input_tokens": 906,
+      "output_tokens": 38,
+      "model": "groq/openai/gpt-oss-120b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 1993,
+        "request_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 3205,
+          "instructions": 182
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 857,
+          "instructions": 49
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+          "attempts": [
+            {
+              "provider": "gemini",
+              "model": "gemini-2.5-flash",
+              "status": "error",
+              "tokens": [
+                0,
+                0
+              ],
+              "cost_usd": null
+            },
+            {
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "status": "success",
+              "tokens": [
+                906,
+                38
+              ],
+              "cost_usd": 0.0001587
+            }
+          ],
+          "gateway_cost_micro_usd": 159
+        }
+      }
+    },
+    {
+      "id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+      "owner": "usman",
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "amount": 191,
+      "state": "reconciled",
+      "input_tokens": 940,
+      "output_tokens": 82,
+      "model": "groq/openai/gpt-oss-120b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 1684,
+        "request_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 3205,
+          "instructions": 324
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 854,
+          "instructions": 86
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+          "attempts": [
+            {
+              "provider": "gemini",
+              "model": "gemini-2.5-flash",
+              "status": "error",
+              "tokens": [
+                0,
+                0
+              ],
+              "cost_usd": null
+            },
+            {
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "status": "success",
+              "tokens": [
+                940,
+                82
+              ],
+              "cost_usd": 0.0001902
+            }
+          ],
+          "gateway_cost_micro_usd": 191
+        }
+      }
+    },
+    {
+      "id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+      "owner": "usman",
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "amount": 326,
+      "state": "reconciled",
+      "input_tokens": 1380,
+      "output_tokens": 198,
+      "model": "groq/openai/gpt-oss-120b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 2074,
+        "request_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 4278,
+          "instructions": 324,
+          "model_actions": 84,
+          "tool:read_file": 255
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1195,
+          "instructions": 91,
+          "model_actions": 23,
+          "tool:read_file": 71
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+          "attempts": [
+            {
+              "provider": "gemini",
+              "model": "gemini-2.5-flash",
+              "status": "error",
+              "tokens": [
+                0,
+                0
+              ],
+              "cost_usd": null
+            },
+            {
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "status": "success",
+              "tokens": [
+                1380,
+                198
+              ],
+              "cost_usd": 0.0003258
+            }
+          ],
+          "gateway_cost_micro_usd": 326
+        }
+      }
+    },
+    {
+      "id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+      "owner": "usman",
+      "run_id": "c2b3d3ec-5c1e-4ec0-a3ec-fac6223fed35",
+      "amount": 271,
+      "state": "reconciled",
+      "input_tokens": 1532,
+      "output_tokens": 68,
+      "model": "groq/openai/gpt-oss-120b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 1755,
+        "request_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 4278,
+          "instructions": 324,
+          "model_actions": 275,
+          "tool:read_file": 255,
+          "tool:apply_patch": 160
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1238,
+          "instructions": 94,
+          "model_actions": 80,
+          "tool:read_file": 74,
+          "tool:apply_patch": 46
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+          "attempts": [
+            {
+              "provider": "gemini",
+              "model": "gemini-2.5-flash",
+              "status": "error",
+              "tokens": [
+                0,
+                0
+              ],
+              "cost_usd": null
+            },
+            {
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "status": "success",
+              "tokens": [
+                1532,
+                68
+              ],
+              "cost_usd": 0.0002706
+            }
+          ],
+          "gateway_cost_micro_usd": 271
+        }
+      }
+    }
+  ],
+  "bifrost_logs": [
+    {
+      "id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "24ae120d-50c3-448e-b7ae-0f7bfd7612e5",
+      "parent_request_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 906,
+      "completion_tokens": 38,
+      "cost": 0.0001587
+    },
+    {
+      "id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "1f68ddc9-c282-42e7-a6c6-03c07f71811b",
+      "parent_request_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 940,
+      "completion_tokens": 82,
+      "cost": 0.0001902
+    },
+    {
+      "id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "ba0f1823-0441-40fb-be62-16296f1aec83",
+      "parent_request_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 1380,
+      "completion_tokens": 198,
+      "cost": 0.0003258
+    },
+    {
+      "id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "5a64b6fa-76f1-4e05-aaab-20d0afaa2838",
+      "parent_request_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 1532,
+      "completion_tokens": 68,
+      "cost": 0.0002706
+    }
+  ],
+  "reconciliation_report": {
+    "summary": {
+      "rows_checked": 4,
+      "results": {
+        "reconciled": 4
+      },
+      "held_before_micro_usd": 210252,
+      "after_micro_usd": 947,
+      "released_micro_usd": 209305,
+      "added_micro_usd": 0
+    },
+    "outcomes": [
+      {
+        "usage_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+        "request_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 48148,
+        "result": "reconciled",
+        "after_micro_usd": 159,
+        "note": ""
+      },
+      {
+        "usage_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+        "request_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 48856,
+        "result": "reconciled",
+        "after_micro_usd": 191,
+        "note": ""
+      },
+      {
+        "usage_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+        "request_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 55704,
+        "result": "reconciled",
+        "after_micro_usd": 326,
+        "note": ""
+      },
+      {
+        "usage_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+        "request_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 57544,
+        "result": "reconciled",
+        "after_micro_usd": 271,
+        "note": ""
+      }
+    ]
+  }
+}

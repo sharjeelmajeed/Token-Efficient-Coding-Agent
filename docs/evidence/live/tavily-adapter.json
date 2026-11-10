@@ -1,0 +1,92 @@
+{
+  "captured_at": "2026-11-10T07:26:53.927581+00:00",
+  "results": {
+    "allowed_live_call": {
+      "ok": true,
+      "query": "httpx 0.28 usage official documentation",
+      "sources": [
+        {
+          "url": "https://www.python-httpx.org/quickstart",
+          "title": "QuickStart - HTTPX",
+          "content": "For advanced timeout management, see Timeout fine-tuning.\n\n## Authentication\n\nHTTPX supports Basic and Digest HTTP authentication.\n\nTo provide Basic authentication credentials, pass a 2-tuple of plaintext `str` or `bytes` objects as the `auth` argument to the request functions:\n\n```\n>>> httpx. get(\" auth =(\"my_user\", \"password123\"))\n``` [...] ```\n>>> with httpx. stream(\"GET\",\" as r:... for line in r. iter_lines():... print(line)\n```\n\nHTTPX will use universal line endings, normalising all cases to `\\n`.\n\nIn some cases you might want to access the raw bytes on the response without applying any HTTP content decoding. In this case any content encoding that the web server has applied such as `gzip`, `deflate`, `brotli`, or `zstd` will not be automatically decoded. [...] ```\n>>> data ={'integer': 123, 'boolean': True, 'list':['a', 'b', 'c']}>>> r = httpx. post(\" json = data)>>> print(r. text){ ... \"json\": { \"boolean\": true, \"integer\": 123, \"list\": [ \"a\", \"b\",  \"c\" ] }, ...}\n```\n\n## Sending B"
+        },
+        {
+          "url": "https://www.python-httpx.org",
+          "title": "HTTPX",
+          "content": "Skip to content\n\n Features\n Documentation\n Dependencies\n Installation\n\nHTTPX\n\n# HTTPX\n\nTest Suite   Package version\n\nA next-generation HTTP client for Python.\n\nHTTPX is a fully featured HTTP client for Python 3, which provides sync and async APIs, and support for both HTTP/1.1 and HTTP/2.\n\nInstall HTTPX using pip:\n\n```\n    \n```\n\nNow, let's get started: [...] International Domains and URLs\n Keep-Alive & Connection Pooling\n Sessions with Cookie Persistence\n Browser-style SSL Verification\n Basic/Digest Authentication\n Elegant Key/Value Cookies\n Automatic Decompression\n Automatic Content Decoding\n Unicode Response Bodies\n Multipart File Uploads\n HTTP(S) Proxy Support\n Connection Timeouts\n Streaming Downloads\n .netrc Support\n Chunked Requests\n\n## Documentation\n\nFor a run-through of all the basics, head over to the QuickStart."
+        }
+      ],
+      "cache_hit": false,
+      "credits": 1,
+      "content_utf8_bytes": 2154,
+      "content_token_upper_bound": 2154,
+      "token_measurement": "UTF-8 byte upper bound; not model-tokenizer usage"
+    },
+    "same_query_again_cached": {
+      "ok": true,
+      "query": "httpx 0.28 usage official documentation",
+      "sources": [
+        {
+          "url": "https://www.python-httpx.org/quickstart",
+          "title": "QuickStart - HTTPX",
+          "content": "For advanced timeout management, see Timeout fine-tuning.\n\n## Authentication\n\nHTTPX supports Basic and Digest HTTP authentication.\n\nTo provide Basic authentication credentials, pass a 2-tuple of plaintext `str` or `bytes` objects as the `auth` argument to the request functions:\n\n```\n>>> httpx. get(\" auth =(\"my_user\", \"password123\"))\n``` [...] ```\n>>> with httpx. stream(\"GET\",\" as r:... for line in r. iter_lines():... print(line)\n```\n\nHTTPX will use universal line endings, normalising all cases to `\\n`.\n\nIn some cases you might want to access the raw bytes on the response without applying any HTTP content decoding. In this case any content encoding that the web server has applied such as `gzip`, `deflate`, `brotli`, or `zstd` will not be automatically decoded. [...] ```\n>>> data ={'integer': 123, 'boolean': True, 'list':['a', 'b', 'c']}>>> r = httpx. post(\" json = data)>>> print(r. text){ ... \"json\": { \"boolean\": true, \"integer\": 123, \"list\": [ \"a\", \"b\",  \"c\" ] }, ...}\n```\n\n## Sending B"
+        },
+        {
+          "url": "https://www.python-httpx.org",
+          "title": "HTTPX",
+          "content": "Skip to content\n\n Features\n Documentation\n Dependencies\n Installation\n\nHTTPX\n\n# HTTPX\n\nTest Suite   Package version\n\nA next-generation HTTP client for Python.\n\nHTTPX is a fully featured HTTP client for Python 3, which provides sync and async APIs, and support for both HTTP/1.1 and HTTP/2.\n\nInstall HTTPX using pip:\n\n```\n    \n```\n\nNow, let's get started: [...] International Domains and URLs\n Keep-Alive & Connection Pooling\n Sessions with Cookie Persistence\n Browser-style SSL Verification\n Basic/Digest Authentication\n Elegant Key/Value Cookies\n Automatic Decompression\n Automatic Content Decoding\n Unicode Response Bodies\n Multipart File Uploads\n HTTP(S) Proxy Support\n Connection Timeouts\n Streaming Downloads\n .netrc Support\n Chunked Requests\n\n## Documentation\n\nFor a run-through of all the basics, head over to the QuickStart."
+        }
+      ],
+      "cache_hit": true,
+      "credits": 0,
+      "content_utf8_bytes": 2154,
+      "content_token_upper_bound": 2154,
+      "token_measurement": "UTF-8 byte upper bound; not model-tokenizer usage"
+    },
+    "no_permission_no_errors": {
+      "ok": false,
+      "refused": "Research needs explicit user permission or two observed same errors"
+    },
+    "unknown_package": {
+      "ok": false,
+      "refused": "Research package is not in the trusted public package catalog"
+    },
+    "confidential_session": {
+      "ok": false,
+      "refused": "External research is disabled for this session"
+    },
+    "two_same_errors_trigger": {
+      "ok": true,
+      "query": "httpx 0.28 TimeoutError error official documentation",
+      "sources": [
+        {
+          "url": "https://www.python-httpx.org/quickstart",
+          "title": "QuickStart - HTTPX",
+          "content": "## Timeouts\n\nHTTPX defaults to including reasonable timeouts for all network operations, meaning that if a connection is not properly established then it should always raise an error rather than hanging indefinitely.\n\nThe default timeout for network inactivity is five seconds. You can modify the value to be more or less strict:\n\n```\n>>> httpx. get(' timeout =0.001)\n```\n\nYou can also disable the timeout behavior completely...\n\n```\n>>> httpx. get(' timeout = None)\n``` [...] For advanced timeout management, see Timeout fine-tuning.\n\n## Authentication\n\nHTTPX supports Basic and Digest HTTP authentication.\n\nTo provide Basic authentication credentials, pass a 2-tuple of plaintext `str` or `bytes` objects as the `auth` argument to the request functions:\n\n```\n>>> httpx. get(\" auth =(\"my_user\", \"password123\"))\n``` [...] Skip to content\n\n Passing Parameters in URLs\n Response Content\n Binary Response Content\n JSON Response Content\n Custom Headers\n Sending Form Encoded Data\n Sending Multipart File "
+        },
+        {
+          "url": "https://www.python-httpx.org/advanced/timeouts",
+          "title": "Timeouts - HTTPX",
+          "content": "The connect timeout specifies the maximum amount of time to wait until a socket connection to the requested host is established. If HTTPX is unable to connect within this time frame, a `ConnectTimeout` exception is raised.\n The read timeout specifies the maximum duration to wait for a chunk of data to be received (for example, a chunk of the response body). If HTTPX is unable to receive data within this time frame, a `ReadTimeout` exception is raised. [...] Skip to content\n\n Setting and disabling timeouts\n Setting a default timeout on a client\n Fine tuning the configuration\n\n# Timeouts\n\nHTTPX is careful to enforce timeouts everywhere by default.\n\nThe default behavior is to raise a `TimeoutException` after 5 seconds of network inactivity.\n\n## Setting and disabling timeouts\n\nYou can set timeouts for an individual request: [...] The pool timeout specifies the maximum duration to wait for acquiring a connection from the connection pool. If HTTPX is unable to acquire a connection within thi"
+        }
+      ],
+      "cache_hit": false,
+      "credits": 1,
+      "content_utf8_bytes": 2331,
+      "content_token_upper_bound": 2331,
+      "token_measurement": "UTF-8 byte upper bound; not model-tokenizer usage"
+    }
+  },
+  "research_calls": [
+    {
+      "query": "httpx 0.28 usage official documentation",
+      "status": "completed",
+      "credits": 1
+    },
+    {
+      "query": "httpx 0.28 TimeoutError error official documentation",
+      "status": "completed",
+      "credits": 1
+    }
+  ]
+}

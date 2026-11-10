@@ -51,8 +51,8 @@ sandbox prerequisites. Required live evidence remains tracked in [STATUS](STATUS
 With `streaming = true` the adapter sends `stream: true` and asks for usage in the final
 chunk. Text stays hidden until the serving model is confirmed as allowlisted. A stream with
 no usage pauses and keeps the reservation as uncertain, and the core never retries it. A
-non-event-stream response is read as a normal JSON reply. Whether Bifrost sends routing
-headers, usage and fallbacks this way on a stream is untested against a live gateway.
+non-event-stream response is read as a normal JSON reply. Live runs through Bifrost v2.5.0 confirmed that
+routing headers, usage and fallbacks arrive on a stream (see [HANDOFF_WS1_WS2](HANDOFF_WS1_WS2.md)).
 
 ## Timeouts
 
@@ -63,9 +63,24 @@ models. A timeout pauses the run and keeps the cost as uncertain, and the core n
 
 ## Service status
 
-The current environment has no configured Bifrost/Tavily keys, Ollama or Docker.
-No real model, search or container call is presented as verified. Python transport,
-approval and accounting tests use controlled responses. Fixture usage is synthetic.
+Live acceptance ran on 2026-11-09 and 2026-11-10 against:
+- Bifrost v2.5.0, pinned by digest;
+- Ollama `qwen2.5-coder:3b` and `7b`;
+- Gemini and Groq through restricted virtual keys;
+- Tavily.
+
+Setup files are in `infra/bifrost/`. The evidence is in `docs/evidence/live/`, indexed with
+results in [HANDOFF_WS1_WS2](HANDOFF_WS1_WS2.md). It covers:
+- TC-FO-01, a provider failing mid-task;
+- TC-CF-01, prompt injection on a confidential repository, with zero cloud requests;
+- the gateway budget cap;
+- reconciliation matching Bifrost's cost exactly;
+- research triggers.
+
+These are integration runs on one disposable task, not benchmark evidence. Docker sandbox
+verification was not part of them, so every live run ended `completed_unverified`. Python
+transport, approval and accounting tests still use controlled responses, and fixture usage is
+synthetic.
 
 Primary implementation references checked on 2026-11-02:
 

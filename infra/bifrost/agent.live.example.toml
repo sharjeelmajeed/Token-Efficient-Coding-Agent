@@ -1,0 +1,36 @@
+# Core configuration used for the WS2 live runs, with Bifrost from infra/bifrost.
+# Secrets are read from environment variables named here, never written in this file.
+# Run the core with:  agent serve --config agent.live.toml   (see docs/M2_USAGE.md)
+mode = "bifrost"
+database = "state/live.sqlite3"
+gateway_url = "http://127.0.0.1:8080/v1/chat/completions"
+
+# Standard (cloud) chain. Bifrost falls back to Groq when Gemini fails (TC-FO-01).
+standard_model = "gemini/gemini-3.6-flash"
+standard_allowlist = ["gemini/gemini-3.6-flash", "groq/openai/gpt-oss-120b"]
+standard_fallbacks = ["groq/openai/gpt-oss-120b"]
+gateway_attempt_ceiling = 2
+
+# Confidential repositories use only this chain, through the local-only virtual key.
+local_model = "ollama/qwen2.5-coder:7b"
+local_allowlist = ["ollama/qwen2.5-coder:7b"]
+# A 7B model on a laptop CPU can take over 60 s before its first token.
+gateway_timeout_seconds = 600
+
+streaming = true
+max_steps = 8
+# Reasoning models (gpt-oss) need room for reasoning tokens; keep this below each
+# model's per-minute output limit on free tiers.
+max_output_tokens = 1024
+approval_timeout_seconds = 1800
+# Conservative price ceilings; real cost comes from `python -m token_agent.reconcile`.
+input_micro_usd_per_million = 2000000
+output_micro_usd_per_million = 12000000
+
+[[users]]
+id = "usman"
+token_env = "AGENT_API_TOKEN"
+repo_roots = ["repos"]
+budget_micro_usd = 5000000
+bifrost_key_env = "BIFROST_VIRTUAL_KEY"
+local_key_env = "BIFROST_LOCAL_VIRTUAL_KEY"

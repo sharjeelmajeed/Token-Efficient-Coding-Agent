@@ -1,0 +1,50 @@
+{
+  "summary": {
+    "rows_checked": 4,
+    "results": {
+      "reconciled": 4
+    },
+    "held_before_micro_usd": 210252,
+    "after_micro_usd": 947,
+    "released_micro_usd": 209305,
+    "added_micro_usd": 0
+  },
+  "outcomes": [
+    {
+      "usage_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+      "request_id": "b230ffd1-005e-4016-a740-70fc87a5874b",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 48148,
+      "result": "reconciled",
+      "after_micro_usd": 159,
+      "note": ""
+    },
+    {
+      "usage_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+      "request_id": "d5c47188-1e27-43a1-bc2e-a8c0de8164a8",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 48856,
+      "result": "reconciled",
+      "after_micro_usd": 191,
+      "note": ""
+    },
+    {
+      "usage_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+      "request_id": "7d3325ee-52c8-4695-92d4-f5a808143951",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 55704,
+      "result": "reconciled",
+      "after_micro_usd": 326,
+      "note": ""
+    },
+    {
+      "usage_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+      "request_id": "bbced54f-9ddf-4af3-a061-e878be6167e4",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 57544,
+      "result": "reconciled",
+      "after_micro_usd": 271,
+      "note": ""
+    }
+  ]
+}
