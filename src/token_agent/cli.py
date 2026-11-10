@@ -110,6 +110,50 @@ def budget_line(payload: dict) -> str:
     return clean("; ".join(parts))
 
 
+def notice(kind: str, payload: dict) -> list[str]:
+    """Readable lines for a core event, using only fields the core sent.
+
+    Missing or oddly typed fields never raise; an empty list means "print nothing".
+    """
+
+    def field(name: str, default: str = "") -> str:
+        value = payload.get(name)
+        return clean(str(value)) if value not in (None, "") else default
+
+    if kind == "model_switched":
+        line = f"Model switched: {field('from', 'unknown')} -> {field('to', 'unknown')}"
+        reason = field("reason")
+        return [f"{line} ({reason})" if reason else line]
+    if kind == "session_paused":
+        lines = [f"Paused: {field('reason', 'no reason given')}"]
+        if field("resume"):
+            lines.append(f"Next step: {field('resume')}")
+        return lines
+    if kind == "run_complete":
+        lines = [f"Run finished: {field('outcome', 'unknown')}"]
+        if field("note"):
+            lines.append(f"Note: {field('note')}")
+        return lines
+    if kind == "policy_block":
+        return [f"Blocked by policy: {field('reason', 'no reason given')}"]
+    if kind == "approval_expired":
+        return [f"Approval {field('approval_id', '')} expired - the action was not run"]
+    if kind == "research_used":
+        cached = "cached" if payload.get("cache_hit") is True else "new"
+        query = field("query", "unknown query")
+        # The trigger says why research ran (e.g. unknown_dependency); shown as the core sent it.
+        if trigger := field("trigger"):
+            return [f"Public research ({trigger}, {cached}): {query}"]
+        return [f"Public research: {query} ({cached})"]
+    if kind == "tool_result":
+        result = payload.get("result")
+        if isinstance(result, dict) and result.get("recoverable") is True:
+            error = clean(str(result.get("error") or "invalid tool input"))
+            # Not "will retry": after three mistakes in a row the core pauses the run.
+            return [f"Tool error (the agent can correct this): {error}"]
+    return []
+
+
 def show_status(data: dict):
     run = data.get("run") or {}
     usage = data.get("usage", [])
@@ -210,11 +254,11 @@ def watch(http: httpx.Client, state: dict):
                 style="bold red",
             )
             show_status(request(http, "GET", f"/sessions/{session_id}/status"))
-        elif kind in {"model_switched", "session_paused", "run_complete"}:
-            console.print(clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow")
-            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
-        elif kind in {"policy_block", "approval_expired", "research_used"}:
-            console.print(clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow")
+        else:
+            for text in notice(kind, payload):
+                console.print(text, markup=False, style="yellow")
+            if kind in {"model_switched", "session_paused", "run_complete"}:
+                show_status(request(http, "GET", f"/sessions/{session_id}/status"))
 
     try:
         with http.stream(
@@ -256,7 +300,9 @@ def watch(http: httpx.Client, state: dict):
     except httpx.HTTPError:
         held.clear()  # their status lookups would fail too; agent status shows the warning
         end_reply()
-        raise typer.BadParameter("Stream disconnected. Use agent resume to reconnect") from None
+        raise typer.BadParameter(
+            'Disconnected from core. Progress is saved; run "agent resume" to continue.'
+        ) from None
 
 
 @app.command()
