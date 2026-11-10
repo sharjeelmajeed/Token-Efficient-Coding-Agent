@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { CoreClient } from './client';
-import { AgentEvent, SessionState, Status, coreOrigin, id, record, safeText, statusLabel } from './protocol';
+import { AgentEvent, SessionState, Status, budgetWarningPercent, coreOrigin, id, noticeText, record, safeText,
+  statusLabel, usd } from './protocol';
 import { webviewHtml } from './webview';
 
 class Documents implements vscode.TextDocumentContentProvider {
@@ -85,8 +86,12 @@ class AgentController implements vscode.Disposable {
     if (this.state !== state) { throw new Error('Session changed while refreshing.'); }
     this.currentStatus = status;
     this.bar.text = statusLabel(status);
-    this.bar.tooltip = `${safeText(status.mode)} · ${status.read_only ? 'read-only' : 'interactive'} · ${safeText(status.run?.status ?? 'idle')}`;
-    this.bar.backgroundColor = status.confidential ? new vscode.ThemeColor('statusBarItem.warningBackground') : undefined;
+    const used = budgetWarningPercent(status);
+    this.bar.tooltip = `${safeText(status.mode)} · ${status.read_only ? 'read-only' : 'interactive'} · ${safeText(status.run?.status ?? 'idle')}` +
+      (used === undefined ? '' : ` · Budget warning: ${used}% used (${usd(status.budget_remaining_micro_usd)} remaining of ${usd(status.budget_limit_micro_usd)})`);
+    // Budget warning uses the error colour so it stays distinct from confidential mode's warning colour.
+    this.bar.backgroundColor = used !== undefined ? new vscode.ThemeColor('statusBarItem.errorBackground')
+      : status.confidential ? new vscode.ThemeColor('statusBarItem.warningBackground') : undefined;
     this.render();
     return status;
   }
@@ -166,17 +171,24 @@ class AgentController implements vscode.Disposable {
     if (this.state !== state) { return; }
     const p = event.payload;
     if (event.type === 'message_delta') { this.add('assistant', safeText(p.text)); }
-    else if (event.type === 'model_switched') {
-      const message = `Model switched: ${safeText(p.from, 100)} → ${safeText(p.to, 100)} (${safeText(p.reason, 160)})`;
-      this.add('warning', message); void vscode.window.showWarningMessage(message);
-    } else if (['policy_block', 'budget_hit', 'budget_warning', 'session_paused', 'run_complete', 'approval_expired'].includes(event.type)) {
-      this.add(event.type === 'run_complete' ? 'notice' : 'warning', `${event.type}: ${JSON.stringify(p)}`);
-    } else if (event.type === 'tool_call' && record(p.action)) {
+    else if (event.type === 'tool_call' && record(p.action)) {
       this.add('tool', `Tool: ${safeText(p.action.tool, 100)}`);
-    } else if (event.type === 'research_used') { this.add('tool', `Public research: ${safeText(p.query, 200)}`); }
+    } else {
+      const lines = noticeText(event.type, p);
+      if (lines.length) {
+        const text = lines.join('\n');
+        const kind = event.type === 'run_complete' ? 'notice'
+          : ['research_used', 'tool_result'].includes(event.type) ? 'tool' : 'warning';
+        this.add(kind, text);
+        if (['model_switched', 'budget_warning', 'budget_hit'].includes(event.type)) {
+          void vscode.window.showWarningMessage(lines[0] ?? text);
+        }
+      }
+    }
     state.cursor = event.id;
     await this.context.workspaceState.update('session', state);
-    if (['approval_request', 'run_complete', 'session_paused', 'tool_result', 'model_switched'].includes(event.type)) {
+    if (['approval_request', 'run_complete', 'session_paused', 'tool_result', 'model_switched',
+      'budget_warning', 'budget_hit'].includes(event.type)) {
       await this.refresh();
     }
   }
