@@ -88,14 +88,22 @@ def usd(micro: int) -> str:
     return f"${micro / 1000000:.4f}"
 
 
+# Plain wording for the core's budget option codes. Unknown codes are shown as sent.
+BUDGET_OPTIONS = {
+    "raise_budget_then_resubmit": "raise your budget, then resend",
+    "raise_gateway_budget_then_resubmit": "raise the gateway budget, then resend",
+}
+
+
 def budget_line(payload: dict) -> str:
     """Readable budget event text built only from the core's event payload."""
     parts = [
         f"{usd(payload.get('remaining_micro_usd', 0))} remaining"
         f" of {usd(payload.get('limit_micro_usd', 0))}"
     ]
-    if payload.get("options"):
-        parts.append("options: " + ", ".join(str(o) for o in payload["options"]))
+    if isinstance(payload.get("options"), list) and payload["options"]:
+        options = (BUDGET_OPTIONS.get(str(o), str(o)) for o in payload["options"])
+        parts.append("options: " + ", ".join(options))
     return clean("; ".join(parts))
 
 

@@ -103,6 +103,11 @@ export function statusLabel(status: Status): string {
   const warning = used === undefined ? '' : ` · ⚠ ${used}% budget`;
   return `$(shield) ${safeText(model, 80)} · ${usd(status.budget_remaining_micro_usd)}${warning} · ${privacy}`;
 }
+/** Plain wording for the core's budget option codes (same as the CLI). Unknown codes are shown as sent. */
+const BUDGET_OPTIONS: ReadonlyMap<string, string> = new Map([
+  ['raise_budget_then_resubmit', 'raise your budget, then resend'],
+  ['raise_gateway_budget_then_resubmit', 'raise the gateway budget, then resend'],
+]);
 /**
  * Readable text for a core event, built only from fields the core sent. Same wording as
  * the CLI. Missing or oddly typed fields never throw; an empty array means show nothing.
@@ -114,7 +119,7 @@ export function noticeText(kind: string, payload: Record<string, unknown>): stri
   };
   const budget = (): string => {
     const options = Array.isArray(payload.options) && payload.options.length
-      ? `; options: ${payload.options.map(o => safeText(o, 60)).join(', ')}` : '';
+      ? `; options: ${payload.options.map(o => BUDGET_OPTIONS.get(String(o)) ?? safeText(o, 60)).join(', ')}` : '';
     return `${usd(payload.remaining_micro_usd)} remaining of ${usd(payload.limit_micro_usd)}${options}`;
   };
   switch (kind) {
