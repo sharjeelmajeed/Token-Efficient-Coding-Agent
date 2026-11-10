@@ -45,19 +45,39 @@ own terminal environment into its password field. Never paste that value into ch
 or a repository file. Then run **Token Agent: Start Session** and submit
 `demo: fix calculator addition` in the chat panel.
 
-Select **Review** on the pending approval. Inspect the native before/after diff,
-then select **Accept once**, **Reject**, or **Reject with feedback**. Accepting the
-fixture changes subtraction to addition. Its authoritative outcome remains
+Select **Review and decide** on the pending approval card. Inspect the native
+before/after diff, then select **Accept once**, **Reject**, or **Reject with feedback**.
+Accepting the fixture changes subtraction to addition. Its authoritative outcome remains
 `completed_unverified` because the fixture core has no configured container checks.
 CLI behavior tests separately verify this authored example; that is not a real-model benchmark.
+After a reject or cancel, the same task can be sent again in the same session; each run
+reads the file and offers the patch again.
 
-The status bar shows the observed model, remaining micro-USD converted to dollars,
-and standard/local-only mode. Fallback notices appear in chat and a warning. Chat
-receives core events; provider token-by-token streaming remains pending. **Reconnect
-Session** fetches current status and continues from its saved event cursor without
-resubmitting the task. The current displayed timeline is in memory; the backend
-retains the full event history. **Cancel Run** cancels the core run; **Open Run Report**
-opens an immutable JSON document with usage, holds and evidence labels.
+The chat toolbar has **New session**, **Reconnect**, **Cancel run** and **Run report**;
+the same actions are in the command palette as **Token Agent: Start Session**,
+**Reconnect Session**, **Cancel Run** and **Open Run Report**.
+
+The status bar shows the observed model, remaining budget in dollars and
+standard/local-only mode. When the core's `status` reports `budget_warning`, the status
+bar shows `⚠ <percent>% budget` in the warning colour and the chat header shows the
+warning; the client never computes this itself. Core events appear as readable lines,
+not JSON: model switches (with the core's reason), pauses with the next step, run
+results, policy blocks, expired approvals, public research (with its trigger, for
+example `Public research (unknown_dependency, new): <query>`) and correctable tool errors
+(`Tool error (the agent can correct this): …`). Budget options are shown in plain words,
+for example "raise the gateway budget, then resend". Model-switch and budget notices
+also show a VS Code warning.
+
+With `streaming = true` in the core config, the streamed pieces of a reply grow one
+assistant entry. A `model_switched` or `budget_warning` sent between the pieces does not
+end the reply. Any other event before the final piece marks the text `(reply incomplete)`.
+With streaming off, each reply arrives whole, as before.
+
+**Reconnect** fetches current status and continues from its saved event cursor without
+resubmitting the task. The current displayed timeline is in memory; the backend retains
+the full event history. **Cancel run** cancels the core run; **Run report** opens an
+immutable JSON document with usage, holds and evidence labels (`benchmark_evidence:
+false` for the fixture).
 
 The core and extension host must see the same absolute repository path. For SSH/WSL,
 run the core on that trusted workspace host. No file synchronization is performed.
@@ -65,6 +85,39 @@ A missing/expired token, invalid path, stale preview or paused backend produces 
 visible error; the extension never writes the repository directly. Configure a new
 connection to discard an unusable saved session. Workspace settings cannot redirect
 the credential, and changing the trusted user connection invalidates the old session.
+
+## Use the CLI client
+
+The CLI talks to the same core (`AGENT_CORE_URL`, default `http://127.0.0.1:8765`) with
+the same `AGENT_API_TOKEN`. From the project root, with the core running:
+
+```bash
+agent init --repo sandbox-repos/demo
+agent run "demo: fix calculator addition"
+agent status
+```
+
+- **Approvals.** File changes print "Exact file change requires your approval" and the
+  diff; commands print the exact argv; gated git actions print "Exact git action requires
+  your approval: <tool>", the fields the core sent, the state it rechecks before running,
+  and its preview diff. Answer `a` (approve once), `d` (deny) or `f` (deny with feedback).
+  The CLI sends only the core's approval ID and never edits the action.
+- **Budget.** `agent status` and the run show `BUDGET WARNING: <n>% of budget used …` only
+  when the core's `status` reports `budget_warning`. Nothing about the budget is stored in
+  the client state file. `budget_warning` and `budget_hit` lines show remaining, limit and
+  the core's options in plain words.
+- **Notices.** The same readable lines as VS Code (model switches, pauses with
+  `Next step`, run results with `Note`, policy blocks, expired approvals, research with its
+  trigger, correctable tool errors). Unknown events are ignored.
+- **Streaming.** With `streaming = true`, a reply prints as one continuous line.
+  `model_switched` and `budget_warning` sent between the pieces are shown after the reply;
+  any other event first prints `(reply incomplete)`.
+- **Disconnect and cancel.** If the stream drops, the CLI prints that progress is saved and
+  to run `agent resume`, which continues from the saved event cursor. Ctrl+C cancels the
+  run (`agent cancel` does the same from another terminal).
+- The fixture prints `OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.`
+
+A step-by-step presenter script for both clients is in [DEMO_WS3.md](DEMO_WS3.md).
 
 ## PR analysis setup
 
@@ -162,11 +215,20 @@ npm run test:host
 
 Linux CI uses `xvfb-run -a npm run test:host`. The script downloads official VS Code
 1.144.0 and checks activation, commands, read-only virtual documents and chat opening.
-It was not run here because no desktop/Xvfb or usable VS Code binary was available.
-Manual acceptance still needs a real editor: approve/reject the fixture diff, cancel
-a waiting run, reload and reconnect, change connection, inspect narrow/light/dark
-layouts, and observe a real live model switch. Also perform an authorized test PR,
-fork-injection attempt, private-routing failure and comment publication before release.
+It passed on Windows 10 (WS3, 2026-11-10).
+
+Manual editor acceptance with the installed VSIX in VS Code 1.145.2 passed 14/14 on the
+fixture core with streaming on: approve/reject/reject with feedback, cancel a waiting
+run, same-session retries, one streamed bubble, status bar, run report, reconnect,
+light/dark theme, keyboard-only use, and stopping and restarting the core. See
+[evidence/ws3-editor-acceptance.md](evidence/ws3-editor-acceptance.md). This is a fixture
+run, not live-model evidence. A live model switch between streamed pieces, shown in both
+clients, is recorded by WS2 in
+[evidence/live/live-streaming-clients.json](evidence/live/live-streaming-clients.json).
+
+Still to do before release: git approvals in the editor (waits for the git executor and
+a preview decision), an authorized test PR, fork-injection attempt, private-routing
+failure and comment publication.
 
 ## Four-person handoff
 
@@ -174,7 +236,7 @@ fork-injection attempt, private-routing failure and comment publication before r
 | --- | --- | --- |
 | WS1 | Core permission migration and approval-preview API | Review security changes and Docker/git remaining scope |
 | WS2 | Gateway keys, models, rate ceilings and actual usage | Live routing, fallback and billing reconciliation |
-| WS3 | `clients/vscode/`, `github_client.py`, `pr_review.py` | Real-editor approval/model-switch rehearsal |
+| WS3 | `clients/vscode/`, CLI (`cli.py`), `github_client.py`, `pr_review.py` | Editor rehearsal done (fixture, 14/14). Next: git approvals in the editor, live PR review on a team PR |
 | WS4 | Cross-client tests, `.github/workflows/`, evidence | Authorized GitHub workflow trial, frozen benchmark and submission |
 
 Use the branch/review/merge procedure in `TEAM_PLAN.md`; do not copy four divergent

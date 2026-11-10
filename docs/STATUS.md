@@ -57,7 +57,7 @@ no model-generated or repository command was executed on the host.
 | WS2 / M2 | Measured research cost-benefit accounting. Bifrost log reconciliation (`token_agent.reconcile`) and all four FSD 7.2 research triggers are implemented |
 | WS1 / M2 | Remaining FSD tools including git, fuller restart recovery, native provider tool calls/streaming where needed |
 | WS1+4 / M2–M4 | All nine optimization techniques are switchable (`docs/OPTIMIZATIONS.md`); measure overhead and setup targets |
-| WS3 / M3 | Actual VS Code host/UI acceptance, approval/reconnect/theme/keyboard rehearsal and live model switch |
+| WS3 / M3 | Done: VS Code host test and installed-editor acceptance 14/14 on the fixture ([ws3-editor-acceptance](evidence/ws3-editor-acceptance.md)); CLI and VS Code streaming, budget status, readable notices and CLI git approvals; live model switch between streamed pieces in both clients ([live-streaming-clients](evidence/live/live-streaming-clients.json), recorded by WS2). Remaining: git approvals in VS Code (waits for the git executor and a preview decision), `agent bench` wiring (waits for the benchmark harness), live PR review on a team PR (waits for the workflow and its secrets) |
 | WS4 / M3 | Authorized GitHub workflow deployment, real fork/private-routing trials and opt-in comment publication |
 | WS4 / M4 | Frozen 15–20 tasks across >=3 repositories and >=2 languages, >=3 repeats/system/task; baseline, optimized and ablations; medians/spread and quality parity |
 | Team / M4 | Fresh-machine rehearsal, demo recording, final evidence and actual submission confirmation |
@@ -73,8 +73,9 @@ Fixture tokens are synthetic and `benchmark_evidence` remains false. UTF-8 byte 
 for research are not actual tokenizer measurements. Gateway response usage and price
 ceilings are not reconciled provider invoices. No token-saving percentage is claimed.
 
-VS Code development/packaging packages were installed and the VSIX was built. A real
-editor/Xvfb was unavailable, so its native UI and host smoke have not been exercised.
+VS Code development/packaging packages were installed and the VSIX was built. The host
+smoke test passed on VS Code 1.144.0, and the installed VSIX passed manual acceptance in
+VS Code 1.145.2 against the fixture core only; that run is not live-model evidence.
 Bifrost, Ollama and Tavily were exercised live for WS2 acceptance (`docs/evidence/live/`); no Docker
 sandbox, external GitHub repository or workflow was deployed. No real comment was posted. Supply real-service credentials only through the team environment, never through
 chat/source.
