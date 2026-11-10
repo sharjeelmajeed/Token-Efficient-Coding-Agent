@@ -190,13 +190,55 @@ def show_status(data: dict):
         )
 
 
+GIT_GATED_TOOLS = {"git_commit", "git_checkout", "git_push"}
+GIT_FIELDS = ("branch", "create", "remote", "expected_head", "message", "paths")
+
+
+def git_summary(action: dict) -> list[str]:
+    """Display lines for a gated git action, taken only from the core's stored action.
+
+    The client never builds or edits the command; it only approves the approval ID.
+    """
+    lines = [f"Exact git action requires your approval: {clean(str(action.get('tool')))}"]
+    for name in GIT_FIELDS:
+        if name in action:
+            value = action[name]
+            text = ", ".join(map(str, value)) if isinstance(value, list) else str(value)
+            lines.append(f"  {name}: {clean(text)}")
+    state = action.get("git")
+    if isinstance(state, dict) and state:
+        lines.append("  checked by core before running:")
+        lines.extend(f"    {clean(str(k))}: {clean(str(v))}" for k, v in state.items())
+    return lines
+
+
 def decide(http: httpx.Client, session_id: str, approval: dict):
-    if approval["action"]["tool"] == "run_shell":
+    tool = approval["action"]["tool"]
+    if tool == "run_shell":
         console.print("Exact isolated command requires your approval", style="bold yellow")
         console.print(clean(json.dumps(approval["action"], indent=2)), markup=False)
-    else:
+    elif tool in GIT_GATED_TOOLS:
+        summary = git_summary(approval["action"])
+        console.print(summary[0], markup=False, style="bold yellow")
+        for text in summary[1:]:
+            console.print(text, markup=False)
+        if approval.get("diff"):
+            # The core's preview: staged diff for a commit, files/branch for a checkout,
+            # commits and remote URL for a push.
+            lexer = "diff" if tool == "git_commit" else "text"
+            console.print(Syntax(clean(approval["diff"]), lexer, theme="ansi_dark", word_wrap=True))
+    elif tool in {"apply_patch", "write_file"}:
         console.print("Exact file change requires your approval", style="bold yellow")
         console.print(Syntax(clean(approval["diff"]), "diff", theme="ansi_dark", word_wrap=True))
+    else:
+        console.print(
+            f"Exact action requires your approval: {clean(str(tool))}",
+            markup=False,
+            style="bold yellow",
+        )
+        console.print(clean(json.dumps(approval["action"], indent=2)), markup=False)
+        if approval.get("diff"):
+            console.print(clean(approval["diff"]), markup=False)
     choice = Prompt.ask(
         "Approve once / deny / deny with feedback", choices=["a", "d", "f"], default="d"
     )
