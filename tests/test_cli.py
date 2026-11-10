@@ -7,6 +7,7 @@ from token_agent.api import create_app
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
+from .test_streaming import FINISH, SUMMARY, StreamingProvider, streaming_settings
 
 
 def cli_env(environment, http, tmp_path) -> dict:
@@ -42,6 +43,8 @@ def test_cli_complete_interactive_flow(environment, tmp_path):
         run = cli(env, "run", "demo: fix calculator addition", stdin="a\n")
         assert run.returncode == 0, run.stderr
         assert "OFFLINE FIXTURE" in run.stdout
+        assert "Fixture completed" in run.stdout  # streaming off: whole message as before
+        assert "reply incomplete" not in run.stdout
         assert "completed_unverified" in run.stdout
         assert "return a + b" in (environment["repo"] / "calculator.py").read_text()
         assert env["AGENT_API_TOKEN"] not in run.stdout + run.stderr
@@ -123,3 +126,31 @@ def test_cli_no_budget_warning_below_threshold_or_from_stale_state(environment, 
         status = cli(env, "status")
         assert status.returncode == 0, status.stderr
         assert "BUDGET WARNING" not in status.stdout
+
+
+def test_cli_streamed_reply_prints_as_one_continuous_text(environment, tmp_path):
+    app = create_app(streaming_settings(environment), StreamingProvider([FINISH]))
+    with live_client(app, environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "any task")
+    assert run.returncode == 0, run.stderr
+    # The core sends the summary in 7-character pieces; the CLI must join them.
+    assert SUMMARY.strip() in run.stdout
+    assert "reply incomplete" not in run.stdout
+
+
+def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
+    # Valid text streams first, then the full reply fails validation and the run pauses.
+    broken = FINISH[:-2] + ',"approved":true}}'
+    app = create_app(streaming_settings(environment), StreamingProvider([broken]))
+    with live_client(app, environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "any task")
+    assert run.returncode == 0, run.stderr
+    lines = run.stdout.splitlines()
+    marker = lines.index("(reply incomplete)")
+    assert lines[marker - 1].startswith("Fixed the calculator.")
+    assert "session_paused" in "\n".join(lines[marker + 1 :])
+    assert run.stdout.count("(reply incomplete)") == 1

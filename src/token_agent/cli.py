@@ -163,6 +163,17 @@ def watch(http: httpx.Client, state: dict):
     show_status(status)
     for approval in status["pending_approvals"]:
         decide(http, session_id, approval)
+    # True while a streamed reply has printed partial pieces but not its final piece.
+    reply_open = False
+
+    def end_reply(note: str = ""):
+        nonlocal reply_open
+        if reply_open:
+            console.print()
+            if note:
+                console.print(note, markup=False, style="yellow")
+            reply_open = False
+
     try:
         with http.stream(
             "GET", f"/sessions/{session_id}/events", params={"after": state.get("last_event_id", 0)}
@@ -175,6 +186,19 @@ def watch(http: httpx.Client, state: dict):
                 state["last_event_id"] = event["id"]
                 save_state(state)
                 kind, payload = event["type"], event["payload"]
+                if kind == "message_delta" and payload.get("partial") is True:
+                    # Streamed piece: keep building the reply on the same line.
+                    console.print(clean(payload["text"]), markup=False, end="", soft_wrap=True)
+                    reply_open = True
+                    continue
+                if kind == "message_delta" and reply_open:
+                    # Final piece (partial: false) closes the streamed reply.
+                    console.print(clean(payload["text"]), markup=False, soft_wrap=True)
+                    reply_open = False
+                    continue
+                # Only the final piece completes a reply. Any other event first (the core
+                # sends policy_block, then session_paused) means the text is incomplete.
+                end_reply("(reply incomplete)")
                 if kind == "approval_request":
                     current = request(http, "GET", f"/sessions/{session_id}/status")
                     for approval in current["pending_approvals"]:
@@ -208,11 +232,14 @@ def watch(http: httpx.Client, state: dict):
                     console.print(
                         clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow"
                     )
+        end_reply()
         show_status(request(http, "GET", f"/sessions/{session_id}/status"))
     except KeyboardInterrupt:
+        end_reply()
         request(http, "POST", f"/sessions/{session_id}/cancel")
         console.print("Run cancelled.")
     except httpx.HTTPError:
+        end_reply()
         raise typer.BadParameter("Stream disconnected. Use agent resume to reconnect") from None
 
 
