@@ -134,3 +134,36 @@ def test_permission_fields_in_a_reply_are_never_accepted(environment):
     data, events, _, _ = run(environment, [(smuggled, None, False)] * MAX_TOOL_ERRORS)
     assert data["run"]["status"] == "paused"
     assert not any(e["type"] == "tool_call" for e in events)
+
+
+# --- Routing during a fallback (review note on #18) ---------------------------------------
+
+ROUTED = dict(
+    fast_model="cloud/fast",
+    standard_allowlist=["cloud/primary", "cloud/fallback", "cloud/fast"],
+    optimization=OptimizationSettings(tiered_routing=True),
+)
+READ = {"tool": "read_file", "path": "calculator.py"}
+
+
+def test_routing_during_a_lasting_fallback_still_names_the_serving_model(environment):
+    steps = [(READ, "cloud/fallback", True), (FINISH, "cloud/fallback", True)]
+    data, _, switches, provider = run(environment, steps, **ROUTED)
+    assert data["run"]["status"] == "completed"
+    assert provider.requested == ["cloud/fast", "cloud/primary"]
+    assert switches == [
+        ("cloud/fast", "cloud/fallback", "gateway_fallback"),
+        ("cloud/fast", "cloud/primary", "configured_step_routing"),
+        ("cloud/primary", "cloud/fallback", "gateway_fallback"),
+    ]
+
+
+def test_routing_after_a_fallback_to_a_model_that_serves_needs_only_the_routing_notice(
+    environment,
+):
+    steps = [(READ, "cloud/fallback", True), (FINISH, None, False)]
+    _, _, switches, _ = run(environment, steps, **ROUTED)
+    assert switches == [
+        ("cloud/fast", "cloud/fallback", "gateway_fallback"),
+        ("cloud/fast", "cloud/primary", "configured_step_routing"),
+    ]

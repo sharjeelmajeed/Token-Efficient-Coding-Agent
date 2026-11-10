@@ -32,7 +32,7 @@ The numeric event ID is the cursor, not a step number. Heartbeats start with `:`
 | `approval_request` | `approval_id`, exact `action`, full bounded `diff`, `deadline`, `tool_class` |
 | `approval_decision` | `approval_id`, `decision`, authenticated `user`, `feedback` |
 | `approval_consumed`, `approval_expired` | `approval_id` |
-| `model_switched` | `from`, `to`, `reason`: `configured_step_routing`, `gateway_fallback`, `gateway_returned_different_allowed_model` or `gateway_primary_restored`. Sent only when the model really changes: a lasting fallback is reported once (no unverified outage cause invented) |
+| `model_switched` | `from`, `to`, `reason`: `configured_step_routing`, `gateway_fallback`, `gateway_returned_different_allowed_model` or `gateway_primary_restored`. Sent only when the model really changes: a lasting fallback is reported once, and again after a routing change so the notice names the model actually serving (no unverified outage cause invented) |
 | `budget_warning` | `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
 | `budget_hit` | `reason`, `remaining_micro_usd`, `limit_micro_usd`, `warning_percent`, `options` |
 | `policy_block` | `reason` |

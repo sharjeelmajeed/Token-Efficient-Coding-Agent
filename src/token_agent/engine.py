@@ -285,9 +285,12 @@ class Engine:
         """Emit model_switched only when the model really changes (FR-23, TC-FO-01).
 
         Routing compares requested models step to step. A gateway substitute is reported once,
-        when it starts or changes, and again when the requested model serves once more.
+        when it starts or changes, and again when the requested model serves once more. After a
+        routing change, a substitute is reported even if it is the same one as before, so the
+        routing notice never leaves the user believing the newly requested model is serving.
         """
-        if previous_requested and requested != previous_requested:
+        rerouted = bool(previous_requested) and requested != previous_requested
+        if rerouted:
             self.emit(
                 session_id,
                 run_id,
@@ -295,7 +298,7 @@ class Engine:
                 {"from": previous_requested, "to": requested, "reason": "configured_step_routing"},
             )
         substituted = result.model != requested or result.is_fallback
-        if substituted and result.model != previous_served:
+        if substituted and (rerouted or result.model != previous_served):
             self.emit(
                 session_id,
                 run_id,
@@ -308,7 +311,8 @@ class Engine:
                     else "gateway_returned_different_allowed_model",
                 },
             )
-        elif not substituted and previous_served:
+        elif not substituted and previous_served and not rerouted:
+            # After a routing change the routing notice already names the model now serving.
             self.emit(
                 session_id,
                 run_id,
