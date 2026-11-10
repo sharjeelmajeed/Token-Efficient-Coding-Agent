@@ -231,15 +231,37 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
             {"query": "httpx timeout", "cache_hit": False},
             ["Public research: httpx timeout (new)"],
         ),
+        # Each trigger the core sends (docs/API.md), shown so the user knows why research ran.
         (
             "research_used",
             {"query": "httpx timeout", "cache_hit": False, "trigger": "unknown_dependency"},
-            ["Public research: httpx timeout (new; trigger: unknown_dependency)"],
+            ["Public research (unknown_dependency, new): httpx timeout"],
         ),
         (
             "research_used",
             {"query": "httpx timeout", "cache_hit": True, "trigger": "repeated_error"},
-            ["Public research: httpx timeout (cached; trigger: repeated_error)"],
+            ["Public research (repeated_error, cached): httpx timeout"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": False, "trigger": "user_permission"},
+            ["Public research (user_permission, new): httpx timeout"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": False, "trigger": "newer_version"},
+            ["Public research (newer_version, new): httpx timeout"],
+        ),
+        # Missing or empty trigger: same output as before.
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": False, "trigger": ""},
+            ["Public research: httpx timeout (new)"],
+        ),
+        (
+            "research_used",
+            {"query": "httpx timeout", "cache_hit": True, "trigger": None},
+            ["Public research: httpx timeout (cached)"],
         ),
         # Shape from the recoverable tool error change (PR #6).
         (
@@ -249,6 +271,19 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
                 "result": {"error": "No such file", "recoverable": True, "changed": False},
             },
             ["Tool error (the agent can correct this): No such file"],
+        ),
+        # A reply that is not a valid action (PR #18) uses the same recoverable shape.
+        (
+            "tool_result",
+            {
+                "tool": "invalid_reply",
+                "result": {
+                    "error": "Reply did not match the action schema.",
+                    "recoverable": True,
+                    "changed": False,
+                },
+            },
+            ["Tool error (the agent can correct this): Reply did not match the action schema."],
         ),
         ("tool_result", {"tool": "read_file", "result": {"text": "contents"}}, []),
         ("tool_result", {"tool": "read_file", "result": "plain text"}, []),
@@ -394,6 +429,14 @@ def test_cli_git_push_approval_end_to_end_with_core(environment, tmp_path, answe
     assert "push to https://github.com/example/repo.git" in run.stdout
     assert "Exact file change" not in run.stdout
     assert bool(executor.applied) is applied
+
+
+@pytest.mark.parametrize("trigger", [["unknown_dependency"], 5, {"why": 1}, True])
+def test_cli_research_trigger_that_is_not_a_string_does_not_raise(trigger):
+    lines = notice("research_used", {"query": "httpx timeout", "trigger": trigger})
+    assert len(lines) == 1
+    assert lines[0].startswith("Public research (")
+    assert lines[0].endswith(", new): httpx timeout")
 
 
 def test_budget_options_use_plain_words_and_keep_unknown_codes():
