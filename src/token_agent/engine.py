@@ -9,7 +9,7 @@ from collections import Counter
 from pydantic import ValidationError
 
 from .config import Settings
-from .context import build_context, enabled_tools
+from .context import build_context, chars_per_token, enabled_tools, output_char_limit
 from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
 from .policy import (
@@ -23,7 +23,7 @@ from .policy import (
     routed_model,
 )
 from .providers import BifrostProvider, FixtureProvider, ProviderError
-from .repo import PolicyError, Repository
+from .repo import MAX_FILE_BYTES, PolicyError, Repository
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
@@ -301,6 +301,13 @@ class Engine:
                     )
                 if result.model not in allowlist:
                     raise PolicyError("Gateway returned a model outside the configured allowlist")
+                if self.settings.tool_output_tokens:
+                    # Size this step's tool output from the model's measured token density.
+                    repo.output_chars = output_char_limit(
+                        self.settings.tool_output_tokens,
+                        chars_per_token(messages, result.input_tokens),
+                        MAX_FILE_BYTES,
+                    )
                 actual_cost = cost_ceiling(
                     self.settings, result.input_tokens, result.output_tokens, confidential
                 )
@@ -317,6 +324,7 @@ class Engine:
                         "request_id": result.request_id,
                         "usage_source": result.source,
                         "attempt_ceiling": self.settings.gateway_attempt_ceiling,
+                        "tool_output_char_limit": repo.output_chars,
                     },
                     retain_reservation=(
                         self.settings.mode != "fixture"

@@ -123,6 +123,9 @@ class Settings(BaseModel):
     max_steps: int = Field(default=12, ge=1, le=100)
     max_output_tokens: int = Field(default=2048, ge=128, le=16384)
     output_chars: int = Field(default=8000, ge=1000, le=20000)
+    # FR-12: when set, tool output is cut to this many tokens instead of output_chars, using
+    # the characters-per-token measured from the model's own count on the current request.
+    tool_output_tokens: int | None = Field(default=None, ge=100, le=20000)
     context_chars: int = Field(default=40000, ge=4000, le=100000)
     approval_timeout_seconds: int = Field(default=120, ge=1, le=3600)
     # Conservative ceilings for every model in the configured fallback chain.

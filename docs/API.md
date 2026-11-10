@@ -81,7 +81,8 @@ This object is display-only; clients approve the existing ID and cannot edit it.
 `diff` is empty for commands. File approvals still contain a full bounded diff.
 
 Status/metrics include `research_usage` separately from LLM `usage`. Usage `details`
-is an object containing cache tokens/hit, latency, request ID, source and attempt ceiling.
+is an object containing cache tokens/hit, latency, request ID, source, attempt ceiling and
+`tool_output_char_limit` (the character limit applied to that step's tool output).
 Amounts in `held_for_reconciliation`/`uncertain` are conservative holds, not final costs.
 `run.options` is the persisted JSON string of typed run options, not model permissions.
 

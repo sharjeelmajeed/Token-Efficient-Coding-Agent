@@ -18,6 +18,24 @@ BASE_PROMPT = (
 )
 
 
+# Used only when a request reports no prompt tokens; cautious, so the budget is not exceeded.
+FALLBACK_CHARS_PER_TOKEN = 3.0
+MIN_OUTPUT_CHARS = 200
+
+
+def chars_per_token(messages: list[dict], input_tokens: int) -> float:
+    """Characters per token for this model, measured on the request it just answered."""
+    characters = sum(len(m.get("content") or "") for m in messages)
+    if input_tokens <= 0 or characters <= 0:
+        return FALLBACK_CHARS_PER_TOKEN
+    return characters / input_tokens
+
+
+def output_char_limit(token_budget: int, ratio: float, ceiling: int) -> int:
+    """Character limit that keeps tool output within a token budget (FR-12)."""
+    return max(MIN_OUTPUT_CHARS, min(ceiling, int(token_budget * ratio)))
+
+
 def enabled_tools(
     settings: Settings, inspected: bool, read_only: bool = False, git: bool = False
 ) -> set[str]:

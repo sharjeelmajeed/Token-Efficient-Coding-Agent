@@ -47,6 +47,16 @@ gateway_direct_cache = false
 early_termination = true
 ```
 
+Tool output is cut to `output_chars` (default 8,000) with an explicit
+`...[output truncated]...` marker. To cut it to a token budget instead (FR-12), set
+`tool_output_tokens` (100 to 20,000) at the top level. On each step the core converts the
+budget to characters using the characters-per-token measured from the model's own
+`input_tokens` on the request it just answered, so the limit follows each model's tokenizer;
+a request that reports no tokens uses a cautious 3 characters per token. The limit stays
+between 200 characters and the 128,000-character file ceiling, and each usage row records
+the `tool_output_char_limit` it used. The split of code and prose within one output is not
+tokenized separately, so the budget is an approximation of real tokens, not an exact cap.
+
 `fast_model` selects the first inspection model when tiered routing is enabled;
 a successful file read or observed error switches later steps to `standard_model`.
 Confidential runs always use the configured local model/allowlist. This is a simple,
