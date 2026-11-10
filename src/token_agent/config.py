@@ -12,6 +12,8 @@ class ResearchPackage(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     name: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9._-]{0,63}$")
     version: str = Field(default="", pattern=r"^[0-9A-Za-z.+_-]{0,40}$")
+    # Newest version the model is trusted to know. A newer pinned version triggers research.
+    known_version: str = Field(default="", pattern=r"^(?:\d+(?:\.\d+){0,3})?$")
     domains: list[str] = Field(min_length=1, max_length=5)
 
     @model_validator(mode="after")
@@ -54,8 +56,44 @@ class SandboxSettings(BaseModel):
         return self
 
 
-class OptimizationSettings(BaseModel):
+class GitSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+    enabled: bool = False
+    # Remote name -> the exact URL it must have. An empty map means push is never allowed.
+    push_remotes: dict[str, str] = Field(default_factory=dict)
+    # Remotes a confidential repository may push to; they must also be in push_remotes.
+    confidential_push_remotes: list[str] = Field(default_factory=list)
+    protected_branches: list[str] = Field(default_factory=lambda: ["main", "master"])
+
+    @model_validator(mode="after")
+    def trusted_remotes(self):
+        for name, url in self.push_remotes.items():
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", name):
+                raise ValueError("Git remote names must be plain identifiers")
+            parts = urlsplit(url)
+            if parts.scheme not in {"https", "ssh"} or not parts.hostname:
+                raise ValueError("Git push remotes need an https:// or ssh:// URL")
+            if parts.password or parts.query or parts.fragment:
+                raise ValueError("Git remote URLs may not contain secrets, query or fragment")
+            if parts.scheme == "https" and parts.username:
+                raise ValueError("Git remote URLs may not contain credentials")
+        if any(name not in self.push_remotes for name in self.confidential_push_remotes):
+            raise ValueError("Confidential push remotes must also be push remotes")
+        return self
+
+
+class OptimizationSettings(BaseModel):
+    """Independent switches for the nine FSD section 8 techniques, for ablation runs.
+
+    Each switch changes only how efficiently the agent works. Safety limits (repository
+    boundaries, secrets, approvals, budget and locality) are never switched off.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    repo_map: bool = True  # TO-01: offer the symbol outline tool
+    targeted_reads: bool = True  # TO-02: line-range reads and grep instead of whole files
+    output_truncation: bool = True  # TO-03: cut tool output to output_chars
+    diff_edits: bool = True  # TO-04: exact patches instead of whole-file writes
     history_compaction: bool = True
     tool_pruning: bool = True
     tiered_routing: bool = False
@@ -87,15 +125,22 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    # Longest wait for the gateway's next bytes. Raise it for slow local models on CPU,
+    # which can take minutes before the first token of a long prompt.
+    gateway_timeout_seconds: int = Field(default=60, ge=5, le=900)
     streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)
+    git: GitSettings = Field(default_factory=GitSettings)
     optimization: OptimizationSettings = Field(default_factory=OptimizationSettings)
     confidential_roots: list[str] = Field(default_factory=list)
     confidential_marker: str = ".agent-confidential"
     max_steps: int = Field(default=12, ge=1, le=100)
     max_output_tokens: int = Field(default=2048, ge=128, le=16384)
     output_chars: int = Field(default=8000, ge=1000, le=20000)
+    # FR-12: when set, tool output is cut to this many tokens instead of output_chars, using
+    # the characters-per-token measured from the model's own count on the current request.
+    tool_output_tokens: int | None = Field(default=None, ge=100, le=20000)
     context_chars: int = Field(default=40000, ge=4000, le=100000)
     approval_timeout_seconds: int = Field(default=120, ge=1, le=3600)
     # Conservative ceilings for every model in the configured fallback chain.

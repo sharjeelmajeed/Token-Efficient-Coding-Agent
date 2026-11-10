@@ -36,16 +36,31 @@ fields must be placed before TOML section headers. Use actual allowed models and
 operator-reviewed price ceilings; no sample model name or rate should be treated
 as a verified provider configuration.
 
-The independent optimization switches are:
+The independent optimization switches are below. See [OPTIMIZATIONS](OPTIMIZATIONS.md)
+for what each one does, the naive baseline and ablation configurations.
 
 ```toml
 [optimization]
+repo_map = true
+targeted_reads = true
+output_truncation = true
+diff_edits = true
 history_compaction = true
 tool_pruning = true
 tiered_routing = false
 gateway_direct_cache = false
 early_termination = true
 ```
+
+Tool output is cut to `output_chars` (default 8,000) with an explicit
+`...[output truncated]...` marker. To cut it to a token budget instead (FR-12), set
+`tool_output_tokens` (100 to 20,000) at the top level. On each step the core converts the
+budget to characters using the characters-per-token measured from the model's own
+`input_tokens` on the request it just answered, so the limit follows each model's tokenizer;
+a request that reports no tokens uses a cautious 3 characters per token. The limit stays
+between 200 characters and the 128,000-character file ceiling, and each usage row records
+the `tool_output_char_limit` it used. The split of code and prose within one output is not
+tokenized separately, so the budget is an approximation of real tokens, not an exact cap.
 
 `fast_model` selects the first inspection model when tiered routing is enabled;
 a successful file read or observed error switches later steps to `standard_model`.
@@ -67,14 +82,25 @@ result_chars = 3000
 [research.packages.python]
 name = "Python"
 version = "3.12"
+known_version = "3.12"
 domains = ["docs.python.org"]
 ```
 
 Supply `TAVILY_API_KEY` through the environment. Start an explicit research-enabled
 run with `agent run --research "Your repository task"`. API callers send the real
-boolean `allow_research: true`; text that claims permission grants none. Automatic
-research currently requires two failed tools reporting the same recognized generic
-exception name. Unknown-package/new-version triggers remain pending. The model can
+boolean `allow_research: true`; text that claims permission grants none. Without that
+permission, the core allows a call only when one of the FSD 7.2 conditions holds, decided from
+the trusted catalog and the repository's own readable files:
+
+| Trigger | Condition |
+| --- | --- |
+| `repeated_error` | Two failed tools reported the same recognized generic exception name |
+| `unknown_dependency` | The repository imports the catalog package (Python or JavaScript import, `requirements*.txt`, `pyproject.toml` or `package.json`) and no README or `docs/` file mentions it; usage topic only |
+| `newer_version` | A dependency file pins a plain release (digits and dots) newer than the entry's `known_version`; the query then uses that pinned release |
+
+Each result and `research_used` event names its `trigger` (or `user_permission`). Protected,
+secret, binary and oversized files are never scanned, and confidential sessions stay research-off
+unless explicitly allowed. The model can
 select only a catalog ID and enum topic/error; code, paths, task text and arbitrary
 queries are never sent to search. Configure only public package names and versions.
 

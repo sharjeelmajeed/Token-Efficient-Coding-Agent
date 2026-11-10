@@ -14,6 +14,15 @@
     if (!data || data.type !== 'state') { return; }
     const status = data.status;
     byId('status').textContent = status ? `${status.mode} · ${status.confidential ? 'LOCAL ONLY' : 'standard'} · ${status.run?.status ?? 'idle'} · $${(status.budget_remaining_micro_usd / 1000000).toFixed(4)} remaining` : 'Start a session to connect.';
+    // Shown only when the core reports the warning; the webview never works it out itself.
+    const limit = status?.budget_limit_micro_usd;
+    const warn = status?.budget_warning === true && Number.isSafeInteger(limit) && limit > 0;
+    const budget = byId('budget');
+    budget.hidden = !warn;
+    budget.textContent = warn
+      ? `⚠ Budget warning: ${Math.floor((limit - status.budget_remaining_micro_usd) * 100 / limit)}% used ` +
+        `($${(status.budget_remaining_micro_usd / 1000000).toFixed(4)} remaining of $${(limit / 1000000).toFixed(4)})`
+      : '';
     const busy = ['running', 'waiting_approval'].includes(status?.run?.status);
     byId('send').disabled = !data.connected || busy;
     byId('cancel').disabled = !busy;

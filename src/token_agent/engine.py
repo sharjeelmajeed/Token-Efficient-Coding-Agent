@@ -9,11 +9,22 @@ from collections import Counter
 from pydantic import ValidationError
 
 from .config import Settings
-from .context import build_context, enabled_tools, observation
+from .context import (
+    ATTRIBUTION_METHOD,
+    attribute_tokens,
+    build_context,
+    chars_per_token,
+    enabled_tools,
+    observation,
+    output_char_limit,
+    prompt_parts,
+)
+from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
 from .policy import (
     budget_payload,
     budget_warning_active,
+    check_git_action,
     classify,
     cost_ceiling,
     model_policy,
@@ -21,7 +32,14 @@ from .policy import (
     routed_model,
 )
 from .providers import BifrostProvider, FixtureProvider, ProviderError
-from .repo import PolicyError, Repository, ToolInputError
+from .repo import (
+    ABSOLUTE_OUTPUT_CHARS,
+    MAX_FILE_BYTES,
+    MAX_READ_LINES,
+    PolicyError,
+    Repository,
+    ToolInputError,
+)
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
@@ -45,8 +63,11 @@ class Engine:
         provider=None,
         research=None,
         sandbox=None,
+        git: GitExecutor | None = None,
     ):
         self.settings, self.store, self.tokens = settings, store, tokens
+        # No git executor ships yet, so git tools stay off unless one is supplied.
+        self.git = git
         self.provider = provider or (
             FixtureProvider() if settings.mode == "fixture" else BifrostProvider(settings)
         )
@@ -60,8 +81,13 @@ class Engine:
             secrets.extend(
                 [os.environ.get(user.bifrost_key_env, ""), os.environ.get(user.local_key_env, "")]
             )
+        optimization = self.settings.optimization
         return Repository(
-            session["repo"], self.settings.confidential_marker, secrets, self.settings.output_chars
+            session["repo"],
+            self.settings.confidential_marker,
+            secrets,
+            self.settings.output_chars if optimization.output_truncation else ABSOLUTE_OUTPUT_CHARS,
+            MAX_READ_LINES if optimization.targeted_reads else None,
         )
 
     def emit(self, session_id: str, run_id: str, kind: str, payload: dict):
@@ -114,14 +140,21 @@ class Engine:
         self,
         session_id: str,
         run_id: str,
-        action: ApplyPatch | WriteFile | RunShell,
+        action: ApplyPatch | WriteFile | RunShell | GitGated,
         repository: Repository,
         step: int,
     ) -> dict:
-        if self.refresh_session(session_id)["read_only"]:
+        session = self.refresh_session(session_id)
+        if session["read_only"]:
             raise PolicyError("Read-only sessions cannot request gated actions")
         binding = action.model_dump()
-        if isinstance(action, RunShell):
+        if isinstance(action, GIT_GATED_TYPES):
+            check_git_action(action, self.settings, bool(session["confidential"]), repository)
+            preview = await self.git.prepare(repository, action)
+            repository.check_secrets(preview.diff)
+            binding["git"] = dict(preview.state)
+            diff = preview.diff
+        elif isinstance(action, RunShell):
             if not self.sandbox.available():
                 raise PolicyError("Docker sandbox is unavailable; host execution is forbidden")
             _, snapshot = repository.snapshot(self.settings.sandbox.max_snapshot_bytes)
@@ -173,7 +206,11 @@ class Engine:
                     raise PolicyError("Approval could not be consumed safely")
                 self.emit(session_id, run_id, "approval_consumed", {"approval_id": approval["id"]})
                 try:
-                    if isinstance(action, RunShell):
+                    if isinstance(action, GIT_GATED_TYPES):
+                        # The executor rechecks every bound state value before it changes anything.
+                        result = await self.git.apply(repository, action, binding["git"])
+                        repository.check_secrets(json.dumps(result))
+                    elif isinstance(action, RunShell):
                         result = await self.sandbox.run(repository, action, snapshot)
                     else:
                         # No await between single-use approval consumption and the checked write.
@@ -207,8 +244,13 @@ class Engine:
     async def run_tool(
         self, session_id, run_id, session, action, repo, step, options, failures
     ) -> dict:
-        if isinstance(action, (ApplyPatch, WriteFile, RunShell)):
+        if isinstance(action, (ApplyPatch, WriteFile, RunShell, *GIT_GATED_TYPES)):
             return await self.wait_for_approval(session_id, run_id, action, repo, step)
+        if isinstance(action, GIT_READ_TYPES):
+            check_git_action(action, self.settings, bool(session["confidential"]), repo)
+            output = await self.git.read(repo, action)
+            repo.check_secrets(json.dumps(output))
+            return output
         if isinstance(action, WebResearch):
             output = await self.research.search(
                 action,
@@ -226,6 +268,7 @@ class Engine:
                     k: output[k]
                     for k in (
                         "query",
+                        "trigger",
                         "cache_hit",
                         "credits",
                         "content_utf8_bytes",
@@ -267,6 +310,8 @@ class Engine:
                     "mode": self.settings.mode,
                     "confidential": confidential,
                     "budget_remaining_micro_usd": self.store.remaining(user.id),
+                    # Recorded so every result can be traced to its ablation configuration.
+                    "optimization": self.settings.optimization.model_dump(),
                 },
             )
             for step in range(1, self.settings.max_steps + 1):
@@ -275,11 +320,14 @@ class Engine:
                 model, allowlist = routed_model(
                     self.settings, confidential, inspected, sum(failures.values())
                 )
-                names = enabled_tools(self.settings, inspected, bool(session["read_only"]))
+                names = enabled_tools(
+                    self.settings, inspected, bool(session["read_only"]), self.git is not None
+                )
                 messages, context_metrics = build_context(
                     self.store.messages(session_id), self.settings, names
                 )
                 self.emit(session_id, run_id, "context_prepared", context_metrics)
+                parts = prompt_parts(messages)
                 request_context = {"session_id": session_id, "run_id": run_id}
                 if self.settings.optimization.gateway_direct_cache and not confidential:
                     _, request_context["snapshot_sha256"] = repo.snapshot(
@@ -328,6 +376,16 @@ class Engine:
                     )
                 if result.model not in allowlist:
                     raise PolicyError("Gateway returned a model outside the configured allowlist")
+                if (
+                    self.settings.optimization.output_truncation
+                    and self.settings.tool_output_tokens
+                ):
+                    # Size this step's tool output from the model's measured token density.
+                    repo.output_chars = output_char_limit(
+                        self.settings.tool_output_tokens,
+                        chars_per_token(messages, result.input_tokens),
+                        MAX_FILE_BYTES,
+                    )
                 actual_cost = cost_ceiling(
                     self.settings, result.input_tokens, result.output_tokens, confidential
                 )
@@ -344,6 +402,11 @@ class Engine:
                         "request_id": result.request_id,
                         "usage_source": result.source,
                         "attempt_ceiling": self.settings.gateway_attempt_ceiling,
+                        "tool_output_char_limit": repo.output_chars,
+                        # Where the request's real prompt tokens went (FR-62, ablation analysis).
+                        "prompt_chars_by_part": parts,
+                        "prompt_tokens_by_part": attribute_tokens(parts, result.input_tokens),
+                        "attribution": ATTRIBUTION_METHOD,
                     },
                     retain_reservation=(
                         self.settings.mode != "fixture"
@@ -393,7 +456,9 @@ class Engine:
                     raise PolicyError("Read-only sessions cannot execute gated actions")
                 read_first = None
                 if action.tool not in names:
-                    later = enabled_tools(self.settings, True, bool(session["read_only"]))
+                    later = enabled_tools(
+                        self.settings, True, bool(session["read_only"]), self.git is not None
+                    )
                     if action.tool not in later:
                         raise PolicyError("Tool is disabled or requires a file inspection first")
                     read_first = "Read the file with read_file before editing it"

@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 
 class StrictModel(BaseModel):
@@ -95,6 +95,65 @@ class Finish(StrictModel):
     summary: str = Field(min_length=1, max_length=4000)
 
 
+COMMIT_ID = r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$"
+GitPath = Annotated[str, Field(min_length=1, max_length=1024)]
+
+
+def branch_name(value: str) -> str:
+    """No option prefixes, "..", "//", "@{", ".lock" parts or trailing "/" and "."."""
+    parts = value.split("/")
+    if (
+        value[0] in "-/."
+        or value[-1] in "/."
+        or ".." in value
+        or "//" in value
+        or "@{" in value
+        or any(part.endswith(".lock") or part.startswith(".") for part in parts)
+    ):
+        raise ValueError("Unsafe branch name")
+    return value
+
+
+Branch = Annotated[str, Field(pattern=r"^[A-Za-z0-9._/-]{1,200}$"), AfterValidator(branch_name)]
+
+
+class GitStatus(StrictModel):
+    tool: Literal["git_status"]
+
+
+class GitDiff(StrictModel):
+    tool: Literal["git_diff"]
+    staged: bool = False
+    paths: list[GitPath] = Field(default_factory=list, max_length=20)
+
+
+class GitLog(StrictModel):
+    tool: Literal["git_log"]
+    max_count: int = Field(default=10, ge=1, le=50)
+    paths: list[GitPath] = Field(default_factory=list, max_length=20)
+
+
+class GitCommit(StrictModel):
+    tool: Literal["git_commit"]
+    message: str = Field(min_length=1, max_length=2000)
+    paths: list[GitPath] = Field(min_length=1, max_length=50)
+    expected_head: str = Field(pattern=COMMIT_ID)
+
+
+class GitCheckout(StrictModel):
+    tool: Literal["git_checkout"]
+    branch: Branch
+    create: bool = False
+    expected_head: str = Field(pattern=COMMIT_ID)
+
+
+class GitPush(StrictModel):
+    tool: Literal["git_push"]
+    remote: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+    branch: Branch
+    expected_head: str = Field(pattern=COMMIT_ID)
+
+
 Action = Annotated[
     ListTree
     | ReadFile
@@ -105,6 +164,12 @@ Action = Annotated[
     | RunShell
     | WebResearch
     | SyntaxCheck
+    | GitStatus
+    | GitDiff
+    | GitLog
+    | GitCommit
+    | GitCheckout
+    | GitPush
     | Finish,
     Field(discriminator="tool"),
 ]

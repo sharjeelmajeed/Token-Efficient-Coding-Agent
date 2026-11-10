@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import Settings, load_tokens
+from .context import ATTRIBUTION_METHOD
 from .engine import Engine
 from .models import ApplyPatch, ApprovalDecision, SessionCreate, TaskRequest, WriteFile
 from .policy import authenticate, budget_warning_active, resolve_repository
@@ -44,11 +45,36 @@ class BodyLimit:
         return await self.app(scope, replay, send)
 
 
-def create_app(settings: Settings, provider=None, research=None, sandbox=None) -> FastAPI:
+def token_attribution(usage: list[dict]) -> dict:
+    """Run totals of real prompt tokens by part, summed over every model request.
+
+    Text that stays in the context, such as a research result, is counted in every request
+    that resends it, so its total here is its real cost to the run.
+    """
+    by_part: dict[str, int] = {}
+    missing = 0
+    for row in usage:
+        shares = row["details"].get("prompt_tokens_by_part")
+        if not shares:
+            missing += 1
+            continue
+        for part, tokens in shares.items():
+            by_part[part] = by_part.get(part, 0) + tokens
+    return {
+        "method": ATTRIBUTION_METHOD,
+        "input_tokens_total": sum(row["input_tokens"] for row in usage),
+        "output_tokens_total": sum(row["output_tokens"] for row in usage),
+        "input_tokens_by_part": dict(sorted(by_part.items())),
+        "research_input_tokens": by_part.get("tool:web_research", 0),
+        "requests_without_attribution": missing,
+    }
+
+
+def create_app(settings: Settings, provider=None, research=None, sandbox=None, git=None) -> FastAPI:
     tokens = load_tokens(settings)
     store = Store(settings.database)
     store.register_accounts(settings.users)
-    engine = Engine(settings, store, tokens, provider, research, sandbox)
+    engine = Engine(settings, store, tokens, provider, research, sandbox, git)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -266,6 +292,7 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None) -
             "run": run,
             "usage": store.usage(run_id),
             "research_usage": store.research_usage(run_id),
+            "token_attribution": token_attribution(store.usage(run_id)),
             "cost_basis": "Conservative configured ceilings; not reconciled Bifrost log cost",
             "benchmark_evidence": False,
         }
