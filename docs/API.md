@@ -83,6 +83,10 @@ This object is display-only; clients approve the existing ID and cannot edit it.
 Status/metrics include `research_usage` separately from LLM `usage`. Usage `details`
 is an object containing cache tokens/hit, latency, request ID, source and attempt ceiling.
 Amounts in `held_for_reconciliation`/`uncertain` are conservative holds, not final costs.
+After gateway reconciliation a row is `reconciled` (gateway cost) or `discrepancy` (still
+held), and its `details.reconciliation` holds the evidence. Metrics add `reconciliation`:
+`{"complete": bool, "usage_states": {state: count}}`; `complete` is true only when every
+usage row of the run is `reconciled`. `budget_hit` may have reason `gateway_budget_hit`.
 `run.options` is the persisted JSON string of typed run options, not model permissions.
 
 `completed_verified` requires every operator-configured verification command to pass

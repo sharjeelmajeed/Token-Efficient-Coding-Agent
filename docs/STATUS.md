@@ -54,7 +54,7 @@ no model-generated or repository command was executed on the host.
 | --- | --- |
 | WS2 / M2 | Run Bifrost and a physically local model; validate restricted virtual keys, actual fallback/retry ceilings, cache behavior, rate-limit/outage handling and provider metadata |
 | WS1+2 / M2 | Live Docker isolation/cancellation acceptance; pinned image containing actual task dependencies; process-crash/orphan-container recovery |
-| WS2 / M2 | Bifrost log-based billing reconciliation; unknown-package/new-version research triggers; measured research cost-benefit accounting |
+| WS2 / M2 | Unknown-package/new-version research triggers; measured research cost-benefit accounting. Bifrost log reconciliation is implemented (`token_agent.reconcile`) |
 | WS1 / M2 | Remaining FSD tools including git, fuller restart recovery, native provider tool calls/streaming where needed |
 | WS1+4 / M2–M4 | Independently switch remaining optimization techniques; measure overhead and setup targets |
 | WS3 / M3 | Actual VS Code host/UI acceptance, approval/reconnect/theme/keyboard rehearsal and live model switch |

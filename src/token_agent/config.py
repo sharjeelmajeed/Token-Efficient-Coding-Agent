@@ -113,6 +113,8 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    # Largest per-direction token difference accepted when reconciling with gateway logs.
+    reconciliation_token_tolerance: int = Field(default=0, ge=0, le=1000)
     streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)

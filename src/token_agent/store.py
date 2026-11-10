@@ -392,6 +392,33 @@ class Store:
                 ),
             )
 
+    def usage_to_reconcile(self, states: tuple[str, ...]) -> list[dict]:
+        marks = ",".join("?" for _ in states)
+        with self.connection() as db:
+            rows = db.execute(
+                f"SELECT * FROM usage WHERE state IN ({marks}) AND source != 'fixture' "
+                "ORDER BY rowid",
+                states,
+            ).fetchall()
+        return [{**dict(row), "details": json.loads(row["details"])} for row in rows]
+
+    def apply_reconciliation(
+        self, usage_id: str, expected_state: str, amount: int, state: str, evidence: dict
+    ) -> bool:
+        """Update one row only if it is still in the state that was judged."""
+        with self.connection(True) as db:
+            row = db.execute(
+                "SELECT details FROM usage WHERE id=? AND state=?", (usage_id, expected_state)
+            ).fetchone()
+            if not row:
+                return False
+            details = {**json.loads(row["details"]), "reconciliation": evidence}
+            db.execute(
+                "UPDATE usage SET amount=?,state=?,details=? WHERE id=? AND state=?",
+                (amount, state, json.dumps(details), usage_id, expected_state),
+            )
+        return True
+
     def uncertain(self, reservation: str):
         with self.connection(True) as db:
             db.execute(
