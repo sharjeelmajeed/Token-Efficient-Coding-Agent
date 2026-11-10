@@ -77,5 +77,11 @@ first". That's why steps 7 and 8 start a new session. Real models re-read the fi
 is expected to apply only to the fixture. Tell WS1 (Usman), since the demo script must
 account for it.
 
+**F1 status: fixed by WS1 in PR #12** (`feature/core-fixture-repeatable`, merged to `main`).
+The fixture now reads only the current run's results, so each new run reads the file and
+offers the patch again. This run used the "New session" workaround in steps 7 and 8, as
+recorded above. Later runs on a `main` that includes #12 can send the task again in the
+same session.
+
 **Manual editor run (2026-11-10, Areeba):** all 14 steps pass in the installed VSIX on
 VS Code 1.145.2. No new client bugs. F1 still applies (fixture only).
