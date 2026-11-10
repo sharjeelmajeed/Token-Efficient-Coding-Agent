@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 from token_agent.api import create_app
+from token_agent.cli import budget_line
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
@@ -171,3 +172,15 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
     assert lines[marker - 1].startswith("Fixed the calculator.")
     assert "session_paused" in "\n".join(lines[marker + 1 :])
     assert run.stdout.count("(reply incomplete)") == 1
+
+
+def test_budget_options_use_plain_words_and_keep_unknown_codes():
+    payload = {"remaining_micro_usd": 0, "limit_micro_usd": 6000}
+    gateway = budget_line({**payload, "options": ["raise_gateway_budget_then_resubmit"]})
+    assert gateway.endswith("options: raise the gateway budget, then resend")
+    user = budget_line({**payload, "options": ["raise_budget_then_resubmit", "new_option"]})
+    assert user.endswith("options: raise your budget, then resend, new_option")
+    assert budget_line({**payload, "options": ["continue", "cancel"]}).endswith(
+        "options: continue, cancel"
+    )
+    assert "options" not in budget_line({**payload, "options": "continue"})

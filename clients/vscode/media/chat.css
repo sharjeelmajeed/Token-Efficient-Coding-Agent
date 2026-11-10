@@ -20,3 +20,4 @@ form { margin-top: 20px; }
 textarea { box-sizing: border-box; width: 100%; margin: 7px 0 10px; padding: 10px; resize: vertical; font: inherit; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--vscode-panel-border)); border-radius: 3px; }
 .composer { justify-content: space-between; }
 .hint { font-size: 11px; }
+.budget-warning { margin: 6px 0 0; font-weight: 600; color: var(--vscode-errorForeground); }

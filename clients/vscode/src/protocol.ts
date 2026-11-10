@@ -8,7 +8,9 @@ export interface Approval {
 export interface Status {
   session_id: string; mode: string; confidential: boolean; read_only: boolean;
   budget_remaining_micro_usd: number;
-  run: { id: string; status: string; step: number; outcome: string | null } | null;
+  /** Computed by the core on every request; older cores may omit both. */
+  budget_limit_micro_usd?: number; budget_warning?: boolean;
+  run:{ id: string; status: string; step: number; outcome: string | null } | null;
   pending_approvals: Approval[];
   usage: { model: string; input_tokens: number; output_tokens: number; amount: number }[];
 }
@@ -59,6 +61,10 @@ export function parseStatus(value: unknown): Status {
         typeof value.run.status === 'string' && Number.isSafeInteger(value.run.step)))) {
     throw new Error('Invalid core status response.');
   }
+  if ((value.budget_limit_micro_usd !== undefined && !Number.isSafeInteger(value.budget_limit_micro_usd)) ||
+      (value.budget_warning !== undefined && typeof value.budget_warning !== 'boolean')) {
+    throw new Error('Invalid core budget status.');
+  }
   id(value.session_id);
   if (record(value.run)) { id(String(value.run.id)); }
   for (const item of value.pending_approvals) {
@@ -81,10 +87,109 @@ export function parsePreview(value: unknown): Preview {
   id(String(value.approval_id));
   return value as unknown as Preview;
 }
+export function usd(micro: unknown): string {
+  return `$${(Number.isSafeInteger(micro) ? Number(micro) / 1e6 : 0).toFixed(4)}`;
+}
+/** Percent of the budget used, only when the core reports the warning; otherwise undefined. */
+export function budgetWarningPercent(status: Status): number | undefined {
+  const limit = status.budget_limit_micro_usd;
+  if (status.budget_warning !== true || limit === undefined || limit <= 0) { return undefined; }
+  return Math.floor((limit - status.budget_remaining_micro_usd) * 100 / limit);
+}
 export function statusLabel(status: Status): string {
   const model = status.usage.at(-1)?.model ?? 'not called';
   const privacy = status.confidential ? 'LOCAL ONLY' : 'standard';
-  return `$(shield) ${safeText(model, 80)} · $${(status.budget_remaining_micro_usd / 1e6).toFixed(4)} · ${privacy}`;
+  const used = budgetWarningPercent(status);
+  const warning = used === undefined ? '' : ` · ⚠ ${used}% budget`;
+  return `$(shield) ${safeText(model, 80)} · ${usd(status.budget_remaining_micro_usd)}${warning} · ${privacy}`;
+}
+/** Plain wording for the core's budget option codes (same as the CLI). Unknown codes are shown as sent. */
+const BUDGET_OPTIONS: ReadonlyMap<string, string> = new Map([
+  ['raise_budget_then_resubmit', 'raise your budget, then resend'],
+  ['raise_gateway_budget_then_resubmit', 'raise the gateway budget, then resend'],
+]);
+/**
+ * Readable text for a core event, built only from fields the core sent. Same wording as
+ * the CLI. Missing or oddly typed fields never throw; an empty array means show nothing.
+ */
+export function noticeText(kind: string, payload: Record<string, unknown>): string[] {
+  const field = (name: string, fallback = ''): string => {
+    const value = payload[name];
+    return value === undefined || value === null || value === '' ? fallback : safeText(value, 500);
+  };
+  const budget = (): string => {
+    const options = Array.isArray(payload.options) && payload.options.length
+      ? `; options: ${payload.options.map(o => BUDGET_OPTIONS.get(String(o)) ?? safeText(o, 60)).join(', ')}` : '';
+    return `${usd(payload.remaining_micro_usd)} remaining of ${usd(payload.limit_micro_usd)}${options}`;
+  };
+  switch (kind) {
+    case 'budget_warning': return [`Budget warning: ${budget()}`];
+    case 'budget_hit': return [`Budget limit reached: ${field('reason', 'budget limit reached')}; ${budget()}`];
+    case 'model_switched': {
+      const line = `Model switched: ${field('from', 'unknown')} -> ${field('to', 'unknown')}`;
+      return [field('reason') ? `${line} (${field('reason')})` : line];
+    }
+    case 'session_paused':
+      return [`Paused: ${field('reason', 'no reason given')}`,
+        ...(field('resume') ? [`Next step: ${field('resume')}`] : [])];
+    case 'run_complete':
+      return [`Run finished: ${field('outcome', 'unknown')}`, ...(field('note') ? [`Note: ${field('note')}`] : [])];
+    case 'policy_block': return [`Blocked by policy: ${field('reason', 'no reason given')}`];
+    case 'approval_expired': return [`Approval ${field('approval_id')} expired - the action was not run`];
+    case 'research_used':
+      return [`Public research: ${field('query', 'unknown query')} (${payload.cache_hit === true ? 'cached' : 'new'})`];
+    case 'tool_result': {
+      const result = payload.result;
+      if (record(result) && result.recoverable === true) {
+        return [`Tool error (agent will retry): ${safeText(result.error || 'invalid tool input', 500)}`];
+      }
+      return [];
+    }
+    default: return [];
+  }
+}
+
+export interface TimelineEntry { kind: string; text: string }
+/**
+ * Notices the core sends after a reply's streamed pieces but before its final piece
+ * (model_switched and budget_warning come right after the model call is settled).
+ * They do not end the reply.
+ */
+export const MID_REPLY_EVENTS: ReadonlySet<string> = new Set(['model_switched', 'budget_warning']);
+/**
+ * Joins streamed message_delta pieces into one assistant entry. With streaming on, the core
+ * sends partial: true pieces and then exactly one partial: false piece. Any other event before
+ * that final piece, except the MID_REPLY_EVENTS notices, means the reply is incomplete. Without
+ * a partial field, each delta is one whole message, as before.
+ */
+export class ReplyJoiner {
+  private open: TimelineEntry | undefined;
+  constructor(private readonly push: (entry: TimelineEntry) => void) {}
+  delta(payload: Record<string, unknown>): void {
+    const text = safeText(payload.text ?? '');
+    if (this.open) {
+      this.open.text = safeText(this.open.text + text);
+      if (payload.partial !== true) { this.open = undefined; }
+    } else if (payload.partial === true) {
+      this.open = { kind: 'assistant', text };
+      this.push(this.open);
+    } else {
+      this.push({ kind: 'assistant', text });
+    }
+  }
+  /** Call for every non-delta event. Mid-reply notices keep the reply open; others interrupt it. */
+  event(type: string): void {
+    if (!MID_REPLY_EVENTS.has(type)) { this.interrupt(); }
+  }
+  /** Closes an open reply and marks it incomplete. */
+  interrupt(): void {
+    if (this.open) {
+      this.open = undefined;
+      this.push({ kind: 'warning', text: '(reply incomplete)' });
+    }
+  }
+  /** Forget an open reply without marking it, e.g. when the timeline is cleared. */
+  reset(): void { this.open = undefined; }
 }
 
 export class SSEDecoder {

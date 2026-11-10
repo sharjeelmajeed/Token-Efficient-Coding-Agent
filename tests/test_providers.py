@@ -275,3 +275,41 @@ def test_private_cache_disabled_and_local_fallback_only(environment, monkeypatch
 
     asyncio.run(exercise())
     assert calls[0].headers["x-bf-cache-key"] != calls[1].headers["x-bf-cache-key"]
+
+
+@pytest.mark.parametrize("seconds", [None, 300])
+def test_gateway_timeout_is_configurable(environment, monkeypatch, seconds):
+    monkeypatch.setenv("BIFROST_VIRTUAL_KEY", secrets.token_urlsafe(40))
+    settings = environment["settings"]
+    if seconds:
+        settings = settings.model_copy(update={"gateway_timeout_seconds": seconds})
+    seen = {}
+    real_client = httpx.AsyncClient
+
+    def capture(**kwargs):
+        seen["timeout"] = kwargs["timeout"]
+        return real_client(
+            transport=httpx.MockTransport(lambda request: httpx.Response(500)), **kwargs
+        )
+
+    monkeypatch.setattr(httpx, "AsyncClient", capture)
+
+    async def exercise():
+        with pytest.raises(ProviderError):
+            await BifrostProvider(settings).complete([], "cloud/code", settings.users[0], False)
+
+    asyncio.run(exercise())
+    assert seen["timeout"].read == (seconds or 60)
+    assert seen["timeout"].connect == 5
+
+
+def test_gateway_timeout_is_bounded(environment):
+    from pydantic import ValidationError
+
+    from token_agent.config import Settings
+
+    base = environment["settings"].model_dump()
+    assert Settings(**base).gateway_timeout_seconds == 60
+    for bad in (4, 901):
+        with pytest.raises(ValidationError):
+            Settings(**{**base, "gateway_timeout_seconds": bad})

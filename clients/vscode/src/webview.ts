@@ -4,7 +4,7 @@ export function webviewHtml(nonce: string, scriptUri: string, styleUri: string, 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'none'; connect-src 'none'; style-src ${attr(cspSource)}; script-src 'nonce-${attr(nonce)}';">
 <link rel="stylesheet" href="${attr(styleUri)}"><title>Token Agent</title></head>
-<body><header><h1>Token Agent</h1><p id="status" role="status">Start a session to connect.</p>
+<body><header><h1>Token Agent</h1><p id="status" role="status">Start a session to connect.</p><p id="budget" class="budget-warning" role="alert" hidden></p>
 <div class="toolbar"><button id="start">New session</button><button id="resume">Reconnect</button>
 <button id="cancel" class="secondary">Cancel run</button><button id="report" class="secondary">Run report</button></div></header>
 <main><section aria-label="Conversation"><div id="timeline" role="log" aria-live="polite"></div></section>
