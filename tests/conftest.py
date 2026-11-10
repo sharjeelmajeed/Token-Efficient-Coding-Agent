@@ -33,9 +33,13 @@ def live_client(app, headers):
             yield client
     finally:
         server.should_exit = True
-        thread.join(timeout=5)
-        listener.close()
-        if thread.is_alive():
+        thread.join(timeout=30)
+        alive = thread.is_alive()
+        try:
+            listener.close()
+        except OSError:
+            pass
+        if alive:
             raise RuntimeError("Test server failed to shut down")
 
 

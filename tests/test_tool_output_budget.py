@@ -18,7 +18,7 @@ from token_agent.context import (
     output_char_limit,
 )
 from token_agent.providers import ProviderResult
-from token_agent.repo import MAX_FILE_BYTES
+from token_agent.repo import ABSOLUTE_OUTPUT_CHARS, MAX_FILE_BYTES
 
 from .conftest import live_client, session, start, wait_status
 
@@ -129,3 +129,15 @@ def test_denser_models_get_fewer_characters_for_the_same_budget(environment, big
 def test_zero_reported_tokens_falls_back_cautiously(environment, big_file):
     _, usage, _ = run(environment, budget(environment, 300), input_tokens=0)
     assert usage[0]["details"]["tool_output_char_limit"] == int(300 * FALLBACK_CHARS_PER_TOKEN)
+
+
+def test_truncation_off_ignores_token_budget_and_uses_fixed_ceiling(environment, big_file):
+    opt = environment["settings"].optimization.model_copy(update={"output_truncation": False})
+    settings = environment["settings"].model_copy(
+        update={"tool_output_tokens": 300, "optimization": opt}
+    )
+    result, usage, _ = run(environment, settings, input_tokens=1000)
+    assert all(row["details"]["tool_output_char_limit"] == ABSOLUTE_OUTPUT_CHARS for row in usage)
+    assert result["truncated"] is False
+    assert "[output truncated]" not in result["text"]
+    assert "value_number_0150" in result["text"]
