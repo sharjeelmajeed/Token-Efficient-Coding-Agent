@@ -12,6 +12,8 @@ class ResearchPackage(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     name: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9._-]{0,63}$")
     version: str = Field(default="", pattern=r"^[0-9A-Za-z.+_-]{0,40}$")
+    # Newest version the model is trusted to know. A newer pinned version triggers research.
+    known_version: str = Field(default="", pattern=r"^(?:\d+(?:\.\d+){0,3})?$")
     domains: list[str] = Field(min_length=1, max_length=5)
 
     @model_validator(mode="after")
@@ -81,7 +83,17 @@ class GitSettings(BaseModel):
 
 
 class OptimizationSettings(BaseModel):
+    """Independent switches for the nine FSD section 8 techniques, for ablation runs.
+
+    Each switch changes only how efficiently the agent works. Safety limits (repository
+    boundaries, secrets, approvals, budget and locality) are never switched off.
+    """
+
     model_config = ConfigDict(extra="forbid", frozen=True)
+    repo_map: bool = True  # TO-01: offer the symbol outline tool
+    targeted_reads: bool = True  # TO-02: line-range reads and grep instead of whole files
+    output_truncation: bool = True  # TO-03: cut tool output to output_chars
+    diff_edits: bool = True  # TO-04: exact patches instead of whole-file writes
     history_compaction: bool = True
     tool_pruning: bool = True
     tiered_routing: bool = False
@@ -113,6 +125,9 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    # Longest wait for the gateway's next bytes. Raise it for slow local models on CPU,
+    # which can take minutes before the first token of a long prompt.
+    gateway_timeout_seconds: int = Field(default=60, ge=5, le=900)
     # Largest per-direction token difference accepted when reconciling with gateway logs.
     reconciliation_token_tolerance: int = Field(default=0, ge=0, le=1000)
     streaming: bool = False
@@ -125,6 +140,9 @@ class Settings(BaseModel):
     max_steps: int = Field(default=12, ge=1, le=100)
     max_output_tokens: int = Field(default=2048, ge=128, le=16384)
     output_chars: int = Field(default=8000, ge=1000, le=20000)
+    # FR-12: when set, tool output is cut to this many tokens instead of output_chars, using
+    # the characters-per-token measured from the model's own count on the current request.
+    tool_output_tokens: int | None = Field(default=None, ge=100, le=20000)
     context_chars: int = Field(default=40000, ge=4000, le=100000)
     approval_timeout_seconds: int = Field(default=120, ge=1, le=3600)
     # Conservative ceilings for every model in the configured fallback chain.

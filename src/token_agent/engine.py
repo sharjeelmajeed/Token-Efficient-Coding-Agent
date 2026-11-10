@@ -9,7 +9,15 @@ from collections import Counter
 from pydantic import ValidationError
 
 from .config import Settings
-from .context import build_context, enabled_tools
+from .context import (
+    ATTRIBUTION_METHOD,
+    attribute_tokens,
+    build_context,
+    chars_per_token,
+    enabled_tools,
+    output_char_limit,
+    prompt_parts,
+)
 from .git_contract import GIT_GATED_TYPES, GIT_READ_TYPES, GitExecutor, GitGated
 from .models import AgentReply, ApplyPatch, Finish, ReadFile, RunShell, WebResearch, WriteFile
 from .policy import (
@@ -23,7 +31,13 @@ from .policy import (
     routed_model,
 )
 from .providers import GATEWAY_BUDGET_HIT, BifrostProvider, FixtureProvider, ProviderError
-from .repo import PolicyError, Repository
+from .repo import (
+    ABSOLUTE_OUTPUT_CHARS,
+    MAX_FILE_BYTES,
+    MAX_READ_LINES,
+    PolicyError,
+    Repository,
+)
 from .research import Research
 from .sandbox import DockerSandbox
 from .store import Store
@@ -63,8 +77,13 @@ class Engine:
             secrets.extend(
                 [os.environ.get(user.bifrost_key_env, ""), os.environ.get(user.local_key_env, "")]
             )
+        optimization = self.settings.optimization
         return Repository(
-            session["repo"], self.settings.confidential_marker, secrets, self.settings.output_chars
+            session["repo"],
+            self.settings.confidential_marker,
+            secrets,
+            self.settings.output_chars if optimization.output_truncation else ABSOLUTE_OUTPUT_CHARS,
+            MAX_READ_LINES if optimization.targeted_reads else None,
         )
 
     def emit(self, session_id: str, run_id: str, kind: str, payload: dict):
@@ -238,6 +257,8 @@ class Engine:
                     "mode": self.settings.mode,
                     "confidential": confidential,
                     "budget_remaining_micro_usd": self.store.remaining(user.id),
+                    # Recorded so every result can be traced to its ablation configuration.
+                    "optimization": self.settings.optimization.model_dump(),
                 },
             )
             for step in range(1, self.settings.max_steps + 1):
@@ -253,6 +274,7 @@ class Engine:
                     self.store.messages(session_id), self.settings, names
                 )
                 self.emit(session_id, run_id, "context_prepared", context_metrics)
+                parts = prompt_parts(messages)
                 request_context = {"session_id": session_id, "run_id": run_id}
                 if self.settings.optimization.gateway_direct_cache and not confidential:
                     _, request_context["snapshot_sha256"] = repo.snapshot(
@@ -301,6 +323,16 @@ class Engine:
                     )
                 if result.model not in allowlist:
                     raise PolicyError("Gateway returned a model outside the configured allowlist")
+                if (
+                    self.settings.optimization.output_truncation
+                    and self.settings.tool_output_tokens
+                ):
+                    # Size this step's tool output from the model's measured token density.
+                    repo.output_chars = output_char_limit(
+                        self.settings.tool_output_tokens,
+                        chars_per_token(messages, result.input_tokens),
+                        MAX_FILE_BYTES,
+                    )
                 actual_cost = cost_ceiling(
                     self.settings, result.input_tokens, result.output_tokens, confidential
                 )
@@ -317,6 +349,11 @@ class Engine:
                         "request_id": result.request_id,
                         "usage_source": result.source,
                         "attempt_ceiling": self.settings.gateway_attempt_ceiling,
+                        "tool_output_char_limit": repo.output_chars,
+                        # Where the request's real prompt tokens went (FR-62, ablation analysis).
+                        "prompt_chars_by_part": parts,
+                        "prompt_tokens_by_part": attribute_tokens(parts, result.input_tokens),
+                        "attribution": ATTRIBUTION_METHOD,
                     },
                     retain_reservation=(
                         self.settings.mode != "fixture"
@@ -412,6 +449,7 @@ class Engine:
                             k: output[k]
                             for k in (
                                 "query",
+                                "trigger",
                                 "cache_hit",
                                 "credits",
                                 "content_utf8_bytes",
