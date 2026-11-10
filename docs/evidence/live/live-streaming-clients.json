@@ -1,0 +1,341 @@
+{
+  "captured_at": "2026-11-10T15:13:43.928708+00:00",
+  "test": "Live streaming through both clients: model_switched arrives between streamed pieces of one reply",
+  "code": "main f453112 (includes #11 VS Code fix, #20 CLI fix, #18 switch notices)",
+  "scenario": "fast model groq/qwen/qwen3.8-27b reads the file; the strong step requests gemini/gemini-2.5-flash, refused for this key, so Bifrost falls back to groq/openai/gpt-oss-120b; streaming on",
+  "events": [
+    {
+      "id": 1,
+      "type": "session_created",
+      "timestamp": "2026-11-10T15:12:45.689907+00:00",
+      "payload": {
+        "mode": "bifrost",
+        "confidential": false
+      }
+    },
+    {
+      "id": 2,
+      "type": "run_started",
+      "timestamp": "2026-11-10T15:12:47.170492+00:00",
+      "payload": {
+        "model": "gemini/gemini-2.5-flash",
+        "mode": "bifrost",
+        "confidential": false,
+        "budget_remaining_micro_usd": 5000000,
+        "optimization": {
+          "repo_map": true,
+          "targeted_reads": true,
+          "output_truncation": true,
+          "diff_edits": true,
+          "history_compaction": true,
+          "tool_pruning": true,
+          "tiered_routing": true,
+          "gateway_direct_cache": false,
+          "early_termination": true
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T15:12:47.199851+00:00",
+      "payload": {
+        "before_chars": 3855,
+        "after_chars": 3832,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "tool_call",
+      "timestamp": "2026-11-10T15:12:47.951435+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 5,
+      "type": "tool_result",
+      "timestamp": "2026-11-10T15:12:47.981631+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "start_line": 1,
+          "end_line": 2,
+          "text": "def add(a, b):\n    return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T15:12:48.023709+00:00",
+      "payload": {
+        "before_chars": 5608,
+        "after_chars": 5544,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "message_delta",
+      "timestamp": "2026-11-10T15:12:49.690875+00:00",
+      "payload": {
+        "text": "The current add function takes two arguments, a and b, and returns the result of a minus b. This means it performs subtraction rather than addition, so the output is the difference between the inputs. Consequently, the function does not ",
+        "partial": true
+      }
+    },
+    {
+      "id": 8,
+      "type": "model_switched",
+      "timestamp": "2026-11-10T15:12:49.738329+00:00",
+      "payload": {
+        "from": "groq/qwen/qwen3.8-27b",
+        "to": "gemini/gemini-2.5-flash",
+        "reason": "configured_step_routing"
+      }
+    },
+    {
+      "id": 9,
+      "type": "model_switched",
+      "timestamp": "2026-11-10T15:12:49.754332+00:00",
+      "payload": {
+        "from": "gemini/gemini-2.5-flash",
+        "to": "groq/openai/gpt-oss-120b",
+        "reason": "gateway_fallback"
+      }
+    },
+    {
+      "id": 10,
+      "type": "message_delta",
+      "timestamp": "2026-11-10T15:12:49.786408+00:00",
+      "payload": {
+        "text": "fulfill its intended purpose of adding the two numbers together.",
+        "partial": false
+      }
+    },
+    {
+      "id": 11,
+      "type": "run_complete",
+      "timestamp": "2026-11-10T15:12:49.817864+00:00",
+      "payload": {
+        "outcome": "completed_unverified",
+        "note": "No complete set of configured behavior checks passed"
+      }
+    }
+  ],
+  "core_usage_after_reconciliation": [
+    {
+      "id": "ef72e404-5610-41de-b281-040b7c776d6d",
+      "owner": "usman",
+      "run_id": "61c4aa85-6025-4611-8021-b3d3dc539963",
+      "amount": 702,
+      "state": "reconciled",
+      "input_tokens": 807,
+      "output_tokens": 14,
+      "model": "groq/qwen/qwen3.8-27b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 694,
+        "request_id": "ef72e404-5610-41de-b281-040b7c776d6d",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 3205,
+          "instructions": 169
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 767,
+          "instructions": 40
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "ef72e404-5610-41de-b281-040b7c776d6d",
+          "attempts": [
+            {
+              "provider": "groq",
+              "model": "qwen/qwen3.8-27b",
+              "status": "success",
+              "tokens": [
+                807,
+                14
+              ],
+              "cost_usd": 0.0007015999999999999
+            }
+          ],
+          "gateway_cost_micro_usd": 702
+        }
+      }
+    },
+    {
+      "id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+      "owner": "usman",
+      "run_id": "61c4aa85-6025-4611-8021-b3d3dc539963",
+      "amount": 277,
+      "state": "reconciled",
+      "input_tokens": 1338,
+      "output_tokens": 126,
+      "model": "groq/openai/gpt-oss-120b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 1660,
+        "request_id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 2,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 4278,
+          "instructions": 169,
+          "model_actions": 84,
+          "tool:read_file": 255
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1196,
+          "instructions": 47,
+          "model_actions": 24,
+          "tool:read_file": 71
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+          "attempts": [
+            {
+              "provider": "gemini",
+              "model": "gemini-2.5-flash",
+              "status": "error",
+              "tokens": [
+                0,
+                0
+              ],
+              "cost_usd": null
+            },
+            {
+              "provider": "groq",
+              "model": "openai/gpt-oss-120b",
+              "status": "success",
+              "tokens": [
+                1338,
+                126
+              ],
+              "cost_usd": 0.0002763
+            }
+          ],
+          "gateway_cost_micro_usd": 277
+        }
+      }
+    }
+  ],
+  "bifrost_logs": [
+    {
+      "id": "ef72e404-5610-41de-b281-040b7c776d6d",
+      "parent_request_id": null,
+      "provider": "groq",
+      "model": "qwen/qwen3.8-27b",
+      "fallback_index": 0,
+      "status": "success",
+      "prompt_tokens": 807,
+      "completion_tokens": 14,
+      "cost": 0.0007015999999999999
+    },
+    {
+      "id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "dec29d40-29b7-4eb3-b604-78109ea61f11",
+      "parent_request_id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 1338,
+      "completion_tokens": 126,
+      "cost": 0.0002763
+    }
+  ],
+  "core_bifrost_token_match": "2 of 2 (successful attempt, including fallback child rows)",
+  "cli": {
+    "command": "agent run (real CLI, same core)",
+    "output": "                  Agent status                   \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Mode                  \u2502 bifrost               \u2502\n\u2502 Repository            \u2502 standard              \u2502\n\u2502 Run                   \u2502 running               \u2502\n\u2502 Model                 \u2502 groq/qwen/qwen3.8-27b \u2502\n\u2502 Steps                 \u2502 0                     \u2502\n\u2502 Budget remaining      \u2502 $4.9549               \u2502\n\u2502 Input / output tokens \u2502 0 / 0                 \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\nTool: read_file (read)\nThe current add function takes two arguments, a and b, and returns the result of a minus b. This means it performs subtraction rather than addition, so the output is the difference between the inputs. Consequently, the function does not fulfill its intended purpose of adding the two numbers together.\nmodel_switched: {\"from\": \"groq/qwen/qwen3.8-27b\", \"to\": \"gemini/gemini-2.5-flash\", \"reason\": \"configured_step_routing\"}\n                    Agent status                    \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Mode                  \u2502 bifrost                  \u2502\n\u2502 Repository            \u2502 standard                 \u2502\n\u2502 Run                   \u2502 completed                \u2502\n\u2502 Model                 \u2502 groq/openai/gpt-oss-120b \u2502\n\u2502 Steps                 \u2502 2                        \u2502\n\u2502 Budget remaining      \u2502 $4.9029                  \u2502\n\u2502 Input / output tokens \u2502 2145 / 140               \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\nmodel_switched: {\"from\": \"gemini/gemini-2.5-flash\", \"to\": \"groq/openai/gpt-oss-120b\", \"reason\": \"gateway_fallback\"}\n                    Agent status                    \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Mode                  \u2502 bifrost                  \u2502\n\u2502 Repository            \u2502 standard                 \u2502\n\u2502 Run                   \u2502 completed                \u2502\n\u2502 Model                 \u2502 groq/openai/gpt-oss-120b \u2502\n\u2502 Steps                 \u2502 2                        \u2502\n\u2502 Budget remaining      \u2502 $4.9029                  \u2502\n\u2502 Input / output tokens \u2502 2145 / 140               \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\nrun_complete: {\"outcome\": \"completed_unverified\", \"note\": \"No complete set of configured behavior checks passed\"}\n                    Agent status                    \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Mode                  \u2502 bifrost                  \u2502\n\u2502 Repository            \u2502 standard                 \u2502\n\u2502 Run                   \u2502 completed                \u2502\n\u2502 Model                 \u2502 groq/openai/gpt-oss-120b \u2502\n\u2502 Steps                 \u2502 2                        \u2502\n\u2502 Budget remaining      \u2502 $4.9029                  \u2502\n\u2502 Input / output tokens \u2502 2145 / 140               \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                    Agent status                    \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Mode                  \u2502 bifrost                  \u2502\n\u2502 Repository            \u2502 standard                 \u2502\n\u2502 Run                   \u2502 completed                \u2502\n\u2502 Model                 \u2502 groq/openai/gpt-oss-120b \u2502\n\u2502 Steps                 \u2502 2                        \u2502\n\u2502 Budget remaining      \u2502 $4.9029                  \u2502\n\u2502 Input / output tokens \u2502 2145 / 140               \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n"
+  },
+  "vscode": {
+    "method": "live SSE stream decoded by the compiled client (out/protocol.js SSEDecoder, ReplyJoiner, noticeText) with the event handling of AgentController.receive(); the editor UI itself was not driven",
+    "timeline": "SSE events received: session_created, run_started, context_prepared, tool_call, tool_result, context_prepared, message_delta, model_switched, model_switched, message_delta, run_complete\n--- VS Code chat timeline ---\n[tool] Tool: read_file\n[assistant] The current add function takes two arguments, a and b, and returns the result of a minus b. This means it performs subtraction rather than addition, so the output is the difference between the inputs. Consequently, the function does not fulfill its intended purpose of adding the two numbers together.\n[warning] Model switched: groq/qwen/qwen3.8-27b -> gemini/gemini-2.5-flash (configured_step_routing)\n[warning] Model switched: gemini/gemini-2.5-flash -> groq/openai/gpt-oss-120b (gateway_fallback)\n[notice] Run finished: completed_unverified\nNote: No complete set of configured behavior checks passed\n--- checks ---\nassistant bubbles: 1, reply incomplete marker: false\n"
+  },
+  "reconciliation_report": {
+    "summary": {
+      "rows_checked": 2,
+      "results": {
+        "reconciled": 2
+      },
+      "held_before_micro_usd": 97088,
+      "after_micro_usd": 979,
+      "released_micro_usd": 96109,
+      "added_micro_usd": 0
+    },
+    "outcomes": [
+      {
+        "usage_id": "ef72e404-5610-41de-b281-040b7c776d6d",
+        "request_id": "ef72e404-5610-41de-b281-040b7c776d6d",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 45120,
+        "result": "reconciled",
+        "after_micro_usd": 702,
+        "note": ""
+      },
+      {
+        "usage_id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+        "request_id": "86521862-2bb3-4d06-80a9-9a04aa2ab8c8",
+        "before_state": "held_for_reconciliation",
+        "before_micro_usd": 51968,
+        "result": "reconciled",
+        "after_micro_usd": 277,
+        "note": ""
+      }
+    ]
+  }
+}
