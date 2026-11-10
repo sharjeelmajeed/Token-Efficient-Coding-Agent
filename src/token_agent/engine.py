@@ -15,6 +15,7 @@ from .context import (
     build_context,
     chars_per_token,
     enabled_tools,
+    observation,
     output_char_limit,
     prompt_parts,
 )
@@ -37,6 +38,7 @@ from .repo import (
     MAX_READ_LINES,
     PolicyError,
     Repository,
+    ToolInputError,
 )
 from .research import Research
 from .sandbox import DockerSandbox
@@ -44,6 +46,8 @@ from .store import Store
 from .streaming import TextStream
 
 logger = logging.getLogger("token_agent")
+# Consecutive model input mistakes allowed before the run pauses for a human.
+MAX_TOOL_ERRORS = 3
 ERROR_NAMES = re.compile(
     r"\b(ImportError|ModuleNotFoundError|AttributeError|TypeError|ValueError|KeyError|"
     r"RuntimeError|TimeoutError|ConnectionError|SyntaxError)\b"
@@ -201,19 +205,23 @@ class Engine:
                 if not self.store.claim_approval(approval["id"]):
                     raise PolicyError("Approval could not be consumed safely")
                 self.emit(session_id, run_id, "approval_consumed", {"approval_id": approval["id"]})
-                if isinstance(action, GIT_GATED_TYPES):
-                    # The executor rechecks every bound state value before it changes anything.
-                    result = await self.git.apply(repository, action, binding["git"])
-                    repository.check_secrets(json.dumps(result))
-                elif isinstance(action, RunShell):
-                    result = await self.sandbox.run(repository, action, snapshot)
-                else:
-                    # No await between single-use approval consumption and the checked write.
-                    result = (
-                        repository.apply(action)
-                        if isinstance(action, ApplyPatch)
-                        else repository.write(action)
-                    )
+                try:
+                    if isinstance(action, GIT_GATED_TYPES):
+                        # The executor rechecks every bound state value before it changes anything.
+                        result = await self.git.apply(repository, action, binding["git"])
+                        repository.check_secrets(json.dumps(result))
+                    elif isinstance(action, RunShell):
+                        result = await self.sandbox.run(repository, action, snapshot)
+                    else:
+                        # No await between single-use approval consumption and the checked write.
+                        result = (
+                            repository.apply(action)
+                            if isinstance(action, ApplyPatch)
+                            else repository.write(action)
+                        )
+                except ToolInputError as exc:
+                    # A human approved this exact change, so a failure now pauses for them.
+                    raise PolicyError(str(exc)) from exc
                 self.store.update_run(run_id, "running", step)
                 return result
             await asyncio.sleep(0.1)
@@ -233,6 +241,44 @@ class Engine:
             },
         )
 
+    async def run_tool(
+        self, session_id, run_id, session, action, repo, step, options, failures
+    ) -> dict:
+        if isinstance(action, (ApplyPatch, WriteFile, RunShell, *GIT_GATED_TYPES)):
+            return await self.wait_for_approval(session_id, run_id, action, repo, step)
+        if isinstance(action, GIT_READ_TYPES):
+            check_git_action(action, self.settings, bool(session["confidential"]), repo)
+            output = await self.git.read(repo, action)
+            repo.check_secrets(json.dumps(output))
+            return output
+        if isinstance(action, WebResearch):
+            output = await self.research.search(
+                action,
+                session,
+                run_id,
+                options.get("allow_research") is True,
+                failures,
+                repo,
+            )
+            self.emit(
+                session_id,
+                run_id,
+                "research_used",
+                {
+                    k: output[k]
+                    for k in (
+                        "query",
+                        "trigger",
+                        "cache_hit",
+                        "credits",
+                        "content_utf8_bytes",
+                        "content_token_upper_bound",
+                    )
+                },
+            )
+            return output
+        return repo.execute_read(action)
+
     async def execute(self, session_id: str, run_id: str):
         session = self.store.session(session_id)
         user = next(u for u in self.settings.users if u.id == session["owner"])
@@ -241,7 +287,14 @@ class Engine:
         checks: set[tuple[str, ...]] = set()
         required_checks = {tuple(cmd) for cmd in self.settings.sandbox.verification_commands}
         verified_snapshot = None
-        inspected = False
+        # A file read earlier in this session still counts: hashes guard against stale edits.
+        inspected = any(
+            (item := observation(message)) is not None
+            and item.get("tool") == "read_file"
+            and "error" not in item["tool_result"]
+            for message in self.store.messages(session_id)
+        )
+        tool_errors = 0
         warned = False
         step, reservation, previous_model = 0, None, None
         try:
@@ -401,8 +454,14 @@ class Engine:
                 kind = classify(action)
                 if session["read_only"] and kind == "gated":
                     raise PolicyError("Read-only sessions cannot execute gated actions")
+                read_first = None
                 if action.tool not in names:
-                    raise PolicyError("Tool is disabled or requires a file inspection first")
+                    later = enabled_tools(
+                        self.settings, True, bool(session["read_only"]), self.git is not None
+                    )
+                    if action.tool not in later:
+                        raise PolicyError("Tool is disabled or requires a file inspection first")
+                    read_first = "Read the file with read_file before editing it"
                 fingerprint = action.model_dump_json()
                 seen[fingerprint] += 1
                 if seen[fingerprint] >= 3:
@@ -426,40 +485,21 @@ class Engine:
                 self.emit(
                     session_id, run_id, "tool_call", {"action": action.model_dump(), "class": kind}
                 )
-                if isinstance(action, (ApplyPatch, WriteFile, RunShell, *GIT_GATED_TYPES)):
-                    output = await self.wait_for_approval(session_id, run_id, action, repo, step)
-                elif isinstance(action, GIT_READ_TYPES):
-                    check_git_action(action, self.settings, confidential, repo)
-                    output = await self.git.read(repo, action)
-                    repo.check_secrets(json.dumps(output))
-                elif isinstance(action, WebResearch):
-                    output = await self.research.search(
-                        action,
-                        session,
-                        run_id,
-                        options.get("allow_research") is True,
-                        failures,
-                        repo,
+                try:
+                    if read_first:
+                        raise ToolInputError(read_first)
+                    output = await self.run_tool(
+                        session_id, run_id, session, action, repo, step, options, failures
                     )
-                    self.emit(
-                        session_id,
-                        run_id,
-                        "research_used",
-                        {
-                            k: output[k]
-                            for k in (
-                                "query",
-                                "trigger",
-                                "cache_hit",
-                                "credits",
-                                "content_utf8_bytes",
-                                "content_token_upper_bound",
-                            )
-                        },
-                    )
+                except ToolInputError as exc:
+                    tool_errors += 1
+                    if tool_errors >= MAX_TOOL_ERRORS:
+                        raise PolicyError(f"{exc} (repeated tool input errors)") from exc
+                    # Nothing changed; tell the model so it can correct its own input.
+                    output = {"error": str(exc), "recoverable": True, "changed": False}
                 else:
-                    output = repo.execute_read(action)
-                if isinstance(action, ReadFile):
+                    tool_errors = 0
+                if isinstance(action, ReadFile) and "error" not in output:
                     inspected = True
                 if output.get("applied"):
                     checks.clear()

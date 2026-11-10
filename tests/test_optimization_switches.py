@@ -119,7 +119,8 @@ def test_targeted_reads_on_limit_ranges(environment, long_file):
     result = repo.execute_read(
         ReadFile(tool="read_file", path="long.py", start_line=10, end_line=12)
     )
-    assert result["text"] == "10: value_10 = 10\n11: value_11 = 11\n12: value_12 = 12"
+    assert result["text"] == "value_10 = 10\nvalue_11 = 11\nvalue_12 = 12"
+    assert (result["start_line"], result["end_line"]) == (10, 12)
     with pytest.raises(PolicyError, match="at most 200 lines"):
         repo.execute_read(ReadFile(tool="read_file", path="long.py", start_line=1, end_line=300))
 
@@ -131,8 +132,9 @@ def test_targeted_reads_off_reads_whole_files_and_hides_grep(environment, long_f
     data, events, _ = run(environment, settings, [action, FINISH])
     assert data["run"]["status"] == "completed"
     text = results(events)[0]["text"]
-    assert text.splitlines()[0] == "1: value_1 = 1"
-    assert text.splitlines()[-1] == "300: value_300 = 300"
+    assert text.splitlines()[0] == "value_1 = 1"
+    assert text.splitlines()[-1] == "value_300 = 300"
+    assert (results(events)[0]["start_line"], results(events)[0]["end_line"]) == (1, 300)
 
 
 def test_whole_file_reads_still_respect_the_file_size_ceiling(environment):
@@ -169,7 +171,7 @@ def test_truncation_off_keeps_full_output_up_to_the_fixed_ceiling(environment, w
     result = results(events)[0]
     assert result["truncated"] is False
     assert len(result["text"]) > settings.output_chars
-    assert result["text"].endswith("150: line_150 = '" + "y" * 90 + "'")
+    assert result["text"].endswith("line_150 = '" + "y" * 90 + "'")
 
 
 def test_fixed_ceiling_still_truncates_when_the_switch_is_off(environment):
