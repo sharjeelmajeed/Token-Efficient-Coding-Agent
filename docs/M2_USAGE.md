@@ -36,10 +36,15 @@ fields must be placed before TOML section headers. Use actual allowed models and
 operator-reviewed price ceilings; no sample model name or rate should be treated
 as a verified provider configuration.
 
-The independent optimization switches are:
+The independent optimization switches are below. See [OPTIMIZATIONS](OPTIMIZATIONS.md)
+for what each one does, the naive baseline and ablation configurations.
 
 ```toml
 [optimization]
+repo_map = true
+targeted_reads = true
+output_truncation = true
+diff_edits = true
 history_compaction = true
 tool_pruning = true
 tiered_routing = false

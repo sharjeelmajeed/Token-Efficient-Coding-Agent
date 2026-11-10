@@ -37,6 +37,13 @@ no usage pauses and keeps the reservation as uncertain, and the core never retri
 non-event-stream response is read as a normal JSON reply. Whether Bifrost sends routing
 headers, usage and fallbacks this way on a stream is untested against a live gateway.
 
+## Timeouts
+
+`gateway_timeout_seconds` (default 60) is the longest the core waits for the gateway's next
+bytes. A local 7B model on a laptop CPU took over 60 seconds before its first token on a
+1,300-token prompt, so the core closed the request and paused. Raise it for slow local
+models. A timeout pauses the run and keeps the cost as uncertain, and the core never retries.
+
 ## Service status
 
 The current environment has no configured Bifrost/Tavily keys, Ollama or Docker.

@@ -84,6 +84,18 @@ Status/metrics include `research_usage` separately from LLM `usage`. Usage `deta
 is an object containing cache tokens/hit, latency, request ID, source, attempt ceiling and
 `tool_output_char_limit` (the character limit applied to that step's tool output).
 Amounts in `held_for_reconciliation`/`uncertain` are conservative holds, not final costs.
+
+Each usage row's `details` also records where that request's prompt tokens went:
+`prompt_chars_by_part` and `prompt_tokens_by_part`, with parts such as `system_prompt`,
+`instructions`, `model_actions`, `history_digest` and `tool:<name>`. The tokens are the
+model's real `input_tokens` for the request, shared out by each part's character count, so
+they always sum to the real total; the split itself is an estimate, because code, prose and
+JSON use different numbers of characters per token. Metrics add `token_attribution` with run
+totals: `input_tokens_total`, `output_tokens_total`, `input_tokens_by_part`,
+`research_input_tokens` and `requests_without_attribution`. Text that stays in the context,
+such as a research result, is counted in every request that resends it, so
+`research_input_tokens` is the real prompt-token cost of research for the run (FR-62). The
+`research_used` event's `content_token_upper_bound` remains a UTF-8 byte bound for one result.
 `run.options` is the persisted JSON string of typed run options, not model permissions.
 
 `completed_verified` requires every operator-configured verification command to pass

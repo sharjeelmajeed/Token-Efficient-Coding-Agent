@@ -81,7 +81,17 @@ class GitSettings(BaseModel):
 
 
 class OptimizationSettings(BaseModel):
+    """Independent switches for the nine FSD section 8 techniques, for ablation runs.
+
+    Each switch changes only how efficiently the agent works. Safety limits (repository
+    boundaries, secrets, approvals, budget and locality) are never switched off.
+    """
+
     model_config = ConfigDict(extra="forbid", frozen=True)
+    repo_map: bool = True  # TO-01: offer the symbol outline tool
+    targeted_reads: bool = True  # TO-02: line-range reads and grep instead of whole files
+    output_truncation: bool = True  # TO-03: cut tool output to output_chars
+    diff_edits: bool = True  # TO-04: exact patches instead of whole-file writes
     history_compaction: bool = True
     tool_pruning: bool = True
     tiered_routing: bool = False
@@ -113,6 +123,9 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    # Longest wait for the gateway's next bytes. Raise it for slow local models on CPU,
+    # which can take minutes before the first token of a long prompt.
+    gateway_timeout_seconds: int = Field(default=60, ge=5, le=900)
     streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)
