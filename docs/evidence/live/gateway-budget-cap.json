@@ -1,0 +1,96 @@
+{
+  "captured_at": "2026-11-10T08:08:53.477722+00:00",
+  "cap_usd": 0.0002,
+  "model": "groq/openai/gpt-oss-120b",
+  "requests": [
+    {
+      "n": 1,
+      "status": 200,
+      "tokens": [
+        77,
+        69
+      ]
+    },
+    {
+      "n": 2,
+      "status": 200,
+      "tokens": [
+        77,
+        80
+      ]
+    },
+    {
+      "n": 3,
+      "status": 200,
+      "tokens": [
+        77,
+        77
+      ]
+    },
+    {
+      "n": 4,
+      "status": 200,
+      "tokens": [
+        77,
+        80
+      ]
+    },
+    {
+      "n": 5,
+      "status": 402,
+      "error": "Budget exceeded: vk_model_config * budget exceeded: 0.0002 >= 0.0002 dollars",
+      "type": "budget_exceeded"
+    },
+    {
+      "n": 6,
+      "status": 402,
+      "error": "Budget exceeded: vk_model_config * budget exceeded: 0.0002 >= 0.0002 dollars",
+      "type": "budget_exceeded"
+    }
+  ],
+  "bifrost_logs": [
+    [
+      "budget-test-1",
+      "success",
+      77,
+      69,
+      5.295e-05
+    ],
+    [
+      "budget-test-2",
+      "success",
+      77,
+      80,
+      5.955e-05
+    ],
+    [
+      "budget-test-3",
+      "success",
+      77,
+      77,
+      5.7749999999999994e-05
+    ],
+    [
+      "budget-test-4",
+      "success",
+      77,
+      80,
+      5.955e-05
+    ],
+    [
+      "budget-test-5",
+      "error",
+      0,
+      0,
+      null
+    ],
+    [
+      "budget-test-6",
+      "error",
+      0,
+      0,
+      null
+    ]
+  ],
+  "total_cost_usd": 0.0002298
+}

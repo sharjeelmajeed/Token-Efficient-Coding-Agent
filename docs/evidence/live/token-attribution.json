@@ -1,0 +1,116 @@
+{
+  "captured_at": "2026-11-10T08:48:45.578136+00:00",
+  "model": "groq/qwen/qwen3.8-27b",
+  "research": "live Tavily, httpx catalog",
+  "token_attribution": {
+    "method": "Actual prompt tokens reported for the request, shared out by each part's character count",
+    "input_tokens_total": 4602,
+    "output_tokens_total": 146,
+    "input_tokens_by_part": {
+      "instructions": 142,
+      "model_actions": 65,
+      "system_prompt": 3095,
+      "tool:read_file": 71,
+      "tool:web_research": 1229
+    },
+    "research_input_tokens": 1229,
+    "requests_without_attribution": 0
+  },
+  "usage": [
+    {
+      "id": "e2734f25-84f3-45d6-9756-daa8820d6d70",
+      "owner": "usman",
+      "run_id": "f997b51c-fd26-4e95-807e-f5ff8c10dc6a",
+      "amount": 2090,
+      "state": "accounted",
+      "input_tokens": 931,
+      "output_tokens": 19,
+      "model": "groq/qwen/qwen3.8-27b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 637,
+        "request_id": "e2734f25-84f3-45d6-9756-daa8820d6d70",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "prompt_chars_by_part": {
+          "system_prompt": 3703,
+          "instructions": 187
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 886,
+          "instructions": 45
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count"
+      }
+    },
+    {
+      "id": "d1abe98d-872d-4018-934b-92644e099d9f",
+      "owner": "usman",
+      "run_id": "f997b51c-fd26-4e95-807e-f5ff8c10dc6a",
+      "amount": 3600,
+      "state": "accounted",
+      "input_tokens": 1596,
+      "output_tokens": 34,
+      "model": "groq/qwen/qwen3.8-27b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 629,
+        "request_id": "d1abe98d-872d-4018-934b-92644e099d9f",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "prompt_chars_by_part": {
+          "system_prompt": 3703,
+          "instructions": 187,
+          "model_actions": 84,
+          "tool:web_research": 2366
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 932,
+          "instructions": 47,
+          "model_actions": 21,
+          "tool:web_research": 596
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count"
+      }
+    },
+    {
+      "id": "d2fc9ada-d261-4070-bd51-a4458690b28f",
+      "owner": "usman",
+      "run_id": "f997b51c-fd26-4e95-807e-f5ff8c10dc6a",
+      "amount": 5266,
+      "state": "accounted",
+      "input_tokens": 2075,
+      "output_tokens": 93,
+      "model": "groq/qwen/qwen3.8-27b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 739,
+        "request_id": "d2fc9ada-d261-4070-bd51-a4458690b28f",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "prompt_chars_by_part": {
+          "system_prompt": 4776,
+          "instructions": 187,
+          "model_actions": 164,
+          "tool:web_research": 2366,
+          "tool:read_file": 267
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1277,
+          "instructions": 50,
+          "model_actions": 44,
+          "tool:web_research": 633,
+          "tool:read_file": 71
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count"
+      }
+    }
+  ],
+  "bifrost_matched": 3
+}

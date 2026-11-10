@@ -1,0 +1,436 @@
+{
+  "captured_at": "2026-11-10T12:11:59.748780+00:00",
+  "code": "main e97dd67",
+  "scenario": "confidential repo; ollama/qwen2.5-coder:7b only; gateway_timeout_seconds 600; streaming on",
+  "events": [
+    {
+      "id": 1,
+      "type": "session_created",
+      "timestamp": "2026-11-10T12:09:01.064450+00:00",
+      "payload": {
+        "mode": "bifrost",
+        "confidential": true
+      }
+    },
+    {
+      "id": 2,
+      "type": "run_started",
+      "timestamp": "2026-11-10T12:09:01.149013+00:00",
+      "payload": {
+        "model": "ollama/qwen2.5-coder:7b",
+        "mode": "bifrost",
+        "confidential": true,
+        "budget_remaining_micro_usd": 5000000,
+        "optimization": {
+          "repo_map": true,
+          "targeted_reads": true,
+          "output_truncation": true,
+          "diff_edits": true,
+          "history_compaction": true,
+          "tool_pruning": true,
+          "tiered_routing": false,
+          "gateway_direct_cache": false,
+          "early_termination": true
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:09:01.194059+00:00",
+      "payload": {
+        "before_chars": 3807,
+        "after_chars": 3784,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "tool_call",
+      "timestamp": "2026-11-10T12:09:56.210932+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 5,
+      "type": "tool_result",
+      "timestamp": "2026-11-10T12:09:56.238103+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "start_line": 1,
+          "end_line": 2,
+          "text": "def add(a, b):\n    return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:09:56.281246+00:00",
+      "payload": {
+        "before_chars": 5560,
+        "after_chars": 5496,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "tool_call",
+      "timestamp": "2026-11-10T12:11:11.765075+00:00",
+      "payload": {
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "def add(a, b):\n    return a - b",
+          "new": "def add(a, b):\n    return a + b"
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 8,
+      "type": "approval_request",
+      "timestamp": "2026-11-10T12:11:11.817403+00:00",
+      "payload": {
+        "approval_id": "588e85a4-377e-421c-a33b-1840a5b2c191",
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "def add(a, b):\n    return a - b",
+          "new": "def add(a, b):\n    return a + b"
+        },
+        "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,2 @@\n def add(a, b):\n-    return a - b\n+    return a + b\n",
+        "deadline": 1794314471.7892807,
+        "tool_class": "gated"
+      }
+    },
+    {
+      "id": 9,
+      "type": "approval_decision",
+      "timestamp": "2026-11-10T12:11:21.964041+00:00",
+      "payload": {
+        "approval_id": "588e85a4-377e-421c-a33b-1840a5b2c191",
+        "decision": "approve_once",
+        "user": "usman",
+        "feedback": ""
+      }
+    },
+    {
+      "id": 10,
+      "type": "approval_consumed",
+      "timestamp": "2026-11-10T12:11:22.085167+00:00",
+      "payload": {
+        "approval_id": "588e85a4-377e-421c-a33b-1840a5b2c191"
+      }
+    },
+    {
+      "id": 11,
+      "type": "tool_result",
+      "timestamp": "2026-11-10T12:11:22.137663+00:00",
+      "payload": {
+        "tool": "apply_patch",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+          "applied": true
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T12:11:22.186887+00:00",
+      "payload": {
+        "before_chars": 6095,
+        "after_chars": 5990,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "message_delta",
+      "timestamp": "2026-11-10T12:11:35.080108+00:00",
+      "payload": {
+        "text": "The add function in calculator.py has been fixed to return the sum of a and b.",
+        "partial": false
+      }
+    },
+    {
+      "id": 14,
+      "type": "run_complete",
+      "timestamp": "2026-11-10T12:11:35.108695+00:00",
+      "payload": {
+        "outcome": "completed_unverified",
+        "note": "No complete set of configured behavior checks passed"
+      }
+    }
+  ],
+  "core_usage": [
+    {
+      "id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+      "owner": "usman",
+      "run_id": "36715f75-69dc-453a-b3bb-d575a053122d",
+      "amount": 0,
+      "state": "reconciled",
+      "input_tokens": 796,
+      "output_tokens": 44,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 54941,
+        "request_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 3205,
+          "instructions": 121
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 767,
+          "instructions": 29
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+          "attempts": [
+            {
+              "provider": "ollama",
+              "model": "qwen2.5-coder:7b",
+              "status": "success",
+              "tokens": [
+                796,
+                44
+              ],
+              "cost_usd": 0.0
+            }
+          ],
+          "gateway_cost_micro_usd": 0
+        }
+      }
+    },
+    {
+      "id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+      "owner": "usman",
+      "run_id": "36715f75-69dc-453a-b3bb-d575a053122d",
+      "amount": 0,
+      "state": "reconciled",
+      "input_tokens": 1267,
+      "output_tokens": 107,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 189,
+        "cache_hit": false,
+        "latency_ms": 75418,
+        "request_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 4278,
+          "instructions": 121,
+          "model_actions": 84,
+          "tool:read_file": 255
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1144,
+          "instructions": 32,
+          "model_actions": 23,
+          "tool:read_file": 68
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+          "attempts": [
+            {
+              "provider": "ollama",
+              "model": "qwen2.5-coder:7b",
+              "status": "success",
+              "tokens": [
+                1267,
+                107
+              ],
+              "cost_usd": 0.0
+            }
+          ],
+          "gateway_cost_micro_usd": 0
+        }
+      }
+    },
+    {
+      "id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+      "owner": "usman",
+      "run_id": "36715f75-69dc-453a-b3bb-d575a053122d",
+      "amount": 0,
+      "state": "reconciled",
+      "input_tokens": 1471,
+      "output_tokens": 29,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 1373,
+        "cache_hit": false,
+        "latency_ms": 12826,
+        "request_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1,
+        "tool_output_char_limit": 8000,
+        "prompt_chars_by_part": {
+          "system_prompt": 4278,
+          "instructions": 121,
+          "model_actions": 307,
+          "tool:read_file": 255,
+          "tool:apply_patch": 160
+        },
+        "prompt_tokens_by_part": {
+          "system_prompt": 1229,
+          "instructions": 35,
+          "model_actions": 88,
+          "tool:read_file": 73,
+          "tool:apply_patch": 46
+        },
+        "attribution": "Actual prompt tokens reported for the request, shared out by each part's character count",
+        "reconciliation": {
+          "result": "reconciled",
+          "note": "",
+          "request_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+          "attempts": [
+            {
+              "provider": "ollama",
+              "model": "qwen2.5-coder:7b",
+              "status": "success",
+              "tokens": [
+                1471,
+                29
+              ],
+              "cost_usd": 0.0
+            }
+          ],
+          "gateway_cost_micro_usd": 0
+        }
+      }
+    }
+  ],
+  "bifrost_logs_in_window": [
+    {
+      "id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "status": "success",
+      "virtual_key_name": "Confidential local only",
+      "prompt_tokens": 796,
+      "completion_tokens": 44,
+      "cost": 0.0
+    },
+    {
+      "id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "status": "success",
+      "virtual_key_name": "Confidential local only",
+      "prompt_tokens": 1267,
+      "completion_tokens": 107,
+      "cost": 0.0
+    },
+    {
+      "id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "status": "success",
+      "virtual_key_name": "Confidential local only",
+      "prompt_tokens": 1471,
+      "completion_tokens": 29,
+      "cost": 0.0
+    }
+  ],
+  "reconciliation_report": {
+    "summary": {
+      "rows_checked": 3,
+      "results": {
+        "reconciled": 3
+      },
+      "held_before_micro_usd": 0,
+      "after_micro_usd": 0,
+      "released_micro_usd": 0,
+      "added_micro_usd": 0
+    },
+    "outcomes": [
+      {
+        "usage_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+        "request_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+        "before_state": "accounted",
+        "before_micro_usd": 0,
+        "result": "reconciled",
+        "after_micro_usd": 0,
+        "note": ""
+      },
+      {
+        "usage_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+        "request_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+        "before_state": "accounted",
+        "before_micro_usd": 0,
+        "result": "reconciled",
+        "after_micro_usd": 0,
+        "note": ""
+      },
+      {
+        "usage_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+        "request_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+        "before_state": "accounted",
+        "before_micro_usd": 0,
+        "result": "reconciled",
+        "after_micro_usd": 0,
+        "note": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "source": "copy of live-run-2 state (TC-FO-01) + live Bifrost logs.db",
+  "summary": {
+    "rows_checked": 4,
+    "results": {
+      "reconciled": 4
+    },
+    "held_before_micro_usd": 312848,
+    "after_micro_usd": 4213,
+    "released_micro_usd": 308635,
+    "added_micro_usd": 0
+  },
+  "outcomes": [
+    {
+      "usage_id": "2272b84d-5db8-4292-b69d-f9c8f03d1d0f",
+      "request_id": "2272b84d-5db8-4292-b69d-f9c8f03d1d0f",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 72052,
+      "result": "reconciled",
+      "after_micro_usd": 1510,
+      "note": ""
+    },
+    {
+      "usage_id": "47d6c5e2-47a0-4b33-88fe-27321678d284",
+      "request_id": "47d6c5e2-47a0-4b33-88fe-27321678d284",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 78780,
+      "result": "reconciled",
+      "after_micro_usd": 1014,
+      "note": ""
+    },
+    {
+      "usage_id": "12c0c326-dd6a-4123-b9e1-3948cd382c34",
+      "request_id": "12c0c326-dd6a-4123-b9e1-3948cd382c34",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 80020,
+      "result": "reconciled",
+      "after_micro_usd": 1422,
+      "note": ""
+    },
+    {
+      "usage_id": "42cd6e9a-e143-4013-9797-dfb2d4f7b7ff",
+      "request_id": "42cd6e9a-e143-4013-9797-dfb2d4f7b7ff",
+      "before_state": "held_for_reconciliation",
+      "before_micro_usd": 81996,
+      "result": "reconciled",
+      "after_micro_usd": 267,
+      "note": ""
+    }
+  ]
+}

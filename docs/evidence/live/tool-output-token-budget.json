@@ -1,0 +1,20 @@
+{
+  "model": "groq/openai/gpt-oss-120b",
+  "tool_output_tokens": 300,
+  "requests": [
+    {
+      "input_tokens": 853,
+      "tool_output_char_limit": 1104
+    },
+    {
+      "input_tokens": 1731,
+      "tool_output_char_limit": 994
+    }
+  ],
+  "read_results": [
+    {
+      "truncated": true,
+      "length": 1104
+    }
+  ]
+}

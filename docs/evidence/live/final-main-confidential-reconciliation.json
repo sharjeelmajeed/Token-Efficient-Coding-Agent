@@ -1,0 +1,41 @@
+{
+  "summary": {
+    "rows_checked": 3,
+    "results": {
+      "reconciled": 3
+    },
+    "held_before_micro_usd": 0,
+    "after_micro_usd": 0,
+    "released_micro_usd": 0,
+    "added_micro_usd": 0
+  },
+  "outcomes": [
+    {
+      "usage_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+      "request_id": "110858d1-bda8-4478-86a6-5ece6c4c9cbc",
+      "before_state": "accounted",
+      "before_micro_usd": 0,
+      "result": "reconciled",
+      "after_micro_usd": 0,
+      "note": ""
+    },
+    {
+      "usage_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+      "request_id": "14c6d515-d0e1-41ad-b876-f8503c9ffb1a",
+      "before_state": "accounted",
+      "before_micro_usd": 0,
+      "result": "reconciled",
+      "after_micro_usd": 0,
+      "note": ""
+    },
+    {
+      "usage_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+      "request_id": "5f956194-dfb7-40df-9d6c-f6bbc08c83b0",
+      "before_state": "accounted",
+      "before_micro_usd": 0,
+      "result": "reconciled",
+      "after_micro_usd": 0,
+      "note": ""
+    }
+  ]
+}

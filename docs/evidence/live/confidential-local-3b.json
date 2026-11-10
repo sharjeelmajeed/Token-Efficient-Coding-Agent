@@ -1,0 +1,754 @@
+{
+  "captured_at": "2026-11-09T18:03:10.509295+00:00",
+  "code": "origin/main 22a57bf + PR #2 f6e8caf + PR #3 2548900 + PR #4 fabc024 (local merge, not a release)",
+  "gateway": "maximhq/bifrost v2.5.0 sha256:b5258c5f11c79064fc8280e49513f54c0b1da81c78bd11d3b4c1f62f8926d1ab",
+  "model": "ollama/qwen2.5-coder:3b on Intel Core i5-8250U CPU, 16 GB RAM",
+  "repository": "disposable demo with .agent-confidential marker",
+  "note": "Live run evidence; local model cost is zero, and this is not benchmark evidence.",
+  "runs": [
+    {
+      "id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "status": "paused",
+      "step": 3,
+      "outcome": "Patch must match exactly one occurrence",
+      "created": "2026-11-09T17:50:11.406771+00:00"
+    },
+    {
+      "id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "status": "paused",
+      "step": 1,
+      "outcome": "Tool is disabled or requires a file inspection first",
+      "created": "2026-11-09T18:01:39.927210+00:00"
+    },
+    {
+      "id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "status": "paused",
+      "step": 2,
+      "outcome": "Patch must match exactly one occurrence",
+      "created": "2026-11-09T18:02:23.278333+00:00"
+    }
+  ],
+  "approvals": [
+    {
+      "id": "bd0de04d-9e6d-435e-98f5-a553d5fc804c",
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "status": "denied",
+      "feedback": "The content includes the line-number prefixes from read_file output (1:, 2:). File content must be plain Python with no line numbers. Use apply_patch to replace 'return a - b' with 'return a + b'."
+    }
+  ],
+  "core_usage": [
+    {
+      "id": "fc6b1ce3-5413-4b6a-a134-652ee6017f5b",
+      "owner": "usman",
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 761,
+      "output_tokens": 26,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 19718,
+        "request_id": "fc6b1ce3-5413-4b6a-a134-652ee6017f5b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "ec00a2a0-307c-4f55-8416-bebf628c2c9c",
+      "owner": "usman",
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1222,
+      "output_tokens": 100,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 154,
+        "cache_hit": false,
+        "latency_ms": 31547,
+        "request_id": "ec00a2a0-307c-4f55-8416-bebf628c2c9c",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "c2dbf7b0-b482-476f-899f-0088bd5caf8b",
+      "owner": "usman",
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1401,
+      "output_tokens": 122,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 43154,
+        "request_id": "c2dbf7b0-b482-476f-899f-0088bd5caf8b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "846060ba-3287-4a87-ac80-2f52fe14dc9b",
+      "owner": "usman",
+      "run_id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1273,
+      "output_tokens": 91,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 154,
+        "cache_hit": false,
+        "latency_ms": 30186,
+        "request_id": "846060ba-3287-4a87-ac80-2f52fe14dc9b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "0e939bfc-bb42-44ef-b7f1-7737eeb30142",
+      "owner": "usman",
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1330,
+      "output_tokens": 26,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 1267,
+        "cache_hit": false,
+        "latency_ms": 4642,
+        "request_id": "0e939bfc-bb42-44ef-b7f1-7737eeb30142",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "708f12da-f0cb-478f-9d41-52016f0cf09b",
+      "owner": "usman",
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1791,
+      "output_tokens": 117,
+      "model": "ollama/qwen2.5-coder:3b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 1516,
+        "cache_hit": false,
+        "latency_ms": 19291,
+        "request_id": "708f12da-f0cb-478f-9d41-52016f0cf09b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    }
+  ],
+  "core_events": [
+    {
+      "id": 1,
+      "run_id": null,
+      "type": "session_created",
+      "timestamp": "2026-11-09T17:50:11.375984+00:00",
+      "payload": {
+        "mode": "bifrost",
+        "confidential": true
+      }
+    },
+    {
+      "id": 2,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "run_started",
+      "timestamp": "2026-11-09T17:50:11.440701+00:00",
+      "payload": {
+        "model": "ollama/qwen2.5-coder:3b",
+        "mode": "bifrost",
+        "confidential": true,
+        "budget_remaining_micro_usd": 1000000
+      }
+    },
+    {
+      "id": 3,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T17:50:11.467522+00:00",
+      "payload": {
+        "before_chars": 3639,
+        "after_chars": 3616,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "tool_call",
+      "timestamp": "2026-11-09T17:50:31.255326+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 5,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "tool_result",
+      "timestamp": "2026-11-09T17:50:31.283519+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "text": "1: def add(a, b):\n2:     return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T17:50:31.321023+00:00",
+      "payload": {
+        "before_chars": 5362,
+        "after_chars": 5298,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "tool_call",
+      "timestamp": "2026-11-09T17:51:02.933213+00:00",
+      "payload": {
+        "action": {
+          "tool": "write_file",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "content": "1: def add(a, b):\n2:     return a + b\n3: "
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 8,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "approval_request",
+      "timestamp": "2026-11-09T17:51:02.987756+00:00",
+      "payload": {
+        "approval_id": "bd0de04d-9e6d-435e-98f5-a553d5fc804c",
+        "action": {
+          "tool": "write_file",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "content": "1: def add(a, b):\n2:     return a + b\n3: "
+        },
+        "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,3 @@\n-def add(a, b):\n-    return a - b\n+1: def add(a, b):\n+2:     return a + b\n+3: ",
+        "deadline": 1794247562.9593408,
+        "tool_class": "gated"
+      }
+    },
+    {
+      "id": 9,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "approval_decision",
+      "timestamp": "2026-11-09T18:00:43.311817+00:00",
+      "payload": {
+        "approval_id": "bd0de04d-9e6d-435e-98f5-a553d5fc804c",
+        "decision": "deny_with_feedback",
+        "user": "usman",
+        "feedback": "The content includes the line-number prefixes from read_file output (1:, 2:). File content must be plain Python with no line numbers. Use apply_patch to replace 'return a - b' with 'return a + b'."
+      }
+    },
+    {
+      "id": 10,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "tool_result",
+      "timestamp": "2026-11-09T18:00:43.432264+00:00",
+      "payload": {
+        "tool": "write_file",
+        "result": {
+          "denied": true,
+          "feedback": "The content includes the line-number prefixes from read_file output (1:, 2:). File content must be plain Python with no line numbers. Use apply_patch to replace 'return a - b' with 'return a + b'."
+        }
+      }
+    },
+    {
+      "id": 11,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T18:00:43.471823+00:00",
+      "payload": {
+        "before_chars": 5969,
+        "after_chars": 5864,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "tool_call",
+      "timestamp": "2026-11-09T18:01:26.688087+00:00",
+      "payload": {
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "1: def add(a, b):\n2:     return a - b\n",
+          "new": "1: def add(a, b):\n2:     return a + b\n"
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 13,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "policy_block",
+      "timestamp": "2026-11-09T18:01:26.722815+00:00",
+      "payload": {
+        "reason": "Patch must match exactly one occurrence"
+      }
+    },
+    {
+      "id": 14,
+      "run_id": "56d1bbaa-a810-4c9b-8dcc-aaf732e90dda",
+      "type": "session_paused",
+      "timestamp": "2026-11-09T18:01:26.739663+00:00",
+      "payload": {
+        "reason": "Patch must match exactly one occurrence",
+        "resume": "Resolve the cause, then submit a new instruction"
+      }
+    },
+    {
+      "id": 15,
+      "run_id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "type": "run_started",
+      "timestamp": "2026-11-09T18:01:39.960696+00:00",
+      "payload": {
+        "model": "ollama/qwen2.5-coder:3b",
+        "mode": "bifrost",
+        "confidential": true,
+        "budget_remaining_micro_usd": 1000000
+      }
+    },
+    {
+      "id": 16,
+      "run_id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T18:01:39.983845+00:00",
+      "payload": {
+        "before_chars": 5310,
+        "after_chars": 5164,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "run_id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "type": "policy_block",
+      "timestamp": "2026-11-09T18:02:10.234154+00:00",
+      "payload": {
+        "reason": "Tool is disabled or requires a file inspection first"
+      }
+    },
+    {
+      "id": 18,
+      "run_id": "c6d42a15-df18-40a1-8a5c-a89a5c8555cc",
+      "type": "session_paused",
+      "timestamp": "2026-11-09T18:02:10.245330+00:00",
+      "payload": {
+        "reason": "Tool is disabled or requires a file inspection first",
+        "resume": "Resolve the cause, then submit a new instruction"
+      }
+    },
+    {
+      "id": 19,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "run_started",
+      "timestamp": "2026-11-09T18:02:23.315588+00:00",
+      "payload": {
+        "model": "ollama/qwen2.5-coder:3b",
+        "mode": "bifrost",
+        "confidential": true,
+        "budget_remaining_micro_usd": 1000000
+      }
+    },
+    {
+      "id": 20,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T18:02:23.345300+00:00",
+      "payload": {
+        "before_chars": 5585,
+        "after_chars": 5416,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "tool_call",
+      "timestamp": "2026-11-09T18:02:28.051717+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 22,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "tool_result",
+      "timestamp": "2026-11-09T18:02:28.072019+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "text": "1: def add(a, b):\n2:     return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 23,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "context_prepared",
+      "timestamp": "2026-11-09T18:02:28.114824+00:00",
+      "payload": {
+        "before_chars": 7308,
+        "after_chars": 7098,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "tool_call",
+      "timestamp": "2026-11-09T18:02:47.472870+00:00",
+      "payload": {
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "1: def add(a, b):\n2:     return a - b\n",
+          "new": "1: def add(a, b):\n2:     return a + b\n"
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 25,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "policy_block",
+      "timestamp": "2026-11-09T18:02:47.510162+00:00",
+      "payload": {
+        "reason": "Patch must match exactly one occurrence"
+      }
+    },
+    {
+      "id": 26,
+      "run_id": "ab9e41e2-9c1f-46d4-9586-7f95cc105ca1",
+      "type": "session_paused",
+      "timestamp": "2026-11-09T18:02:47.524106+00:00",
+      "payload": {
+        "reason": "Patch must match exactly one occurrence",
+        "resume": "Resolve the cause, then submit a new instruction"
+      }
+    }
+  ],
+  "bifrost_logs": [
+    {
+      "id": "probe-no_virtual_key",
+      "timestamp": "2026-11-09 17:40:30.135050554+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": null,
+      "status": "error",
+      "latency": 76.087115,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "cost": null,
+      "stream": 0,
+      "cache_debug": "",
+      "token_usage": "",
+      "error_details": "{\"type\":\"virtual_key_required\",\"is_bifrost_error\":false,\"status_code\":401,\"error\":{\"message\":\"virtual key is required. Provide a virtual key via the x-bf-vk header.\"},\"extra_fields\":{\"routing_info\":{},\"provider\":\"ollama\",\"original_model_requested\":\"qwen2.5-coder:3b\",\"resolved_model_used\":\"qwen2.5-coder:3b\",\"request_type\":\"chat_completion\"}}"
+    },
+    {
+      "id": "probe-allowed_local_model",
+      "timestamp": "2026-11-09 17:40:30.140264653+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "error",
+      "latency": 4.544774,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "cost": null,
+      "stream": 0,
+      "cache_debug": "",
+      "token_usage": "",
+      "error_details": "{\"type\":\"no_key_supports_model\",\"is_bifrost_error\":false,\"status_code\":400,\"error\":{\"error\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\",\"type\":\"no_key_supports_model\",\"message\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\"},\"extra_fields\":{\"routing_info\":{},\"provider\":\"ollama\",\"original_model_requested\":\"qwen2.5-coder:3b\",\"resolved_model_used\":\"qwen2.5-coder:3b\",\"request_type\":\"chat_completion\",\"error_type\":\"caller_model_not_available\"}}"
+    },
+    {
+      "id": "probe-model_not_on_key",
+      "timestamp": "2026-11-09 17:40:30.147387626+00:00",
+      "provider": "ollama",
+      "model": "llama3.1:8b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "error",
+      "latency": 0.499319,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "cost": null,
+      "stream": 0,
+      "cache_debug": "",
+      "token_usage": "",
+      "error_details": "{\"type\":\"model_blocked\",\"is_bifrost_error\":false,\"status_code\":403,\"error\":{\"message\":\"Model 'llama3.1:8b' is not allowed for virtual key 'Confidential local only'\"},\"extra_fields\":{\"routing_info\":{},\"provider\":\"ollama\",\"original_model_requested\":\"llama3.1:8b\",\"resolved_model_used\":\"llama3.1:8b\",\"request_type\":\"chat_completion\",\"error_type\":\"policy_model_blocked\"}}"
+    },
+    {
+      "id": "probe-allowed_local_model_streamed",
+      "timestamp": "2026-11-09 17:40:30.152867336+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "error",
+      "latency": 0.0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "cost": null,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "",
+      "error_details": "{\"type\":\"no_key_supports_model\",\"is_bifrost_error\":false,\"status_code\":400,\"error\":{\"error\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\",\"type\":\"no_key_supports_model\",\"message\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\"},\"extra_fields\":{\"routing_info\":{},\"provider\":\"ollama\",\"original_model_requested\":\"qwen2.5-coder:3b\",\"resolved_model_used\":\"qwen2.5-coder:3b\",\"request_type\":\"chat_completion_stream\",\"error_type\":\"caller_model_not_available\"}}"
+    },
+    {
+      "id": "12f1342c-28ee-447b-a499-06d0aea74f1a",
+      "timestamp": "2026-11-09 17:44:01.175992256+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "error",
+      "latency": 60.811294,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "cost": null,
+      "stream": 0,
+      "cache_debug": "",
+      "token_usage": "",
+      "error_details": "{\"type\":\"no_key_supports_model\",\"is_bifrost_error\":false,\"status_code\":400,\"error\":{\"error\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\",\"type\":\"no_key_supports_model\",\"message\":\"no keys found for provider: ollama and model: qwen2.5-coder:3b\"},\"extra_fields\":{\"routing_info\":{},\"provider\":\"ollama\",\"original_model_requested\":\"qwen2.5-coder:3b\",\"resolved_model_used\":\"qwen2.5-coder:3b\",\"request_type\":\"chat_completion\",\"error_type\":\"caller_model_not_available\"}}"
+    },
+    {
+      "id": "fc6b1ce3-5413-4b6a-a134-652ee6017f5b",
+      "timestamp": "2026-11-09 17:50:11.946751415+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 19267.602007,
+      "prompt_tokens": 761,
+      "completion_tokens": 26,
+      "total_tokens": 787,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":761,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0},\"completion_tokens\":26,\"total_tokens\":787}",
+      "error_details": ""
+    },
+    {
+      "id": "ec00a2a0-307c-4f55-8416-bebf628c2c9c",
+      "timestamp": "2026-11-09 17:50:31.680947451+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 31212.463129,
+      "prompt_tokens": 1222,
+      "completion_tokens": 100,
+      "total_tokens": 1322,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":1222,\"prompt_tokens_details\":{\"cached_read_tokens\":154,\"cached_tokens\":154,\"cache_write_tokens\":0},\"completion_tokens\":100,\"total_tokens\":1322}",
+      "error_details": ""
+    },
+    {
+      "id": "c2dbf7b0-b482-476f-899f-0088bd5caf8b",
+      "timestamp": "2026-11-09 18:00:43.847584794+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 42805.772483,
+      "prompt_tokens": 1401,
+      "completion_tokens": 122,
+      "total_tokens": 1523,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":1401,\"prompt_tokens_details\":{\"cached_tokens\":0,\"cache_write_tokens\":0},\"completion_tokens\":122,\"total_tokens\":1523}",
+      "error_details": ""
+    },
+    {
+      "id": "846060ba-3287-4a87-ac80-2f52fe14dc9b",
+      "timestamp": "2026-11-09 18:01:40.338481478+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 29860.770024,
+      "prompt_tokens": 1273,
+      "completion_tokens": 91,
+      "total_tokens": 1364,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":1273,\"prompt_tokens_details\":{\"cached_read_tokens\":154,\"cached_tokens\":154,\"cache_write_tokens\":0},\"completion_tokens\":91,\"total_tokens\":1364}",
+      "error_details": ""
+    },
+    {
+      "id": "0e939bfc-bb42-44ef-b7f1-7737eeb30142",
+      "timestamp": "2026-11-09 18:02:23.701205334+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 4313.898435,
+      "prompt_tokens": 1330,
+      "completion_tokens": 26,
+      "total_tokens": 1356,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":1330,\"prompt_tokens_details\":{\"cached_read_tokens\":1267,\"cached_tokens\":1267,\"cache_write_tokens\":0},\"completion_tokens\":26,\"total_tokens\":1356}",
+      "error_details": ""
+    },
+    {
+      "id": "708f12da-f0cb-478f-9d41-52016f0cf09b",
+      "timestamp": "2026-11-09 18:02:28.475855005+00:00",
+      "provider": "ollama",
+      "model": "qwen2.5-coder:3b",
+      "served_model": null,
+      "number_of_retries": 0,
+      "fallback_index": 0,
+      "virtual_key_name": "Confidential local only",
+      "status": "success",
+      "latency": 18962.006631,
+      "prompt_tokens": 1791,
+      "completion_tokens": 117,
+      "total_tokens": 1908,
+      "cost": 0.0,
+      "stream": 1,
+      "cache_debug": "",
+      "token_usage": "{\"prompt_tokens\":1791,\"prompt_tokens_details\":{\"cached_read_tokens\":1516,\"cached_tokens\":1516,\"cache_write_tokens\":0},\"completion_tokens\":117,\"total_tokens\":1908}",
+      "error_details": ""
+    }
+  ]
+}

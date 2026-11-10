@@ -52,7 +52,7 @@ no model-generated or repository command was executed on the host.
 
 | Owner / milestone | Work still required |
 | --- | --- |
-| WS2 / M2 | Run Bifrost and a physically local model; validate restricted virtual keys, actual fallback/retry ceilings, cache behavior, rate-limit/outage handling and provider metadata |
+| WS2 / M2 | Live Bifrost, local Ollama, restricted virtual keys, cross-provider fallback (TC-FO-01), confidential routing (TC-CF-01), gateway budget refusal and provider metadata are validated ([HANDOFF_WS1_WS2](HANDOFF_WS1_WS2.md)). Remaining: live cache behavior and rate-limit handling under benchmark load |
 | WS1+2 / M2 | Live Docker isolation/cancellation acceptance; pinned image containing actual task dependencies; process-crash/orphan-container recovery |
 | WS2 / M2 | Measured research cost-benefit accounting. Bifrost log reconciliation (`token_agent.reconcile`) and all four FSD 7.2 research triggers are implemented |
 | WS1 / M2 | Remaining FSD tools including git, fuller restart recovery, native provider tool calls/streaming where needed |
@@ -75,9 +75,9 @@ ceilings are not reconciled provider invoices. No token-saving percentage is cla
 
 VS Code development/packaging packages were installed and the VSIX was built. A real
 editor/Xvfb was unavailable, so its native UI and host smoke have not been exercised.
-No Bifrost/Ollama/Tavily service, Docker daemon, external GitHub repository or workflow
-was installed/deployed. No real comment was posted. Real-service credentials are
-absent; supply them only through the team environment, never through chat/source.
+Bifrost, Ollama and Tavily were exercised live for WS2 acceptance (`docs/evidence/live/`); no Docker
+sandbox, external GitHub repository or workflow was deployed. No real comment was posted. Supply real-service credentials only through the team environment, never through
+chat/source.
 
 The deadline, portal and team names remain unspecified. These do not reopen scope.
 Next joint checkpoint: WS1 validates Docker/git remaining scope, WS2 validates

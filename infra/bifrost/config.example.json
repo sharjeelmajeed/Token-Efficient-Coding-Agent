@@ -1,0 +1,129 @@
+{
+  "$schema": "https://www.getbifrost.ai/schema",
+  "client": {
+    "enforce_auth_on_inference": true,
+    "drop_excess_requests": false
+  },
+  "providers": {
+    "ollama": {
+      "keys": [
+        {
+          "name": "ollama-local",
+          "value": "",
+          "models": [
+            "qwen2.5-coder:3b",
+            "qwen2.5-coder:7b"
+          ],
+          "weight": 1.0,
+          "ollama_key_config": {
+            "url": "http://host.docker.internal:11434"
+          }
+        }
+      ],
+      "network_config": {
+        "base_url": "http://host.docker.internal:11434",
+        "allow_private_network": true
+      }
+    },
+    "gemini": {
+      "keys": [
+        {
+          "name": "gemini-main",
+          "value": "env.GEMINI_API_KEY",
+          "models": [
+            "gemini-3.6-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-2.5-flash"
+          ],
+          "weight": 1.0
+        }
+      ]
+    },
+    "groq": {
+      "keys": [
+        {
+          "name": "groq-main",
+          "value": "env.GROQ_API_KEY",
+          "models": [
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b"
+          ],
+          "weight": 1.0
+        }
+      ]
+    }
+  },
+  "governance": {
+    "virtual_keys": [
+      {
+        "id": "vk-local",
+        "name": "Confidential local only",
+        "value": "REPLACE_WITH_LOCAL_VIRTUAL_KEY",
+        "is_active": true,
+        "provider_configs": [
+          {
+            "provider": "ollama",
+            "weight": 1.0,
+            "allowed_models": [
+              "qwen2.5-coder:3b",
+              "qwen2.5-coder:7b"
+            ],
+            "key_ids": [
+              "*"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "vk-standard",
+        "name": "Standard cloud",
+        "value": "REPLACE_WITH_STANDARD_VIRTUAL_KEY",
+        "is_active": true,
+        "provider_configs": [
+          {
+            "provider": "gemini",
+            "weight": 1.0,
+            "allowed_models": [
+              "gemini-3.6-flash",
+              "gemini-3.1-flash-lite",
+              "gemini-3.5-flash-lite",
+              "gemini-3.5-flash",
+              "gemini-2.5-flash"
+            ],
+            "key_ids": [
+              "*"
+            ]
+          },
+          {
+            "provider": "groq",
+            "weight": 1.0,
+            "allowed_models": [
+              "openai/gpt-oss-120b",
+              "qwen/qwen3.8-27b"
+            ],
+            "key_ids": [
+              "*"
+            ]
+          }
+        ]
+      }
+    ],
+    "budgets": [
+      {
+        "id": "budget-standard",
+        "virtual_key_id": "vk-standard",
+        "max_limit": 1.0,
+        "reset_duration": "1M"
+      }
+    ]
+  },
+  "config_store": {
+    "enabled": true,
+    "type": "sqlite",
+    "config": {
+      "path": "/app/data/config.db"
+    }
+  }
+}

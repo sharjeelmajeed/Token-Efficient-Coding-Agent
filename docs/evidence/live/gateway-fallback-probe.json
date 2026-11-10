@@ -1,0 +1,258 @@
+{
+  "captured_at": "2026-11-09T18:45:55.269779+00:00",
+  "results": [
+    {
+      "case": "groq_gpt_oss",
+      "requested": "groq/openai/gpt-oss-120b",
+      "fallbacks": null,
+      "stream": false,
+      "status": 200,
+      "headers": {
+        "x-bifrost-routing-info-provider": "groq",
+        "x-bifrost-routing-info-model": "openai/gpt-oss-120b",
+        "x-bifrost-routing-info-is-fallback": null
+      },
+      "latency_ms": 1256,
+      "body_model": "openai/gpt-oss-120b",
+      "routing_info": {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "key": "groq-main",
+        "requested_provider": "groq",
+        "requested_model": "openai/gpt-oss-120b"
+      },
+      "usage": {
+        "prompt_tokens": 130,
+        "completion_tokens": 120,
+        "completion_tokens_details": {
+          "reasoning_tokens": 92
+        },
+        "total_tokens": 250
+      },
+      "content": "{\"action\":{\"tool\":\"finish\",\"summary\":\"The request was answered.\"}}"
+    },
+    {
+      "case": "groq_qwen_streamed",
+      "requested": "groq/qwen/qwen3.8-27b",
+      "fallbacks": null,
+      "stream": true,
+      "status": 200,
+      "headers": {
+        "x-bifrost-routing-info-provider": "groq",
+        "x-bifrost-routing-info-model": "qwen/qwen3.8-27b",
+        "x-bifrost-routing-info-is-fallback": null
+      },
+      "latency_ms": 180,
+      "body_models": [
+        "qwen/qwen3.8-27b"
+      ],
+      "routing_info": {
+        "provider": "groq",
+        "model": "qwen/qwen3.8-27b",
+        "key": "groq-main",
+        "requested_provider": "groq",
+        "requested_model": "qwen/qwen3.8-27b"
+      },
+      "usage": {
+        "prompt_tokens": 45,
+        "completion_tokens": 16,
+        "total_tokens": 61
+      }
+    },
+    {
+      "case": "local_key_cannot_use_groq",
+      "requested": "groq/openai/gpt-oss-120b",
+      "fallbacks": null,
+      "stream": false,
+      "status": 403,
+      "headers": {
+        "x-bifrost-routing-info-provider": null,
+        "x-bifrost-routing-info-model": null,
+        "x-bifrost-routing-info-is-fallback": null
+      },
+      "latency_ms": 2,
+      "error": "Provider 'groq' is not allowed for virtual key 'Confidential local only'"
+    },
+    {
+      "case": "fallback_gemini_to_groq",
+      "requested": "gemini/gemini-2.5-flash",
+      "fallbacks": [
+        "groq/openai/gpt-oss-120b"
+      ],
+      "stream": false,
+      "status": 200,
+      "headers": {
+        "x-bifrost-routing-info-provider": "groq",
+        "x-bifrost-routing-info-model": "openai/gpt-oss-120b",
+        "x-bifrost-routing-info-is-fallback": "true"
+      },
+      "latency_ms": 1465,
+      "body_model": "openai/gpt-oss-120b",
+      "routing_info": {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "key": "groq-main",
+        "is_fallback": true,
+        "primary_provider": "gemini",
+        "primary_model": "gemini-2.5-flash",
+        "requested_provider": "gemini",
+        "requested_model": "gemini-2.5-flash"
+      },
+      "usage": {
+        "prompt_tokens": 130,
+        "completion_tokens": 111,
+        "completion_tokens_details": {
+          "reasoning_tokens": 87
+        },
+        "total_tokens": 241
+      },
+      "content": "{\"action\":{\"tool\":\"finish\",\"summary\":\"The request was answered.\"}}"
+    },
+    {
+      "case": "fallback_gemini_to_groq_streamed",
+      "requested": "gemini/gemini-2.5-flash",
+      "fallbacks": [
+        "groq/openai/gpt-oss-120b"
+      ],
+      "stream": true,
+      "status": 200,
+      "headers": {
+        "x-bifrost-routing-info-provider": "groq",
+        "x-bifrost-routing-info-model": "openai/gpt-oss-120b",
+        "x-bifrost-routing-info-is-fallback": "true"
+      },
+      "latency_ms": 1264,
+      "body_models": [
+        "openai/gpt-oss-120b"
+      ],
+      "routing_info": {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "key": "groq-main",
+        "is_fallback": true,
+        "primary_provider": "gemini",
+        "primary_model": "gemini-2.5-flash",
+        "requested_provider": "gemini",
+        "requested_model": "gemini-2.5-flash"
+      },
+      "usage": {
+        "prompt_tokens": 130,
+        "completion_tokens": 129,
+        "completion_tokens_details": {
+          "reasoning_tokens": 102
+        },
+        "total_tokens": 259
+      }
+    }
+  ],
+  "core_adapter": {
+    "core_recorded_model": "groq/openai/gpt-oss-120b",
+    "core_is_fallback": true,
+    "core_tokens": [
+      130,
+      133
+    ],
+    "request_id": "p4-core-adapter"
+  },
+  "bifrost_logs": [
+    {
+      "id": "p4-groq_gpt_oss",
+      "parent_request_id": null,
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 0,
+      "status": "success",
+      "prompt_tokens": 130,
+      "completion_tokens": 120,
+      "cost": 9.15e-05
+    },
+    {
+      "id": "p4-groq_qwen_streamed",
+      "parent_request_id": null,
+      "provider": "groq",
+      "model": "qwen/qwen3.8-27b",
+      "fallback_index": 0,
+      "status": "success",
+      "prompt_tokens": 45,
+      "completion_tokens": 16,
+      "cost": 9.999999999999999e-05
+    },
+    {
+      "id": "p4-local_key_cannot_use_groq",
+      "parent_request_id": null,
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "p4-fallback_gemini_to_groq",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "797c6079-1ebc-4f08-922c-17540a7d6f83",
+      "parent_request_id": "p4-fallback_gemini_to_groq",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 130,
+      "completion_tokens": 111,
+      "cost": 8.609999999999999e-05
+    },
+    {
+      "id": "p4-fallback_gemini_to_groq_streamed",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "c558278f-b7d9-401e-b8c8-fe4067888779",
+      "parent_request_id": "p4-fallback_gemini_to_groq_streamed",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 130,
+      "completion_tokens": 129,
+      "cost": 9.69e-05
+    },
+    {
+      "id": "p4-core-adapter",
+      "parent_request_id": null,
+      "provider": "gemini",
+      "model": "gemini-2.5-flash",
+      "fallback_index": 0,
+      "status": "error",
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cost": null
+    },
+    {
+      "id": "1a3cc0fc-b9e1-406e-9118-adb067734070",
+      "parent_request_id": "p4-core-adapter",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "fallback_index": 1,
+      "status": "success",
+      "prompt_tokens": 130,
+      "completion_tokens": 133,
+      "cost": 9.93e-05
+    }
+  ]
+}

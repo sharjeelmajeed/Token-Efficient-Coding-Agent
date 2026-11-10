@@ -1,0 +1,306 @@
+{
+  "captured_at": "2026-11-10T04:35:17.452204+00:00",
+  "test": "Confidential task on local qwen2.5-coder:7b with the PR #6 agent loop fixes",
+  "code": "origin/main 3285b56 + PR #6 2935d5c (conflict resolved locally) + gateway_timeout_seconds change (uncommitted branch feature/gateway-timeout-setting)",
+  "gateway": "maximhq/bifrost v2.5.0 sha256:b5258c5f11c79064fc8280e49513f54c0b1da81c78bd11d3b4c1f62f8926d1ab",
+  "hardware": "Intel Core i5-8250U CPU, 16 GB RAM, no GPU",
+  "settings": {
+    "gateway_timeout_seconds": 600,
+    "streaming": true
+  },
+  "events": [
+    {
+      "id": 1,
+      "type": "session_created",
+      "timestamp": "2026-11-10T04:31:39.886206+00:00",
+      "payload": {
+        "mode": "bifrost",
+        "confidential": true
+      }
+    },
+    {
+      "id": 2,
+      "type": "run_started",
+      "timestamp": "2026-11-10T04:31:39.965089+00:00",
+      "payload": {
+        "model": "ollama/qwen2.5-coder:7b",
+        "mode": "bifrost",
+        "confidential": true,
+        "budget_remaining_micro_usd": 5000000
+      }
+    },
+    {
+      "id": 3,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T04:31:39.999483+00:00",
+      "payload": {
+        "before_chars": 3807,
+        "after_chars": 3784,
+        "compacted": false,
+        "available_tools": [
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "type": "tool_call",
+      "timestamp": "2026-11-10T04:32:59.164350+00:00",
+      "payload": {
+        "action": {
+          "tool": "read_file",
+          "path": "calculator.py",
+          "start_line": 1,
+          "end_line": 100
+        },
+        "class": "read"
+      }
+    },
+    {
+      "id": 5,
+      "type": "tool_result",
+      "timestamp": "2026-11-10T04:32:59.189885+00:00",
+      "payload": {
+        "tool": "read_file",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "total_lines": 2,
+          "start_line": 1,
+          "end_line": 2,
+          "text": "def add(a, b):\n    return a - b",
+          "truncated": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T04:32:59.229588+00:00",
+      "payload": {
+        "before_chars": 5560,
+        "after_chars": 5496,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "tool_call",
+      "timestamp": "2026-11-10T04:34:31.105642+00:00",
+      "payload": {
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "def add(a, b):\n    return a - b",
+          "new": "def add(a, b):\n    return a + b"
+        },
+        "class": "gated"
+      }
+    },
+    {
+      "id": 8,
+      "type": "approval_request",
+      "timestamp": "2026-11-10T04:34:31.149464+00:00",
+      "payload": {
+        "approval_id": "862d6041-d141-4b6c-b7d3-96be760b132c",
+        "action": {
+          "tool": "apply_patch",
+          "path": "calculator.py",
+          "expected_sha256": "e1a894022d1a082987b87adecb623438c9e386d86b2b621cff4a5fe7fdf7edc8",
+          "old": "def add(a, b):\n    return a - b",
+          "new": "def add(a, b):\n    return a + b"
+        },
+        "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -1,2 +1,2 @@\n def add(a, b):\n-    return a - b\n+    return a + b\n",
+        "deadline": 1794287071.129338,
+        "tool_class": "gated"
+      }
+    },
+    {
+      "id": 9,
+      "type": "approval_decision",
+      "timestamp": "2026-11-10T04:34:41.154208+00:00",
+      "payload": {
+        "approval_id": "862d6041-d141-4b6c-b7d3-96be760b132c",
+        "decision": "approve_once",
+        "user": "usman",
+        "feedback": ""
+      }
+    },
+    {
+      "id": 10,
+      "type": "approval_consumed",
+      "timestamp": "2026-11-10T04:34:41.195874+00:00",
+      "payload": {
+        "approval_id": "862d6041-d141-4b6c-b7d3-96be760b132c"
+      }
+    },
+    {
+      "id": 11,
+      "type": "tool_result",
+      "timestamp": "2026-11-10T04:34:41.259461+00:00",
+      "payload": {
+        "tool": "apply_patch",
+        "result": {
+          "path": "calculator.py",
+          "sha256": "ba1a531f581d2e6094e978ed6f7aca7a8d92eeb62c6e7ad73ee692f7f18bc772",
+          "applied": true
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "context_prepared",
+      "timestamp": "2026-11-10T04:34:41.326413+00:00",
+      "payload": {
+        "before_chars": 6095,
+        "after_chars": 5990,
+        "compacted": false,
+        "available_tools": [
+          "apply_patch",
+          "finish",
+          "grep",
+          "list_tree",
+          "read_file",
+          "repo_map",
+          "syntax_check",
+          "write_file"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": "message_delta",
+      "timestamp": "2026-11-10T04:34:55.214145+00:00",
+      "payload": {
+        "text": "The add function in calculator.py has been fixed to return the sum of a and b.",
+        "partial": false
+      }
+    },
+    {
+      "id": 14,
+      "type": "run_complete",
+      "timestamp": "2026-11-10T04:34:55.239991+00:00",
+      "payload": {
+        "outcome": "completed_unverified",
+        "note": "No complete set of configured behavior checks passed"
+      }
+    }
+  ],
+  "core_usage": [
+    {
+      "id": "46d7f682-d86c-467d-bed0-5b87eb0254ab",
+      "owner": "usman",
+      "run_id": "f9415dd4-1313-437e-842a-1cbacd1a4465",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 796,
+      "output_tokens": 44,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 0,
+        "cache_hit": false,
+        "latency_ms": 79098,
+        "request_id": "46d7f682-d86c-467d-bed0-5b87eb0254ab",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "4ea00dc0-2d7a-4d17-aaf7-97e1fcd5e62b",
+      "owner": "usman",
+      "run_id": "f9415dd4-1313-437e-842a-1cbacd1a4465",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1267,
+      "output_tokens": 107,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 189,
+        "cache_hit": false,
+        "latency_ms": 91813,
+        "request_id": "4ea00dc0-2d7a-4d17-aaf7-97e1fcd5e62b",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    },
+    {
+      "id": "831df581-b364-479a-bdf0-6e6e7a74beb8",
+      "owner": "usman",
+      "run_id": "f9415dd4-1313-437e-842a-1cbacd1a4465",
+      "amount": 0,
+      "state": "accounted",
+      "input_tokens": 1471,
+      "output_tokens": 29,
+      "model": "ollama/qwen2.5-coder:7b",
+      "source": "pricing_ceiling_pending_reconciliation",
+      "details": {
+        "cached_tokens": 1373,
+        "cache_hit": false,
+        "latency_ms": 13816,
+        "request_id": "831df581-b364-479a-bdf0-6e6e7a74beb8",
+        "usage_source": "bifrost_response_usage_pending_log_reconciliation",
+        "attempt_ceiling": 1
+      }
+    }
+  ],
+  "bifrost_logs": [
+    {
+      "id": "46d7f682-d86c-467d-bed0-5b87eb0254ab",
+      "parent_request_id": null,
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "fallback_index": 0,
+      "status": "success",
+      "latency": 78223.048768,
+      "prompt_tokens": 796,
+      "completion_tokens": 44,
+      "cost": 0.0,
+      "virtual_key_name": "Confidential local only"
+    },
+    {
+      "id": "4ea00dc0-2d7a-4d17-aaf7-97e1fcd5e62b",
+      "parent_request_id": null,
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "fallback_index": 0,
+      "status": "success",
+      "latency": 91101.254292,
+      "prompt_tokens": 1267,
+      "completion_tokens": 107,
+      "cost": 0.0,
+      "virtual_key_name": "Confidential local only"
+    },
+    {
+      "id": "831df581-b364-479a-bdf0-6e6e7a74beb8",
+      "parent_request_id": null,
+      "provider": "ollama",
+      "model": "qwen2.5-coder:7b",
+      "fallback_index": 0,
+      "status": "success",
+      "latency": 13052.537395,
+      "prompt_tokens": 1471,
+      "completion_tokens": 29,
+      "cost": 0.0,
+      "virtual_key_name": "Confidential local only"
+    }
+  ],
+  "note": "Live evidence on a disposable confidential repository; not benchmark evidence."
+}
