@@ -35,6 +35,25 @@ test('an interrupting event marks the reply incomplete exactly once', () => {
   assert.deepEqual(view(), [{ kind: 'assistant', text: 'Half a rep' }, { kind: 'warning', text: '(reply incomplete)' }]);
 });
 
+test('model_switched and budget_warning between the pieces keep the reply open', () => {
+  // Core order (engine.execute): partial pieces, settle, model_switched, budget_warning, final piece.
+  const { replies, view } = joiner();
+  replies.delta({ text: 'Fixed ', partial: true });
+  replies.event('model_switched');
+  replies.event('budget_warning');
+  replies.delta({ text: 'it.', partial: false });
+  assert.deepEqual(view(), [{ kind: 'assistant', text: 'Fixed it.' }]);
+});
+
+test('other events through event() still mark the reply incomplete', () => {
+  const { replies, view } = joiner();
+  replies.delta({ text: 'Half', partial: true });
+  replies.event('budget_warning');
+  replies.event('policy_block');
+  replies.event('session_paused');
+  assert.deepEqual(view(), [{ kind: 'assistant', text: 'Half' }, { kind: 'warning', text: '(reply incomplete)' }]);
+});
+
 test('streaming off: each delta is one whole message, as before', () => {
   const { replies, view } = joiner();
   replies.delta({ text: 'First' });

@@ -172,8 +172,9 @@ class AgentController implements vscode.Disposable {
   private async receive(event: AgentEvent, state: SessionState): Promise<void> {
     if (this.state !== state) { return; }
     const p = event.payload;
-    // Only the final streamed piece completes a reply; any other event first marks it incomplete.
-    if (event.type !== 'message_delta') { this.replies.interrupt(); }
+    // Only the final streamed piece completes a reply. Other events mark it incomplete, except
+    // model_switched and budget_warning, which the core sends before the final piece.
+    if (event.type !== 'message_delta') { this.replies.event(event.type); }
     if (event.type === 'message_delta') { this.replies.delta(p); this.render(); }
     else if (event.type === 'tool_call' && record(p.action)) {
       this.add('tool', `Tool: ${safeText(p.action.tool, 100)}`);

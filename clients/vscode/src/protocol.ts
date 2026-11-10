@@ -146,10 +146,16 @@ export function noticeText(kind: string, payload: Record<string, unknown>): stri
 
 export interface TimelineEntry { kind: string; text: string }
 /**
+ * Notices the core sends after a reply's streamed pieces but before its final piece
+ * (model_switched and budget_warning come right after the model call is settled).
+ * They do not end the reply.
+ */
+export const MID_REPLY_EVENTS: ReadonlySet<string> = new Set(['model_switched', 'budget_warning']);
+/**
  * Joins streamed message_delta pieces into one assistant entry. With streaming on, the core
  * sends partial: true pieces and then exactly one partial: false piece. Any other event before
- * that final piece means the reply is incomplete. Without a partial field, each delta is one
- * whole message, as before.
+ * that final piece, except the MID_REPLY_EVENTS notices, means the reply is incomplete. Without
+ * a partial field, each delta is one whole message, as before.
  */
 export class ReplyJoiner {
   private open: TimelineEntry | undefined;
@@ -166,7 +172,11 @@ export class ReplyJoiner {
       this.push({ kind: 'assistant', text });
     }
   }
-  /** Call for every non-delta event; closes an open reply and marks it incomplete. */
+  /** Call for every non-delta event. Mid-reply notices keep the reply open; others interrupt it. */
+  event(type: string): void {
+    if (!MID_REPLY_EVENTS.has(type)) { this.interrupt(); }
+  }
+  /** Closes an open reply and marks it incomplete. */
   interrupt(): void {
     if (this.open) {
       this.open = undefined;
