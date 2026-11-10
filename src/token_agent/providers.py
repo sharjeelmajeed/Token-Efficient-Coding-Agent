@@ -240,7 +240,9 @@ class BifrostProvider:
             data = await request(self.client)
         else:
             async with httpx.AsyncClient(
-                timeout=httpx.Timeout(60, connect=5), trust_env=False, follow_redirects=False
+                timeout=httpx.Timeout(self.settings.gateway_timeout_seconds, connect=5),
+                trust_env=False,
+                follow_redirects=False,
             ) as client:
                 data = await request(client)
         try:

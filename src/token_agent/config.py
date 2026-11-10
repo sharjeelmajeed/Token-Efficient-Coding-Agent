@@ -113,6 +113,9 @@ class Settings(BaseModel):
     local_fallbacks: list[str] = Field(default_factory=list)
     fast_model: str = ""
     gateway_attempt_ceiling: int = Field(default=1, ge=1, le=20)
+    # Longest wait for the gateway's next bytes. Raise it for slow local models on CPU,
+    # which can take minutes before the first token of a long prompt.
+    gateway_timeout_seconds: int = Field(default=60, ge=5, le=900)
     streaming: bool = False
     research: ResearchSettings = Field(default_factory=ResearchSettings)
     sandbox: SandboxSettings = Field(default_factory=SandboxSettings)
