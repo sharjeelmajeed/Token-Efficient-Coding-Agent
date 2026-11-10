@@ -9,7 +9,7 @@ git approvals in the editor (Item 6b).
 | --- | --- |
 | Date | 2026-11-10 |
 | Client commit | `523618d` (branch `feature/clients-vscode-streaming`: Items 4 + 5) |
-| VSIX | `token-efficient-coding-agent-0.3.0.vsix`, SHA-256 prefix `ACF5BAD2B75F00A7` |
+| VSIX | `token-efficient-coding-agent-0.3.0.vsix`, SHA-256 prefix `ACF5BAD2B75F00A7`, built locally from `523618d` (not committed). It does not include `af82bfd` (PR #11: model/budget notices no longer end a streamed reply), and the version stays `0.3.0`, so a VSIX built from `main` has the same version number. The 7 and 8 re-run used this same VSIX |
 | Core config | `.agent/acceptance.toml` (git-ignored): `agent.toml` + `streaming = true`, fixture mode |
 | OS | Windows 10 Pro 10.0.19045 |
 | Tester | Areeba |
@@ -77,12 +77,11 @@ reject with feedback → `completed_unverified`, file unchanged; cancel while wa
 `completed_unverified`; run report `benchmark_evidence: false`. With streaming on, the
 fixture reply arrives as one `partial: true` piece and one `partial: false` piece.
 
-**F1: fixture limitation, not a client bug.** In the **same session**, after a rejected or
-cancelled patch, the scripted fixture does not propose the patch again. The next run ends
-with `completed_unverified`, or pauses with "Tool is disabled or requires a file inspection
-first". That's why steps 7 and 8 start a new session. Real models re-read the file, so this
-is expected to apply only to the fixture. Tell WS1 (Usman), since the demo script must
-account for it.
+**F1: fixture limitation, not a client bug.** Before PR #12, in the **same session**, after a
+rejected or cancelled patch, the scripted fixture did not propose the patch again. The next
+run ended with `completed_unverified`, or paused with "Tool is disabled or requires a file
+inspection first". That's why the first run of steps 7 and 8 started a new session. It
+applied only to the fixture and was reported to WS1 (Usman).
 
 **F1 status: fixed by WS1 in PR #12** (`feature/core-fixture-repeatable`, merged to `main`).
 The fixture now reads only the current run's results, so each new run reads the file and
