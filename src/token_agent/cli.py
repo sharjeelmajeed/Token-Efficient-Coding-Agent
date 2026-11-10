@@ -140,9 +140,11 @@ def notice(kind: str, payload: dict) -> list[str]:
         return [f"Approval {field('approval_id', '')} expired - the action was not run"]
     if kind == "research_used":
         cached = "cached" if payload.get("cache_hit") is True else "new"
+        query = field("query", "unknown query")
         # The trigger says why research ran (e.g. unknown_dependency); shown as the core sent it.
-        why = f"; trigger: {field('trigger')}" if field("trigger") else ""
-        return [f"Public research: {field('query', 'unknown query')} ({cached}{why})"]
+        if trigger := field("trigger"):
+            return [f"Public research ({trigger}, {cached}): {query}"]
+        return [f"Public research: {query} ({cached})"]
     if kind == "tool_result":
         result = payload.get("result")
         if isinstance(result, dict) and result.get("recoverable") is True:
