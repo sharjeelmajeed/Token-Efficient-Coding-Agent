@@ -1,0 +1,14 @@
+{
+  "id": "TASK-07",
+  "repository": "https://github.com/pallets/jinja.git",
+  "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+  "language": "python",
+  "category": "bug_fix",
+  "title": "DebugUndefined chained filter attribute access",
+  "prompt": "Fix DebugUndefined in jinja2.runtime so accessing missing attributes in chained filter expressions raises UndefinedError with attribute name instead of raw KeyError.",
+  "check_command": "pytest tests/test_runtime.py -k test_chained_debug_undefined",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/jinja2/runtime.py"
+  ]
+}

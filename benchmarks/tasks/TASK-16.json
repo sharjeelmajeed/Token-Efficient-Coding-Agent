@@ -1,0 +1,14 @@
+{
+  "id": "TASK-16",
+  "repository": "https://github.com/expressjs/express.git",
+  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+  "language": "javascript",
+  "category": "test_addition",
+  "title": "Empty request body handling tests",
+  "prompt": "Add tests in test/req.body.js verifying that empty strings and whitespace-only request payloads are handled properly by middleware without unhandled promise rejections.",
+  "check_command": "npm test -- test/req.body.js",
+  "timeout_seconds": 60,
+  "target_files": [
+    "test/req.body.js"
+  ]
+}

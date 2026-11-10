@@ -1,0 +1,14 @@
+{
+  "id": "TASK-17",
+  "repository": "https://github.com/expressjs/express.git",
+  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+  "language": "javascript",
+  "category": "bug_fix",
+  "title": "Sub-app router mount path trailing slash resolution",
+  "prompt": "Fix routing issue in lib/router/index.js where mounting a sub-app at a path ending with / fails to match root routes on the sub-app.",
+  "check_command": "npm test -- test/app.use.js",
+  "timeout_seconds": 60,
+  "target_files": [
+    "lib/router/index.js"
+  ]
+}

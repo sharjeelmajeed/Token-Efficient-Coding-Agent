@@ -30,6 +30,16 @@ It is not an AI model and its synthetic token counts are not benchmark evidence.
 The real Bifrost adapter is implemented but has not been tested against a running
 team gateway or paid provider in this environment.
 
+## Frozen benchmark suite
+
+The benchmark task suite is frozen in [`benchmarks/tasks/`](benchmarks/tasks/) at commit `7d00bc4` on branch `test/evaluation-freeze`.
+It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja`, and `expressjs/express`)
+and 2 languages (Python, JavaScript), covering bug fixes, small features, refactors, and test additions.
+Each task specifies a pinned commit, exact prompt, target files, and automated pass/fail command.
+Per handoff G01 and FSD 10.3, core optimization features were developed prior to benchmark freezing;
+this held-out suite serves as the fixed ground truth for all comparative evaluations. See
+[`benchmarks/README.md`](benchmarks/README.md) for full task definitions and protocol.
+
 ## Install on Windows PowerShell
 
 Open PowerShell in the extracted `token-efficient-coding-agent` directory.
@@ -151,6 +161,7 @@ pending approvals and pauses incomplete runs for inspection.
 | `.github/workflows/` | Core/extension checks and opt-in read-only PR workflow |
 | `scripts/demo.py` | Isolated interactive demonstration |
 | `tests/` | Policy, API, persistence, gateway and CLI tests |
+| `benchmarks/` | Frozen evaluation task suite and manifests |
 | `docs/openapi.json`, `docs/event.schema.json` | Generated client contracts |
 | `docs/evidence/` | Captured local verification evidence |
 

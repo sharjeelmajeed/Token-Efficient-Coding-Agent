@@ -1,0 +1,14 @@
+{
+  "id": "TASK-08",
+  "repository": "https://github.com/pallets/jinja.git",
+  "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+  "language": "python",
+  "category": "small_feature",
+  "title": "Unique filter attribute parameter support",
+  "prompt": "Enhance the unique filter in jinja2.filters to accept an optional attribute argument to deduplicate a list of dicts/objects by a specific property.",
+  "check_command": "pytest tests/test_filters.py -k test_unique_by_attribute",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/jinja2/filters.py"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "TASK-09",
+  "repository": "https://github.com/pallets/jinja.git",
+  "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+  "language": "python",
+  "category": "refactor",
+  "title": "Compiler CodeGenerator AST visitor method caching",
+  "prompt": "Refactor dynamic method lookup in CodeGenerator.visit to cache node handler methods to eliminate repetitive getattr dispatch calls.",
+  "check_command": "pytest tests/test_compiler.py",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/jinja2/compiler.py"
+  ]
+}

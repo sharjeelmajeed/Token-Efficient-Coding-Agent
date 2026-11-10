@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "suite_name": "token-efficient-coding-agent-benchmarks",
+  "created_at": "2026-11-10T22:00:00Z",
+  "frozen": true,
+  "task_count": 18,
+  "repositories": [
+    {
+      "name": "pallets/click",
+      "url": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "task_ids": [
+        "TASK-01",
+        "TASK-02",
+        "TASK-03",
+        "TASK-04",
+        "TASK-05",
+        "TASK-06"
+      ]
+    },
+    {
+      "name": "pallets/jinja",
+      "url": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "task_ids": [
+        "TASK-07",
+        "TASK-08",
+        "TASK-09",
+        "TASK-10",
+        "TASK-11",
+        "TASK-12"
+      ]
+    },
+    {
+      "name": "expressjs/express",
+      "url": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "task_ids": [
+        "TASK-13",
+        "TASK-14",
+        "TASK-15",
+        "TASK-16",
+        "TASK-17",
+        "TASK-18"
+      ]
+    }
+  ],
+  "category_counts": {
+    "bug_fix": 6,
+    "small_feature": 6,
+    "refactor": 3,
+    "test_addition": 3
+  },
+  "language_counts": {
+    "python": 12,
+    "javascript": 6
+  },
+  "disclosure": "Timing deviation: As noted in FSD section 10.3 and docs/STATUS.md / docs/HANDOFF_WS1_WS2.md, core token-optimization switches (TO-01 through TO-09) and initial test harnesses were implemented in milestones M1-M3 prior to benchmark task suite freezing. This frozen suite serves as the held-out evaluation baseline for all subsequent comparisons and ablations.",
+  "tasks": [
+    {
+      "id": "TASK-01",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "bug_fix",
+      "title": "Boolean flag toggle handling with custom prefix",
+      "prompt": "Fix an issue in Click argument parsing where boolean option flags with default True do not correctly toggle when passed --no-<flag> with custom prefix.",
+      "check_command": "pytest tests/test_options.py -k test_boolean_flags",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/click/core.py",
+        "src/click/parser.py"
+      ]
+    },
+    {
+      "id": "TASK-02",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "small_feature",
+      "title": "Case-insensitive choice matching",
+      "prompt": "Add a case_sensitive parameter (default True) to click.Choice so case-insensitive matching can be enabled for choices.",
+      "check_command": "pytest tests/test_types.py -k test_choice_case_insensitive",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/click/types.py"
+      ]
+    },
+    {
+      "id": "TASK-03",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "refactor",
+      "title": "Refactor help option parameter resolution",
+      "prompt": "Refactor help_option parameter building in click.decorators to use _make_option_name helper instead of duplicated prefix string manipulation.",
+      "check_command": "pytest tests/test_help.py",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/click/decorators.py"
+      ]
+    },
+    {
+      "id": "TASK-04",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "test_addition",
+      "title": "Test bash completion with spaced values",
+      "prompt": "Add test cases covering bash completion when parameter values contain spaces and quoted delimiters in tests/test_shell_completion.py.",
+      "check_command": "pytest tests/test_shell_completion.py -k test_completion_with_spaces",
+      "timeout_seconds": 60,
+      "target_files": [
+        "tests/test_shell_completion.py"
+      ]
+    },
+    {
+      "id": "TASK-05",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "bug_fix",
+      "title": "Prompt default resolution on empty input",
+      "prompt": "Fix click.prompt so an empty input line returns the default value without raising Abort when default is empty string.",
+      "check_command": "pytest tests/test_termui.py -k test_prompt_empty_default",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/click/termui.py"
+      ]
+    },
+    {
+      "id": "TASK-06",
+      "repository": "https://github.com/pallets/click.git",
+      "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+      "language": "python",
+      "category": "small_feature",
+      "title": "Hidden command support in Group listing",
+      "prompt": "Ensure commands registered on a group with hidden=True are omitted from the formatted command listing in help output.",
+      "check_command": "pytest tests/test_commands.py -k test_hidden_command_in_group",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/click/core.py"
+      ]
+    },
+    {
+      "id": "TASK-07",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "bug_fix",
+      "title": "DebugUndefined chained filter attribute access",
+      "prompt": "Fix DebugUndefined in jinja2.runtime so accessing missing attributes in chained filter expressions raises UndefinedError with attribute name instead of raw KeyError.",
+      "check_command": "pytest tests/test_runtime.py -k test_chained_debug_undefined",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/jinja2/runtime.py"
+      ]
+    },
+    {
+      "id": "TASK-08",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "small_feature",
+      "title": "Unique filter attribute parameter support",
+      "prompt": "Enhance the unique filter in jinja2.filters to accept an optional attribute argument to deduplicate a list of dicts/objects by a specific property.",
+      "check_command": "pytest tests/test_filters.py -k test_unique_by_attribute",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/jinja2/filters.py"
+      ]
+    },
+    {
+      "id": "TASK-09",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "refactor",
+      "title": "Compiler CodeGenerator AST visitor method caching",
+      "prompt": "Refactor dynamic method lookup in CodeGenerator.visit to cache node handler methods to eliminate repetitive getattr dispatch calls.",
+      "check_command": "pytest tests/test_compiler.py",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/jinja2/compiler.py"
+      ]
+    },
+    {
+      "id": "TASK-10",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "test_addition",
+      "title": "Async loop control test suite",
+      "prompt": "Add comprehensive async test cases in tests/test_async.py verifying loop.index and loop.nextitem behavior inside async for blocks.",
+      "check_command": "pytest tests/test_async.py -k test_async_loop_controls",
+      "timeout_seconds": 60,
+      "target_files": [
+        "tests/test_async.py"
+      ]
+    },
+    {
+      "id": "TASK-11",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "bug_fix",
+      "title": "Markup subclass XML auto-escaping",
+      "prompt": "Ensure that subclasses of Markup or SafeString are not double-escaped when passed through escape or custom filters.",
+      "check_command": "pytest tests/test_filters.py -k test_markup_subclass_escaping",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/jinja2/filters.py",
+        "src/jinja2/utils.py"
+      ]
+    },
+    {
+      "id": "TASK-12",
+      "repository": "https://github.com/pallets/jinja.git",
+      "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+      "language": "python",
+      "category": "small_feature",
+      "title": "Slice filter negative indexing support",
+      "prompt": "Update do_slice filter in jinja2.filters to handle negative step or slice boundaries without throwing IndexError.",
+      "check_command": "pytest tests/test_filters.py -k test_slice_negative_indices",
+      "timeout_seconds": 60,
+      "target_files": [
+        "src/jinja2/filters.py"
+      ]
+    },
+    {
+      "id": "TASK-13",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "bug_fix",
+      "title": "Preserve query encoding in res.redirect",
+      "prompt": "Fix res.redirect in lib/response.js to ensure query string parameters with spaces or unicode symbols remain correctly percent-encoded when resolving relative URLs.",
+      "check_command": "npm test -- test/res.redirect.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "lib/response.js"
+      ]
+    },
+    {
+      "id": "TASK-14",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "small_feature",
+      "title": "Header appending support via res.appendHeader",
+      "prompt": "Add res.appendHeader(field, val) in lib/response.js that appends to existing response headers as an array or comma-separated list.",
+      "check_command": "npm test -- test/res.set.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "lib/response.js"
+      ]
+    },
+    {
+      "id": "TASK-15",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "refactor",
+      "title": "Router path regex pattern compilation caching",
+      "prompt": "Refactor path parameter parsing in lib/router/layer.js to avoid redundant regex recompilation for unchanged route path patterns.",
+      "check_command": "npm test -- test/app.router.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "lib/router/layer.js"
+      ]
+    },
+    {
+      "id": "TASK-16",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "test_addition",
+      "title": "Empty request body handling tests",
+      "prompt": "Add tests in test/req.body.js verifying that empty strings and whitespace-only request payloads are handled properly by middleware without unhandled promise rejections.",
+      "check_command": "npm test -- test/req.body.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "test/req.body.js"
+      ]
+    },
+    {
+      "id": "TASK-17",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "bug_fix",
+      "title": "Sub-app router mount path trailing slash resolution",
+      "prompt": "Fix routing issue in lib/router/index.js where mounting a sub-app at a path ending with / fails to match root routes on the sub-app.",
+      "check_command": "npm test -- test/app.use.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "lib/router/index.js"
+      ]
+    },
+    {
+      "id": "TASK-18",
+      "repository": "https://github.com/expressjs/express.git",
+      "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+      "language": "javascript",
+      "category": "small_feature",
+      "title": "Custom status fallback messaging in res.sendStatus",
+      "prompt": "Allow res.sendStatus in lib/response.js to accept custom HTTP status codes and provide a sensible fallback message if no default status message exists in http.STATUS_CODES.",
+      "check_command": "npm test -- test/res.sendStatus.js",
+      "timeout_seconds": 60,
+      "target_files": [
+        "lib/response.js"
+      ]
+    }
+  ]
+}

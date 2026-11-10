@@ -1,0 +1,14 @@
+{
+  "id": "TASK-04",
+  "repository": "https://github.com/pallets/click.git",
+  "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+  "language": "python",
+  "category": "test_addition",
+  "title": "Test bash completion with spaced values",
+  "prompt": "Add test cases covering bash completion when parameter values contain spaces and quoted delimiters in tests/test_shell_completion.py.",
+  "check_command": "pytest tests/test_shell_completion.py -k test_completion_with_spaces",
+  "timeout_seconds": 60,
+  "target_files": [
+    "tests/test_shell_completion.py"
+  ]
+}

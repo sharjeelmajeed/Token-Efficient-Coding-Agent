@@ -1,0 +1,14 @@
+{
+  "id": "TASK-12",
+  "repository": "https://github.com/pallets/jinja.git",
+  "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+  "language": "python",
+  "category": "small_feature",
+  "title": "Slice filter negative indexing support",
+  "prompt": "Update do_slice filter in jinja2.filters to handle negative step or slice boundaries without throwing IndexError.",
+  "check_command": "pytest tests/test_filters.py -k test_slice_negative_indices",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/jinja2/filters.py"
+  ]
+}

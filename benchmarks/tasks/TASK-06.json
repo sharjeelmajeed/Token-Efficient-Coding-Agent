@@ -1,0 +1,14 @@
+{
+  "id": "TASK-06",
+  "repository": "https://github.com/pallets/click.git",
+  "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+  "language": "python",
+  "category": "small_feature",
+  "title": "Hidden command support in Group listing",
+  "prompt": "Ensure commands registered on a group with hidden=True are omitted from the formatted command listing in help output.",
+  "check_command": "pytest tests/test_commands.py -k test_hidden_command_in_group",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/click/core.py"
+  ]
+}

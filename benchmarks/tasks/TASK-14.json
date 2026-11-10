@@ -1,0 +1,14 @@
+{
+  "id": "TASK-14",
+  "repository": "https://github.com/expressjs/express.git",
+  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
+  "language": "javascript",
+  "category": "small_feature",
+  "title": "Header appending support via res.appendHeader",
+  "prompt": "Add res.appendHeader(field, val) in lib/response.js that appends to existing response headers as an array or comma-separated list.",
+  "check_command": "npm test -- test/res.set.js",
+  "timeout_seconds": 60,
+  "target_files": [
+    "lib/response.js"
+  ]
+}

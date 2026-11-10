@@ -1,0 +1,14 @@
+{
+  "id": "TASK-05",
+  "repository": "https://github.com/pallets/click.git",
+  "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+  "language": "python",
+  "category": "bug_fix",
+  "title": "Prompt default resolution on empty input",
+  "prompt": "Fix click.prompt so an empty input line returns the default value without raising Abort when default is empty string.",
+  "check_command": "pytest tests/test_termui.py -k test_prompt_empty_default",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/click/termui.py"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "TASK-02",
+  "repository": "https://github.com/pallets/click.git",
+  "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
+  "language": "python",
+  "category": "small_feature",
+  "title": "Case-insensitive choice matching",
+  "prompt": "Add a case_sensitive parameter (default True) to click.Choice so case-insensitive matching can be enabled for choices.",
+  "check_command": "pytest tests/test_types.py -k test_choice_case_insensitive",
+  "timeout_seconds": 60,
+  "target_files": [
+    "src/click/types.py"
+  ]
+}
