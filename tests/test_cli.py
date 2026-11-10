@@ -140,6 +140,23 @@ def test_cli_streamed_reply_prints_as_one_continuous_text(environment, tmp_path)
     assert "reply incomplete" not in run.stdout
 
 
+def test_cli_model_switch_between_streamed_pieces_keeps_reply_whole(environment, tmp_path):
+    # The gateway answers with another allowed model, so the core sends model_switched
+    # after the partial pieces and before the final piece.
+    provider = StreamingProvider([FINISH], model="cloud/fallback")
+    app = create_app(streaming_settings(environment), provider)
+    with live_client(app, environment["first"]) as http:
+        env = cli_env(environment, http, tmp_path)
+        assert cli(env, "init", "--repo", str(environment["repo"])).returncode == 0
+        run = cli(env, "run", "any task")
+    assert run.returncode == 0, run.stderr
+    assert "reply incomplete" not in run.stdout
+    assert SUMMARY.strip() in run.stdout
+    # The notice is shown after the reply text, not in the middle of it.
+    assert run.stdout.index(SUMMARY.strip()) < run.stdout.index("model_switched")
+    assert "gateway_returned_different_allowed_model" in run.stdout
+
+
 def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
     # Valid text streams first, then the full reply fails validation and the run pauses.
     broken = FINISH[:-2] + ',"approved":true}}'

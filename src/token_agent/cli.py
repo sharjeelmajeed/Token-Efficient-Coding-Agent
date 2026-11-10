@@ -19,6 +19,9 @@ app = typer.Typer(
     no_args_is_help=True, help="Token-efficient coding agent. All policy lives in core."
 )
 console = Console(highlight=False)
+# The core sends these after a reply's streamed pieces but before its final piece
+# (right after the model call is settled). They do not end the reply.
+MID_REPLY_EVENTS = {"model_switched", "budget_warning"}
 
 
 def clean(text: str) -> str:
@@ -165,6 +168,8 @@ def watch(http: httpx.Client, state: dict):
         decide(http, session_id, approval)
     # True while a streamed reply has printed partial pieces but not its final piece.
     reply_open = False
+    # Mid-reply notices, shown once the reply's line is finished.
+    held: list[tuple[str, dict]] = []
 
     def end_reply(note: str = ""):
         nonlocal reply_open
@@ -173,6 +178,35 @@ def watch(http: httpx.Client, state: dict):
             if note:
                 console.print(note, markup=False, style="yellow")
             reply_open = False
+        while held:
+            show_event(*held.pop(0))
+
+    def show_event(kind: str, payload: dict):
+        if kind == "approval_request":
+            current = request(http, "GET", f"/sessions/{session_id}/status")
+            for approval in current["pending_approvals"]:
+                if approval["id"] == payload["approval_id"]:
+                    decide(http, session_id, approval)
+        elif kind == "message_delta":
+            console.print(clean(payload["text"]), markup=False)
+        elif kind == "tool_call":
+            console.print(f"Tool: {payload['action']['tool']} ({payload['class']})", markup=False)
+        elif kind == "budget_warning":
+            console.print(f"Budget warning: {budget_line(payload)}", markup=False, style="bold red")
+            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+        elif kind == "budget_hit":
+            reason = clean(str(payload.get("reason", "budget limit reached")))
+            console.print(
+                f"Budget limit reached: {reason}; {budget_line(payload)}",
+                markup=False,
+                style="bold red",
+            )
+            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+        elif kind in {"model_switched", "session_paused", "run_complete"}:
+            console.print(clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow")
+            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+        elif kind in {"policy_block", "approval_expired", "research_used"}:
+            console.print(clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow")
 
     try:
         with http.stream(
@@ -195,43 +229,16 @@ def watch(http: httpx.Client, state: dict):
                     # Final piece (partial: false) closes the streamed reply.
                     console.print(clean(payload["text"]), markup=False, soft_wrap=True)
                     reply_open = False
+                    end_reply()  # now show any notices held back during the reply
+                    continue
+                if reply_open and kind in MID_REPLY_EVENTS:
+                    # Sent before the final piece; hold it so the reply text stays together.
+                    held.append((kind, payload))
                     continue
                 # Only the final piece completes a reply. Any other event first (the core
                 # sends policy_block, then session_paused) means the text is incomplete.
                 end_reply("(reply incomplete)")
-                if kind == "approval_request":
-                    current = request(http, "GET", f"/sessions/{session_id}/status")
-                    for approval in current["pending_approvals"]:
-                        if approval["id"] == payload["approval_id"]:
-                            decide(http, session_id, approval)
-                elif kind == "message_delta":
-                    console.print(clean(payload["text"]), markup=False)
-                elif kind == "tool_call":
-                    console.print(
-                        f"Tool: {payload['action']['tool']} ({payload['class']})", markup=False
-                    )
-                elif kind == "budget_warning":
-                    console.print(
-                        f"Budget warning: {budget_line(payload)}", markup=False, style="bold red"
-                    )
-                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
-                elif kind == "budget_hit":
-                    reason = clean(str(payload.get("reason", "budget limit reached")))
-                    console.print(
-                        f"Budget limit reached: {reason}; {budget_line(payload)}",
-                        markup=False,
-                        style="bold red",
-                    )
-                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
-                elif kind in {"model_switched", "session_paused", "run_complete"}:
-                    console.print(
-                        clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow"
-                    )
-                    show_status(request(http, "GET", f"/sessions/{session_id}/status"))
-                elif kind in {"policy_block", "approval_expired", "research_used"}:
-                    console.print(
-                        clean(f"{kind}: {json.dumps(payload)}"), markup=False, style="yellow"
-                    )
+                show_event(kind, payload)
         end_reply()
         show_status(request(http, "GET", f"/sessions/{session_id}/status"))
     except KeyboardInterrupt:
@@ -239,6 +246,7 @@ def watch(http: httpx.Client, state: dict):
         request(http, "POST", f"/sessions/{session_id}/cancel")
         console.print("Run cancelled.")
     except httpx.HTTPError:
+        held.clear()  # their status lookups would fail too; agent status shows the warning
         end_reply()
         raise typer.BadParameter("Stream disconnected. Use agent resume to reconnect") from None
 
