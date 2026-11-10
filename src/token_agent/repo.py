@@ -14,7 +14,18 @@ class PolicyError(Exception):
     pass
 
 
+class ToolInputError(PolicyError):
+    """The model's tool input was wrong and nothing changed, so the model may correct it.
+
+    Never used for security decisions, which stay plain PolicyError and pause the run.
+    """
+
+
 MAX_FILE_BYTES = 128000
+# Fixed ceiling for tool output when optimization truncation is off. It is a resource
+# safety limit, not an optimization, so it applies in every configuration.
+ABSOLUTE_OUTPUT_CHARS = MAX_FILE_BYTES
+MAX_READ_LINES = 200
 MAX_FILES = 500
 SECRET_PATTERN = re.compile(
     r"-----BEGIN [A-Z ]*PRIVATE KEY-----|"
@@ -33,7 +44,14 @@ def bounded(text: str, limit: int) -> dict:
 
 
 class Repository:
-    def __init__(self, root: str, marker: str, secrets: list[str], output_chars: int):
+    def __init__(
+        self,
+        root: str,
+        marker: str,
+        secrets: list[str],
+        output_chars: int,
+        max_read_lines: int | None = MAX_READ_LINES,
+    ):
         try:
             self.root = Path(root).resolve(strict=True)
         except OSError as exc:
@@ -43,6 +61,8 @@ class Repository:
         self.marker = marker
         self.secrets = [s for s in secrets if s]
         self.output_chars = output_chars
+        # None means whole-file reads (targeted reads switched off).
+        self.max_read_lines = max_read_lines
 
     def protected(self, part: str) -> bool:
         name = part.casefold()
@@ -92,7 +112,7 @@ class Repository:
     def read(self, relative: str) -> str:
         path = self.path(relative)
         if not path.is_file():
-            raise PolicyError("File does not exist or is not a regular file")
+            raise ToolInputError("File does not exist or is not a regular file")
         flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
         with os.fdopen(os.open(path, flags), "rb") as stream:
             metadata = os.fstat(stream.fileno())
@@ -144,15 +164,15 @@ class Repository:
     def prepare_patch(self, action: ApplyPatch) -> tuple[str, str]:
         content = self.read(action.path)
         if self.digest(content) != action.expected_sha256:
-            raise PolicyError("File changed; read it again and request a new approval")
+            raise ToolInputError("File changed; read it again and request a new approval")
         if content.count(action.old) != 1:
-            raise PolicyError("Patch must match exactly one occurrence")
+            raise ToolInputError("Patch must match exactly one occurrence")
         revised = content.replace(action.old, action.new, 1)
         self.check_secrets(revised)
         if revised == content:
-            raise PolicyError("Patch has no effect")
+            raise ToolInputError("Patch has no effect")
         if len(revised.encode()) > MAX_FILE_BYTES:
-            raise PolicyError("Resulting file exceeds size limit")
+            raise ToolInputError("Resulting file exceeds size limit")
         diff = "".join(
             difflib.unified_diff(
                 content.splitlines(keepends=True),
@@ -162,7 +182,7 @@ class Repository:
             )
         )
         if len(diff) > 30000:
-            raise PolicyError("Diff too large for a single review; split the change")
+            raise ToolInputError("Diff too large for a single review; split the change")
         return revised, diff
 
     def apply(self, action: ApplyPatch) -> dict:
@@ -188,18 +208,18 @@ class Repository:
     def prepare_write(self, action: WriteFile) -> tuple[str, str]:
         path = self.path(action.path)
         if not path.parent.is_dir():
-            raise PolicyError("Create files inside an existing directory")
+            raise ToolInputError("Create files inside an existing directory")
         if action.expected_sha256 == "absent":
             if path.exists():
-                raise PolicyError("File exists; read it and provide its current hash")
+                raise ToolInputError("File exists; read it and provide its current hash")
             current = ""
         else:
             current = self.read(action.path)
             if self.digest(current) != action.expected_sha256:
-                raise PolicyError("File changed; request a new approval")
+                raise ToolInputError("File changed; request a new approval")
         self.check_secrets(action.content)
         if action.expected_sha256 != "absent" and current == action.content:
-            raise PolicyError("Write has no effect")
+            raise ToolInputError("Write has no effect")
         diff = "".join(
             difflib.unified_diff(
                 current.splitlines(keepends=True),
@@ -209,7 +229,7 @@ class Repository:
             )
         )
         if len(diff) > 30000:
-            raise PolicyError("Diff too large; split the change")
+            raise ToolInputError("Diff too large; split the change")
         return action.content, diff or f"Create empty file: {action.path}\n"
 
     def write(self, action: WriteFile) -> dict:
@@ -261,19 +281,23 @@ class Repository:
 
     def execute_read(self, action) -> dict:
         if isinstance(action, ReadFile):
-            if action.end_line < action.start_line or action.end_line - action.start_line >= 200:
-                raise PolicyError("Read at most 200 lines in ascending order")
+            start, end = action.start_line, action.end_line
+            if self.max_read_lines is not None and (
+                end < start or end - start >= self.max_read_lines
+            ):
+                raise ToolInputError(f"Read at most {self.max_read_lines} lines in ascending order")
             content = self.read(action.path)
             lines = content.splitlines()
-            body = "\n".join(
-                f"{i + 1}: {line}"
-                for i, line in enumerate(lines)
-                if action.start_line <= i + 1 <= action.end_line
-            )
+            if self.max_read_lines is None:
+                start, end = 1, len(lines)  # Whole-file read; size is still capped by read().
+            # Plain file text, so models can copy it into exact patches; numbering is separate.
+            body = "\n".join(lines[start - 1 : end])
             return {
                 "path": action.path,
                 "sha256": self.digest(content),
                 "total_lines": len(lines),
+                "start_line": start,
+                "end_line": min(end, len(lines)),
                 **bounded(body, self.output_chars),
             }
         if isinstance(action, ListTree):
@@ -314,7 +338,7 @@ class Repository:
             return bounded("\n".join(outlines), self.output_chars)
         if isinstance(action, SyntaxCheck):
             if not action.path.endswith(".py"):
-                raise PolicyError("Syntax check currently supports Python files only")
+                raise ToolInputError("Syntax check currently supports Python files only")
             try:
                 ast.parse(self.read(action.path))
             except SyntaxError as exc:

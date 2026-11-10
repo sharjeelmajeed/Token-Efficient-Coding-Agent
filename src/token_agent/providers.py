@@ -12,6 +12,8 @@ import httpx
 from .config import Settings, UserConfig
 
 DEMO_TASK = "demo: fix calculator addition"
+# Reason used when the gateway refuses a request because its virtual-key budget is spent.
+GATEWAY_BUDGET_HIT = "gateway_budget_hit"
 
 
 class ProviderError(Exception):
@@ -61,14 +63,18 @@ class FixtureProvider:
     ) -> ProviderResult:
         if not any(m["content"] == DEMO_TASK for m in messages if m["role"] == "user"):
             raise ProviderError(f"Fixture mode only supports: {DEMO_TASK}")
+        # Only the current run counts: results after the latest plain-text instruction.
+        # Otherwise one earlier denial or cancel would end every later run in the session.
         results = []
         for message in messages:
             try:
                 item = json.loads(message["content"])
-                if isinstance(item, dict) and "tool_result" in item:
-                    results.append(item)
             except (json.JSONDecodeError, TypeError):
+                if message["role"] == "user":
+                    results = []
                 continue
+            if isinstance(item, dict) and "tool_result" in item:
+                results.append(item)
         if not results:
             action = {"tool": "read_file", "path": "calculator.py", "start_line": 1, "end_line": 20}
         else:
@@ -209,6 +215,11 @@ class BifrostProvider:
                     json=payload,
                     follow_redirects=False,
                 ) as response:
+                    if response.status_code == 402:
+                        body = (await response.aread())[:4096].decode(errors="replace")
+                        if "budget_exceeded" in body:
+                            # The gateway's own spend limit; nothing was sent to a provider.
+                            raise ProviderError(GATEWAY_BUDGET_HIT)
                     if response.status_code != 200:
                         raise ProviderError(
                             f"Gateway returned HTTP {response.status_code}; session paused"
@@ -240,7 +251,9 @@ class BifrostProvider:
             data = await request(self.client)
         else:
             async with httpx.AsyncClient(
-                timeout=httpx.Timeout(60, connect=5), trust_env=False, follow_redirects=False
+                timeout=httpx.Timeout(self.settings.gateway_timeout_seconds, connect=5),
+                trust_env=False,
+                follow_redirects=False,
             ) as client:
                 data = await request(client)
         try:

@@ -110,8 +110,21 @@ def test_disabled_tool_and_write_before_inspection_are_backend_blocked(environme
             sid = session(client, environment)
             start(client, sid)
             result = wait_status(client, sid, {"paused"})
-            assert "disabled" in result["run"]["outcome"]
             assert not result["pending_approvals"]
+            events = app.state.store.events(sid)
+            assert not any(e["type"] == "approval_request" for e in events)
+            if action["tool"] == "run_shell":
+                assert "disabled" in result["run"]["outcome"]
+            else:
+                # Editing before reading is a correctable mistake: the model is told to read
+                # first, and repeating the same edit still pauses without any approval.
+                errors = [
+                    e["payload"]["result"]
+                    for e in events
+                    if e["type"] == "tool_result" and "error" in e["payload"]["result"]
+                ]
+                assert errors and errors[0]["error"].startswith("Read the file")
+                assert "Repeated action" in result["run"]["outcome"]
     assert not (environment["repo"] / "unsafe.py").exists()
 
 

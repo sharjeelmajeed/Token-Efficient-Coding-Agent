@@ -6,7 +6,7 @@ import sys
 import pytest
 
 from token_agent.api import create_app
-from token_agent.cli import notice
+from token_agent.cli import budget_line, notice
 from token_agent.providers import ProviderResult
 
 from .conftest import live_client
@@ -270,3 +270,15 @@ def test_cli_notice_never_crashes_on_missing_or_odd_fields(kind):
     }
     lines = notice(kind, odd)
     assert all("\x1b" not in line for line in lines)
+
+
+def test_budget_options_use_plain_words_and_keep_unknown_codes():
+    payload = {"remaining_micro_usd": 0, "limit_micro_usd": 6000}
+    gateway = budget_line({**payload, "options": ["raise_gateway_budget_then_resubmit"]})
+    assert gateway.endswith("options: raise the gateway budget, then resend")
+    user = budget_line({**payload, "options": ["raise_budget_then_resubmit", "new_option"]})
+    assert user.endswith("options: raise your budget, then resend, new_option")
+    assert budget_line({**payload, "options": ["continue", "cancel"]}).endswith(
+        "options: continue, cancel"
+    )
+    assert "options" not in budget_line({**payload, "options": "continue"})

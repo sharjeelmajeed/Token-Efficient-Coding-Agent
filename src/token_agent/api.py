@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .config import Settings, load_tokens
+from .context import ATTRIBUTION_METHOD
 from .engine import Engine
 from .models import ApplyPatch, ApprovalDecision, SessionCreate, TaskRequest, WriteFile
 from .policy import authenticate, budget_warning_active, resolve_repository
@@ -42,6 +43,31 @@ class BodyLimit:
             return chunks.pop(0) if chunks else await receive()
 
         return await self.app(scope, replay, send)
+
+
+def token_attribution(usage: list[dict]) -> dict:
+    """Run totals of real prompt tokens by part, summed over every model request.
+
+    Text that stays in the context, such as a research result, is counted in every request
+    that resends it, so its total here is its real cost to the run.
+    """
+    by_part: dict[str, int] = {}
+    missing = 0
+    for row in usage:
+        shares = row["details"].get("prompt_tokens_by_part")
+        if not shares:
+            missing += 1
+            continue
+        for part, tokens in shares.items():
+            by_part[part] = by_part.get(part, 0) + tokens
+    return {
+        "method": ATTRIBUTION_METHOD,
+        "input_tokens_total": sum(row["input_tokens"] for row in usage),
+        "output_tokens_total": sum(row["output_tokens"] for row in usage),
+        "input_tokens_by_part": dict(sorted(by_part.items())),
+        "research_input_tokens": by_part.get("tool:web_research", 0),
+        "requests_without_attribution": missing,
+    }
 
 
 def create_app(settings: Settings, provider=None, research=None, sandbox=None, git=None) -> FastAPI:
@@ -262,11 +288,20 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
         except KeyError:
             raise HTTPException(404, "Run not found") from None
         owned(run["session_id"], identity)
+        usage = store.usage(run_id)
+        states: dict[str, int] = {}
+        for row in usage:
+            states[row["state"]] = states.get(row["state"], 0) + 1
+        reconciled = bool(usage) and set(states) == {"reconciled"}
         return {
             "run": run,
-            "usage": store.usage(run_id),
+            "usage": usage,
             "research_usage": store.research_usage(run_id),
-            "cost_basis": "Conservative configured ceilings; not reconciled Bifrost log cost",
+            "token_attribution": token_attribution(usage),
+            "cost_basis": "Reconciled against gateway log cost"
+            if reconciled
+            else "Conservative configured ceilings; not fully reconciled with gateway logs",
+            "reconciliation": {"complete": reconciled, "usage_states": states},
             "benchmark_evidence": False,
         }
 
