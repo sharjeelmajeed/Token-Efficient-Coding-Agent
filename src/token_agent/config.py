@@ -12,6 +12,8 @@ class ResearchPackage(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     name: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9._-]{0,63}$")
     version: str = Field(default="", pattern=r"^[0-9A-Za-z.+_-]{0,40}$")
+    # Newest version the model is trusted to know. A newer pinned version triggers research.
+    known_version: str = Field(default="", pattern=r"^(?:\d+(?:\.\d+){0,3})?$")
     domains: list[str] = Field(min_length=1, max_length=5)
 
     @model_validator(mode="after")
