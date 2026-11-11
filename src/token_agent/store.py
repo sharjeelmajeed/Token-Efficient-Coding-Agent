@@ -127,13 +127,18 @@ class Store:
             yield db
             if transaction:
                 db.commit()
-        except Exception:
-            if transaction and db.in_transaction:
-                db.rollback()
-            if reuse:
-                # Never keep a connection whose state is uncertain.
-                local.db = None
-                db.close()
+        except BaseException:
+            # BaseException, not Exception: asyncio.CancelledError (a cancelled run) and
+            # KeyboardInterrupt must also roll back, or the reused connection would stay
+            # inside BEGIN IMMEDIATE and keep holding the write lock.
+            try:
+                if transaction and db.in_transaction:
+                    db.rollback()
+            finally:
+                if reuse:
+                    # Never keep a connection whose state is uncertain.
+                    local.db = None
+                    db.close()
             raise
         finally:
             if reuse:

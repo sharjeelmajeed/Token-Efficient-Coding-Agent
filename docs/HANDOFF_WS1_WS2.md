@@ -154,14 +154,24 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
    was not retried after PR #6.
 8. **Policy overhead (NFR-01, under 50 ms excluding network)** was measured with
    `scripts/measure_overhead.py` (`docs/evidence/policy-overhead.json`).
-   - **The policy checks alone are within target on small and medium repositories:**
-     - confidentiality rescan, secret scans and reply validation take about 8 ms on a 1-file
-       repository and 14 ms on a 116-file one;
-     - on a 4,000-file repository, the per-request confidentiality rescan alone takes about
-       100 ms.
-   - **The core's whole work per request** (including the tool and the database) is a median
-     of 48 ms on the 1-file repository, after reusing one database connection per thread; it
-     was 221 ms before. Large repositories are dominated by tool time (`grep` about 2 s).
+   - **About the evidence file:** it combines two script runs, one on `main` before
+     connection reuse and one after it. It is not a single direct output of the script.
+   - **The policy checks alone are within target on small and medium repositories.**
+     Confidentiality rescan, secret scans and reply validation (medians of the after run):
+
+     | Repository | Policy checks per request |
+     |---|---|
+     | 1 file | about 10.4 ms |
+     | 118 files | about 14.3 ms |
+     | 4,000 files | about 114 ms, of which the per-request confidentiality rescan is about 105 ms |
+
+   - **The core's whole work per request** (including the tool and the database), on the
+     1-file repository:
+     - after reusing one database connection per thread: **median 48 ms, p95 53 ms**, so the
+       p95 is just above the 50 ms target;
+     - before: median 221 ms, p95 256 ms.
+
+     Large repositories are dominated by tool time (`grep` about 2 s).
 9. **Not measured:** crash recovery by killing the process (tested from a prepared database).
 
 ## 7. Open items

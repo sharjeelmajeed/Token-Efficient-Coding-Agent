@@ -2,6 +2,7 @@
   "measure": "core work between model requests, excluding network and model time",
   "target_ms": 50,
   "script": "scripts/measure_overhead.py --runs 10",
+  "composition": "Combined from two runs of scripts/measure_overhead.py --runs 10 on the same machine: before_connection_reuse on main 4f20f3f, and after_connection_reuse with this change. Not a single direct output of the script.",
   "note": "Scripted instant provider; overhead only, not model behaviour and not benchmark evidence. The core work per request includes tool execution, so grep and list_tree on large repositories are tool time, not policy time; policy_steps time the policy alone.",
   "machine": {
     "platform": "Windows-11-10.0.26200-SP0",

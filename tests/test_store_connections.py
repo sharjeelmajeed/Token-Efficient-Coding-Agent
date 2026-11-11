@@ -78,3 +78,49 @@ def test_close_releases_the_connection(store):
         db.execute("SELECT 1")
     with store.connection() as fresh:
         assert fresh is not db
+
+
+def assert_unlocked(store):
+    """The next transaction works, and another connection can take the write lock."""
+    with store.connection(True) as db:
+        db.execute("INSERT INTO accounts VALUES ('after', 1)")
+    other = sqlite3.connect(store.path, timeout=0.5)
+    try:
+        other.execute("BEGIN IMMEDIATE")
+        other.execute("INSERT INTO accounts VALUES ('other', 1)")
+        other.commit()
+    finally:
+        other.close()
+
+
+def test_keyboard_interrupt_mid_transaction_rolls_back_and_releases_the_lock(store):
+    with pytest.raises(KeyboardInterrupt):
+        with store.connection(True) as db:
+            db.execute("INSERT INTO accounts VALUES ('lost', 1)")
+            raise KeyboardInterrupt
+    assert_unlocked(store)
+    with store.connection() as db:
+        assert db.execute("SELECT COUNT(*) FROM accounts WHERE owner='lost'").fetchone()[0] == 0
+
+
+def test_a_cancelled_run_mid_transaction_rolls_back_and_releases_the_lock(store):
+    import asyncio
+
+    async def write_then_wait():
+        with store.connection(True) as db:
+            db.execute("INSERT INTO accounts VALUES ('cancelled', 1)")
+            await asyncio.sleep(10)
+
+    async def scenario():
+        task = asyncio.create_task(write_then_wait())
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(scenario())
+    assert_unlocked(store)
+    with store.connection() as db:
+        assert (
+            db.execute("SELECT COUNT(*) FROM accounts WHERE owner='cancelled'").fetchone()[0] == 0
+        )
