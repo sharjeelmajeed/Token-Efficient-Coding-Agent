@@ -320,7 +320,8 @@ def test_each_run_is_reconciled_against_its_own_database(tmp_path, monkeypatch, 
     )
     record = runner.run_single(bench_task, SYSTEM_OPTIMIZED, 1)
     assert record.error is None
-    assert len(seen) == 1
+    # Usage here is never reconciled, so all three attempts run, each on the run's own database.
+    assert len(seen) == 3 and len(set(seen)) == 1
     assert Path(seen[0]).name.startswith("LOCAL-01_optimized_rep1_")
     assert Path(seen[0]) != tmp_path / "base.sqlite3"
 
@@ -413,3 +414,29 @@ def test_frozen_task_needs_its_test_environment(tmp_path, monkeypatch, frozen_ta
     record = runner.run_single(frozen_task, SYSTEM_OPTIMIZED, 1)
     assert record.passed is False
     assert "No test environment configured for python" in record.error
+
+
+def test_reconciliation_retries_stop_once_every_row_is_reconciled(
+    tmp_path, monkeypatch, bench_task
+):
+    import benchmarks.harness as harness
+
+    attempts = []
+
+    def reconcile_on_second_try(store, rows, tolerance):
+        attempts.append(store.path)
+        if len(attempts) == 2:
+            with store.connection(True) as db:
+                db.execute("UPDATE usage SET state='reconciled'")
+        return _Report()
+
+    monkeypatch.setattr(harness, "reconcile", reconcile_on_second_try)
+    log = tmp_path / "gateway.json"
+    log.write_text("[]")
+    runner = bench_runner(
+        tmp_path, monkeypatch, ScriptedModel(), gateway_log=log, reconcile_delay_seconds=0
+    )
+    record = runner.run_single(bench_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert len(attempts) == 2
+    assert record.cost_reconciled is True
