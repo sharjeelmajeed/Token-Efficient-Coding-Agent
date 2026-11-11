@@ -162,9 +162,7 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
    - **The core's whole work per request** (including the tool and the database) is a median
      of 48 ms on the 1-file repository, after reusing one database connection per thread; it
      was 221 ms before. Large repositories are dominated by tool time (`grep` about 2 s).
-9. **Not measured:**
-   - scan time on a large repository;
-   - crash recovery by killing the process (tested from a prepared database).
+9. **Not measured:** crash recovery by killing the process (tested from a prepared database).
 
 ## 7. Open items
 
