@@ -133,3 +133,23 @@ Each task is evaluated across 11 system configurations defined in `docs/OPTIMIZA
   run reconciled. Fixture or scripted runs are never benchmark evidence.
 - **Checks:** a task's `check_command` runs through a shell in the task workspace. It comes only
   from this frozen, reviewed task suite, never from model output or the repository.
+
+## 6. Research on versus off (handoff G08)
+
+`benchmarks/research_comparison.py` runs the same frozen tasks, model and configuration in two
+modes:
+- **research off:** `[research]` is disabled, so the `web_research` tool is not offered and no
+  automatic trigger can fire;
+- **research on:** `[research]` is enabled, with explicit user permission for public research
+  (FSD 7.2).
+
+It reports, per mode and per task:
+- pass rate;
+- total tokens, and the tokens research text added (`research_input_tokens`);
+- research calls and Tavily credits;
+- gateway-reconciled cost.
+
+It reports numbers and spread only; no saving is claimed from a small sample.
+`benchmarks/research.example.toml` restricts research to each library's official
+documentation site. The default sample is two tasks per repository (TASK-01, 03, 09, 12, 14
+and 15) with three repeats per mode.

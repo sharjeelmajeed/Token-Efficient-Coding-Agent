@@ -146,6 +146,9 @@ class RunRecord:
     run_status: str = ""
     outcome: str | None = None
     auto_approvals: int = 0
+    research_enabled: bool = False
+    research_input_tokens: int = 0
+    research_credits: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -212,6 +215,8 @@ def aggregate_system_results(runs: list[RunRecord]) -> dict[str, Any]:
         "steps": calculate_spread([r.steps for r in runs]),
         "tool_calls": calculate_spread([r.tool_calls for r in runs]),
         "research_calls": calculate_spread([r.research_calls for r in runs]),
+        "research_input_tokens": calculate_spread([r.research_input_tokens for r in runs]),
+        "research_credits_total": round(sum(r.research_credits for r in runs), 4),
     }
 
 
@@ -274,6 +279,7 @@ class BenchmarkRunner:
         gateway_log: str | Path | None = None,
         provider=None,
         environments: dict[str, Environment] | None = None,
+        research: bool = False,
         run_timeout_seconds: float = 900.0,
         reconcile_delay_seconds: float = 2.0,
     ):
@@ -287,6 +293,9 @@ class BenchmarkRunner:
         self.provider = provider
         # Test environments by name (see benchmarks/setup_environments.py).
         self.environments = environments or {}
+        # Explicit user permission for public research on every run (FSD 7.2), for the
+        # research on-vs-off comparison. Research still needs [research] enabled in the config.
+        self.research = research
         self.run_timeout_seconds = run_timeout_seconds
         # Bifrost writes its log after answering; wait briefly before reconciling a run.
         self.reconcile_delay_seconds = reconcile_delay_seconds
@@ -374,7 +383,7 @@ class BenchmarkRunner:
         self, engine: Engine, store: Store, session_id: str, prompt: str
     ) -> tuple[str, int]:
         """Run one task inside a single event loop, approving exact pending actions."""
-        run_id = engine.start(session_id, prompt)
+        run_id = engine.start(session_id, prompt, self.research)
         task = engine.tasks.get(session_id)
         approvals = 0
         deadline = time.monotonic() + self.run_timeout_seconds
@@ -457,6 +466,8 @@ class BenchmarkRunner:
                 logger.info("Reconciliation for %s: %s", run_id, report.summary())
 
             usage_rows = store.usage(run_id)
+            attribution = token_attribution(usage_rows)
+            research_rows = store.research_usage(run_id)
             run = store.run(run_id) or {}
             events = store.events(session["id"])
             return RunRecord(
@@ -479,11 +490,14 @@ class BenchmarkRunner:
                 steps=run.get("step", 0),
                 tool_calls=sum(1 for e in events if e.get("type") == "tool_call"),
                 research_calls=sum(1 for e in events if e.get("type") == "research_used"),
-                token_attribution=token_attribution(usage_rows),
+                token_attribution=attribution,
                 check_output=check_out[:2000],
                 run_status=run.get("status", ""),
                 outcome=run.get("outcome"),
                 auto_approvals=approvals,
+                research_enabled=self.research,
+                research_input_tokens=attribution.get("research_input_tokens", 0),
+                research_credits=sum(float(r.get("credits") or 0) for r in research_rows),
             )
         except Exception as exc:
             logger.exception("Run %s failed", run_identifier)
