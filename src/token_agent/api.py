@@ -81,6 +81,7 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
         store.recover()
         yield
         await engine.close()
+        store.close()
 
     app = FastAPI(
         title="Token-Efficient Coding Agent",

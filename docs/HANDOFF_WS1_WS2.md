@@ -152,8 +152,17 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 7. **Slow local models.** A 7B model on a laptop CPU took 13 to 92 seconds per request, which
    needs `gateway_timeout_seconds` raised. The 3B model failed the task on the old agent loop and
    was not retried after PR #6.
-8. **Not measured:**
-   - policy overhead (target under 50 ms; only the confidential scan was timed, median 1.7 ms);
+8. **Policy overhead (NFR-01, under 50 ms excluding network)** was measured with
+   `scripts/measure_overhead.py` (`docs/evidence/policy-overhead.json`).
+   - **The policy checks alone are within target on small and medium repositories:**
+     - confidentiality rescan, secret scans and reply validation take about 8 ms on a 1-file
+       repository and 14 ms on a 116-file one;
+     - on a 4,000-file repository, the per-request confidentiality rescan alone takes about
+       100 ms.
+   - **The core's whole work per request** (including the tool and the database) is a median
+     of 48 ms on the 1-file repository, after reusing one database connection per thread; it
+     was 221 ms before. Large repositories are dominated by tool time (`grep` about 2 s).
+9. **Not measured:**
    - scan time on a large repository;
    - crash recovery by killing the process (tested from a prepared database).
 

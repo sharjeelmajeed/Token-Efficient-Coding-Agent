@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import threading
 import time
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ def overlaps(first: str, second: str) -> bool:
 class Store:
     def __init__(self, path: str):
         self.path = path
+        self._local = threading.local()
         Path(path).parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         if Path(path).is_symlink():
             raise ValueError("Database cannot be a symbolic link")
@@ -96,11 +98,29 @@ class Store:
                     "SELECT DISTINCT repo FROM sessions WHERE confidential=1"
                 )
 
-    @contextmanager
-    def connection(self, transaction: bool = False):
+    def _open(self) -> sqlite3.Connection:
         db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA foreign_keys=ON")
+        return db
+
+    @contextmanager
+    def connection(self, transaction: bool = False):
+        """Yield a connection; every write is still committed before the block returns.
+
+        Each thread reuses one connection. Opening and closing a connection for every
+        operation cost about 200 ms per model request (closing checkpoints the WAL). A nested
+        use on the same thread gets its own short-lived connection, as before.
+        """
+        local = self._local
+        reuse = not getattr(local, "busy", False)
+        if reuse:
+            db = getattr(local, "db", None)
+            if db is None:
+                db = local.db = self._open()
+            local.busy = True
+        else:
+            db = self._open()
         try:
             if transaction:
                 db.execute("BEGIN IMMEDIATE")
@@ -108,10 +128,24 @@ class Store:
             if transaction:
                 db.commit()
         except Exception:
-            if transaction:
+            if transaction and db.in_transaction:
                 db.rollback()
+            if reuse:
+                # Never keep a connection whose state is uncertain.
+                local.db = None
+                db.close()
             raise
         finally:
+            if reuse:
+                local.busy = False
+            else:
+                db.close()
+
+    def close(self):
+        """Close this thread's reused connection, for example before deleting the database."""
+        db = getattr(self._local, "db", None)
+        if db is not None:
+            self._local.db = None
             db.close()
 
     def register_accounts(self, users):
