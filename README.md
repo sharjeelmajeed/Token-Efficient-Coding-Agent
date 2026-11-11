@@ -32,9 +32,10 @@ team gateway or paid provider in this environment.
 
 ## Frozen benchmark suite
 
-The benchmark task suite is in [`benchmarks/tasks/`](benchmarks/tasks/), frozen by PR #33. Record
-PR #33's merge commit on `main` here once it lands; it is the reference for every benchmark
-report.
+The benchmark task suite is in [`benchmarks/tasks/`](benchmarks/tasks/), frozen at commit
+`7ac9085` (`7ac908565c52a06fb27f10e5b2f6c8f17eb58e50`, the merge of PR #33 into `main`). It
+is the reference for every benchmark report: name this commit in each report, and revalidate
+before using any later change to `benchmarks/tasks/`.
 
 It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja` and
 `expressjs/express`) and 2 languages (Python, JavaScript), covering bug fixes, small features,
