@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { CoreClient } from './client';
-import { AgentEvent, ReplyJoiner, SessionState, Status, TimelineEntry, budgetWarningPercent, coreOrigin, id,
-  noticeText, record, safeText, statusLabel, usd } from './protocol';
+import { AgentEvent, GIT_GATED_TOOLS, ReplyJoiner, SessionState, Status, TimelineEntry, budgetWarningPercent, coreOrigin,
+  gitApprovalText, id, noticeText, record, safeText, statusLabel, usd } from './protocol';
 import { webviewHtml } from './webview';
 
 class Documents implements vscode.TextDocumentContentProvider {
@@ -224,6 +224,13 @@ class AgentController implements vscode.Disposable {
         const after = this.documents.put('after', preview.after);
         await vscode.commands.executeCommand('vscode.diff', before, after, `Proposed change: ${safeText(preview.path, 200)}`);
         detail = `Review the native diff, then return to this decision. File: ${safeText(preview.path, 200)}`;
+      } else if (GIT_GATED_TOOLS.has(approval.action.tool)) {
+        // Read-only virtual document from the core's action and preview only; the editor never runs git.
+        // A commit's preview is a staged diff, so it opens in diff mode; checkout/push are plain text.
+        const name = approval.action.tool === 'git_commit' ? 'git-commit.diff' : `${approval.action.tool.replace('_', '-')}.txt`;
+        const uri = this.documents.put(name, gitApprovalText(approval.action, approval.diff));
+        await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri), { preview: false });
+        detail = 'Review the git action in the opened document, then decide.';
       } else { detail = safeText(JSON.stringify(approval.action, null, 2), 64000); }
       const choice = await vscode.window.showInformationMessage(
         approval.action.tool === 'run_shell' ? 'Review the exact command in chat before deciding.' : detail,
