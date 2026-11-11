@@ -1,14 +1,30 @@
 {
   "id": "TASK-15",
   "repository": "https://github.com/expressjs/express.git",
-  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
   "language": "javascript",
-  "category": "refactor",
-  "title": "Router path regex pattern compilation caching",
-  "prompt": "Refactor path parameter parsing in lib/router/layer.js to avoid redundant regex recompilation for unchanged route path patterns.",
-  "check_command": "npm test -- test/app.router.js",
-  "timeout_seconds": 60,
-  "target_files": [
-    "lib/router/layer.js"
-  ]
+  "category": "small_feature",
+  "title": "Conditional revalidation for QUERY requests",
+  "prompt": "`req.fresh` only checks freshness for GET and HEAD requests, so a QUERY request with a matching `If-None-Match` never gets a 304. QUERY is a safe, cacheable method: make `req.fresh` support it in the same way.",
+  "source": "https://github.com/expressjs/express/commit/ae6dd37680e3a00618d6c8a3e522f0ee4eeba1a4",
+  "environment": "node-express5",
+  "timeout_seconds": 900,
+  "commit": "ba006766fb964571723138708eacaba0f55759cd",
+  "reference_commit": "ae6dd37680e3a00618d6c8a3e522f0ee4eeba1a4",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "mocha",
+    "test_files": [
+      "test/req.fresh.js"
+    ],
+    "fail_to_pass": [
+      "req .fresh should return true for a QUERY request with a body when the resource is not modified"
+    ],
+    "pass_to_pass": [
+      "req .fresh should ignore \"If-Modified-Since\" when \"If-None-Match\" is present",
+      "req .fresh should return false for a QUERY request with a body when the resource is modified",
+      "req .fresh should return false when the resource is modified",
+      "req .fresh should return false without response headers",
+      "req .fresh should return true when the resource is not modified"
+    ]
+  }
 }

@@ -1,14 +1,50 @@
 {
   "id": "TASK-14",
   "repository": "https://github.com/expressjs/express.git",
-  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
   "language": "javascript",
-  "category": "small_feature",
-  "title": "Header appending support via res.appendHeader",
-  "prompt": "Add res.appendHeader(field, val) in lib/response.js that appends to existing response headers as an array or comma-separated list.",
-  "check_command": "npm test -- test/res.set.js",
-  "timeout_seconds": 60,
-  "target_files": [
-    "lib/response.js"
-  ]
+  "category": "bug_fix",
+  "title": "Settings must ignore Object.prototype values",
+  "prompt": "`app.get(setting)`, `app.enabled()` and `app.disabled()` read inherited values from `Object.prototype`, so settings named like built-in properties (for example `constructor` or `hasOwnProperty`) look set. Only the app's own settings, and those inherited from a parent app, should count.",
+  "source": "https://github.com/expressjs/express/commit/c17fe058613dc7dfb7779fbe68a9738a108fe408",
+  "environment": "node-express4",
+  "timeout_seconds": 900,
+  "commit": "87279c08aa46d178fe6f2e235d2345f17d6b5a37",
+  "reference_commit": "c17fe058613dc7dfb7779fbe68a9738a108fe408",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "mocha",
+    "test_files": [
+      "test/config.js"
+    ],
+    "fail_to_pass": [
+      "config .disabled() should default to true for prototype values",
+      "config .enabled() should default to false for prototype values",
+      "config .get() should return undefined for prototype values",
+      "config .set() should return undefined for prototype values"
+    ],
+    "pass_to_pass": [
+      "config .disable() should set prototype values",
+      "config .disable() should set the value to false",
+      "config .disabled() should default to true",
+      "config .disabled() should return false when set",
+      "config .enable() should set prototype values",
+      "config .enable() should set the value to true",
+      "config .enabled() should default to false",
+      "config .enabled() should return true when set",
+      "config .get() should otherwise return the value",
+      "config .get() should return undefined when unset",
+      "config .get() when mounted should default to the parent app",
+      "config .get() when mounted should given precedence to the child",
+      "config .get() when mounted should inherit \"trust proxy\" setting",
+      "config .get() when mounted should prefer child \"trust proxy\" setting",
+      "config .set() \"etag\" should set \"etag fn\"",
+      "config .set() \"etag\" should throw on bad value",
+      "config .set() \"trust proxy\" should set \"trust proxy fn\"",
+      "config .set() should return set value",
+      "config .set() should return the app",
+      "config .set() should return the app when undefined",
+      "config .set() should set a value",
+      "config .set() should set prototype values"
+    ]
+  }
 }

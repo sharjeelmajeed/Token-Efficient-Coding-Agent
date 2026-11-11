@@ -1,0 +1,370 @@
+{
+  "validated_at": "2026-11-11T06:51:16Z",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.2"
+  },
+  "all_valid": true,
+  "tasks": [
+    {
+      "id": "TASK-01",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "9 required tests did not pass: [\"tests/test_options.py::test_missing_envvar_sequence[-'--units']\", \"tests/test_options.py::test_missing_envvar_sequence[envvar1-'--units' (env var: 'UNITS')]\", \"tests/test_options.py::test_missing_envvar_sequence[envvar2-'--units' (env var: 'WEATHER_UNITS', 'UNITS')]\", \"tests/test_options.py::test_missing_envvar_sequence[envvar3-'--units' (env var: 'WEATHER_UNITS', 'UNITS')]\", \"tests/test_options.py::test_missing_envvar_sequence[envvar4-'--units']\"]",
+        "required": 676,
+        "failed_or_missing": 9,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 676 required tests passed",
+        "required": 676,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 9
+      },
+      "seconds": 17.3
+    },
+    {
+      "id": "TASK-02",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "3 required tests did not pass: ['tests/test_shell_completion.py::test_zsh_full_complete_with_colons[env0-plain\\\\na\\\\n_\\\\nplain\\\\nb\\\\nbee\\\\nplain\\\\nc\\\\\\\\:d\\\\ncee:dee\\\\nplain\\\\nc:e\\\\n_\\\\n]', 'tests/test_shell_completion.py::test_zsh_full_complete_with_colons[env1-plain\\\\nc\\\\\\\\:d\\\\ncee:dee\\\\nplain\\\\nc:e\\\\n_\\\\n]', 'tests/test_shell_completion.py::test_zsh_full_complete_with_colons[env2-plain\\\\nc\\\\\\\\:d\\\\ncee:dee\\\\nplain\\\\nc:e\\\\n_\\\\n]']",
+        "required": 50,
+        "failed_or_missing": 3,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 50 required tests passed",
+        "required": 50,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 3
+      },
+      "seconds": 5.6
+    },
+    {
+      "id": "TASK-03",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['tests/test_termui.py::test_progressbar_hidden_manual']",
+        "required": 80,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 80 required tests passed",
+        "required": 80,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 6.1
+    },
+    {
+      "id": "TASK-04",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['tests/test_defaults.py::test_multiple_flag_default']",
+        "required": 116,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 116 required tests passed",
+        "required": 116,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 6.9
+    },
+    {
+      "id": "TASK-05",
+      "category": "refactor",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "3 required tests did not pass: ['tests/test_shell_completion.py::test_add_completion_class', 'tests/test_shell_completion.py::test_add_completion_class_decorator', 'tests/test_shell_completion.py::test_add_completion_class_with_name']",
+        "required": 40,
+        "failed_or_missing": 3,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 40 required tests passed",
+        "required": 40,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 3
+      },
+      "seconds": 5.6
+    },
+    {
+      "id": "TASK-06",
+      "category": "refactor",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "4 required tests did not pass: ['tests/test_defaults.py::test_lookup_default_override_respected', 'tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[None-anything-None]', 'tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map1-nonexistent-None]', 'tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map3-anything-None]']",
+        "required": 22,
+        "failed_or_missing": 4,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 22 required tests passed",
+        "required": 22,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 4
+      },
+      "seconds": 5.0
+    },
+    {
+      "id": "TASK-07",
+      "category": "refactor",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "3 required tests did not pass: ['tests/test_utils/test_sentinel.py::test_parameter_duplication[pickle]', 'tests/test_utils/test_sentinel.py::test_sentinel_duplication_preserves_identity[pickle-Sentinel.FLAG_NEEDS_VALUE]', 'tests/test_utils/test_sentinel.py::test_sentinel_duplication_preserves_identity[pickle-Sentinel.UNSET]']",
+        "required": 10,
+        "failed_or_missing": 3,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 10 required tests passed",
+        "required": 10,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 3
+      },
+      "seconds": 4.9
+    },
+    {
+      "id": "TASK-08",
+      "category": "test_addition",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "no test fails when the fix is reverted",
+        "tests": 551,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "1 tests fail when the fix is reverted",
+        "tests": 552,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 1
+      },
+      "seconds": 20.0
+    },
+    {
+      "id": "TASK-09",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['tests/test_regression.py::TestBug::test_pass_context_with_select']",
+        "required": 53,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 53 required tests passed",
+        "required": 53,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 14.5
+    },
+    {
+      "id": "TASK-10",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "7 required tests did not pass: ['tests/test_filters.py::TestFilter::test_xmlattr_key_invalid[ ]', 'tests/test_filters.py::TestFilter::test_xmlattr_key_invalid[/]', 'tests/test_filters.py::TestFilter::test_xmlattr_key_invalid[=]', 'tests/test_filters.py::TestFilter::test_xmlattr_key_invalid[>]', 'tests/test_filters.py::TestFilter::test_xmlattr_key_invalid[\\\\n]']",
+        "required": 131,
+        "failed_or_missing": 7,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 131 required tests passed",
+        "required": 131,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 7
+      },
+      "seconds": 8.1
+    },
+    {
+      "id": "TASK-11",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "2 required tests did not pass: ['tests/test_async.py::test_getitem_after_call', 'tests/test_async.py::test_getitem_after_filter']",
+        "required": 58,
+        "failed_or_missing": 2,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 58 required tests passed",
+        "required": 58,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 2
+      },
+      "seconds": 7.2
+    },
+    {
+      "id": "TASK-12",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "3 required tests did not pass: ['tests/test_loader.py::test_package_file_list', 'tests/test_loader.py::test_package_file_source[foo/test.html-FOO]', 'tests/test_loader.py::test_package_file_source[test.html-BAR]']",
+        "required": 40,
+        "failed_or_missing": 3,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 40 required tests passed",
+        "required": 40,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 3
+      },
+      "seconds": 5.9
+    },
+    {
+      "id": "TASK-13",
+      "category": "test_addition",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "no test fails when the fix is reverted",
+        "tests": 15,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "1 tests fail when the fix is reverted",
+        "tests": 15,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 1
+      },
+      "seconds": 9.9
+    },
+    {
+      "id": "TASK-14",
+      "category": "bug_fix",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "4 required tests did not pass: ['config .disabled() should default to true for prototype values', 'config .enabled() should default to false for prototype values', 'config .get() should return undefined for prototype values', 'config .set() should return undefined for prototype values']",
+        "required": 26,
+        "failed_or_missing": 4,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 26 required tests passed",
+        "required": 26,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 4
+      },
+      "seconds": 14.5
+    },
+    {
+      "id": "TASK-15",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['req .fresh should return true for a QUERY request with a body when the resource is not modified']",
+        "required": 6,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 6 required tests passed",
+        "required": 6,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 5.5
+    },
+    {
+      "id": "TASK-16",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['res .links(obj) should set multiple links for single rel']",
+        "required": 3,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 3 required tests passed",
+        "required": 3,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 5.2
+    },
+    {
+      "id": "TASK-17",
+      "category": "small_feature",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "1 required tests did not pass: ['app .render(name, options, fn) should accept null or undefined options']",
+        "required": 21,
+        "failed_or_missing": 1,
+        "fail_to_pass_passing": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "all 21 required tests passed",
+        "required": 21,
+        "failed_or_missing": 0,
+        "fail_to_pass_passing": 1
+      },
+      "seconds": 4.6
+    },
+    {
+      "id": "TASK-18",
+      "category": "test_addition",
+      "valid": true,
+      "without_agent_work": {
+        "passed": false,
+        "detail": "no test fails when the fix is reverted",
+        "tests": 9,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 0
+      },
+      "with_reference_change": {
+        "passed": true,
+        "detail": "1 tests fail when the fix is reverted",
+        "tests": 10,
+        "failing_on_fixed_code": 0,
+        "fail_when_fix_reverted": 1
+      },
+      "seconds": 11.4
+    }
+  ]
+}

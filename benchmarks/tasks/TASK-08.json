@@ -1,14 +1,24 @@
 {
   "id": "TASK-08",
-  "repository": "https://github.com/pallets/jinja.git",
-  "commit": "c87b640e74b3f886f380126ffc59d9f5ea6c4d7e",
+  "repository": "https://github.com/pallets/click.git",
   "language": "python",
-  "category": "small_feature",
-  "title": "Unique filter attribute parameter support",
-  "prompt": "Enhance the unique filter in jinja2.filters to accept an optional attribute argument to deduplicate a list of dicts/objects by a specific property.",
-  "check_command": "pytest tests/test_filters.py -k test_unique_by_attribute",
-  "timeout_seconds": 60,
-  "target_files": [
-    "src/jinja2/filters.py"
-  ]
+  "category": "test_addition",
+  "title": "Tests for show_default with non-string defaults",
+  "prompt": "The help output for an option with `show_default=True` treats an empty-string default specially. That check must only apply to real strings: a default value whose type compares equal to `\"\"` without being a string must be rendered normally. The code already handles this. Add tests to `tests/test_options.py` that cover this behaviour, so that they would catch a regression.",
+  "source": "https://github.com/pallets/click/commit/d340b0c1202284a1b9d0ca892549208527d586ce",
+  "environment": "python",
+  "timeout_seconds": 900,
+  "commit": "d340b0c1202284a1b9d0ca892549208527d586ce",
+  "reference_commit": "d340b0c1202284a1b9d0ca892549208527d586ce",
+  "check": {
+    "kind": "test_addition",
+    "runner": "pytest",
+    "test_files": [
+      "tests/test_options.py"
+    ],
+    "source_files": [
+      "src/click/core.py"
+    ],
+    "revert_to": "04ef3a6f473deb2499721a8d11f92a7d2c0912f2"
+  }
 }

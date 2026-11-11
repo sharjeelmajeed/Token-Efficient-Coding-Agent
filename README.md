@@ -32,13 +32,21 @@ team gateway or paid provider in this environment.
 
 ## Frozen benchmark suite
 
-The benchmark task suite is frozen in [`benchmarks/tasks/`](benchmarks/tasks/) at commit `0ecb417` on branch `test/evaluation-freeze`.
-It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja`, and `expressjs/express`)
-and 2 languages (Python, JavaScript), covering bug fixes, small features, refactors, and test additions.
-Each task specifies a pinned commit, exact prompt, target files, and automated pass/fail command.
-Per handoff G01 and FSD 10.3, core optimization features were developed prior to benchmark freezing;
-this held-out suite serves as the fixed ground truth for all comparative evaluations. See
-[`benchmarks/README.md`](benchmarks/README.md) for full task definitions and protocol.
+The benchmark task suite is in [`benchmarks/tasks/`](benchmarks/tasks/), frozen by PR #33. Record
+PR #33's merge commit on `main` here once it lands; it is the reference for every benchmark
+report.
+
+It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja` and
+`expressjs/express`) and 2 languages (Python, JavaScript), covering bug fixes, small features,
+refactors and test additions. Each task is a real fix from the repository's history. The
+task starts at the commit before the fix, and its automated check is the tests that came with
+the fix. [`benchmarks/validate_tasks.py`](benchmarks/validate_tasks.py) proves that every check
+fails with no agent work and passes with the real fix
+([`validation.json`](benchmarks/tasks/validation.json)).
+
+Per handoff G01 and FSD 10.3, core optimization features were developed before the suite was
+frozen. These held-out tasks are the fixed ground truth for all comparative evaluations. See
+[`benchmarks/README.md`](benchmarks/README.md) for the task definitions and protocol.
 
 ## Install on Windows PowerShell
 

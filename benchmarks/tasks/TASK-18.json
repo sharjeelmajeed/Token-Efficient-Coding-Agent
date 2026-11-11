@@ -1,14 +1,24 @@
 {
   "id": "TASK-18",
   "repository": "https://github.com/expressjs/express.git",
-  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
   "language": "javascript",
-  "category": "small_feature",
-  "title": "Custom status fallback messaging in res.sendStatus",
-  "prompt": "Allow res.sendStatus in lib/response.js to accept custom HTTP status codes and provide a sensible fallback message if no default status message exists in http.STATUS_CODES.",
-  "check_command": "npm test -- test/res.sendStatus.js",
-  "timeout_seconds": 60,
-  "target_files": [
-    "lib/response.js"
-  ]
+  "category": "test_addition",
+  "title": "Tests for res.location with non-string values",
+  "prompt": "`res.location(url)` converts its argument to a string, so a `URL` instance or another non-string value works. The code already does this. Add tests to `test/res.location.js` that would catch a regression to string-only handling.",
+  "source": "https://github.com/expressjs/express/commit/a003cfab034fbadb1c78ae337ee8ab389adda217",
+  "environment": "node-express4",
+  "timeout_seconds": 900,
+  "commit": "a003cfab034fbadb1c78ae337ee8ab389adda217",
+  "reference_commit": "a003cfab034fbadb1c78ae337ee8ab389adda217",
+  "check": {
+    "kind": "test_addition",
+    "runner": "mocha",
+    "test_files": [
+      "test/res.location.js"
+    ],
+    "source_files": [
+      "lib/response.js"
+    ],
+    "revert_to": "a1fa90fcea7d8e844e1c9938ad095d62669c3abd"
+  }
 }

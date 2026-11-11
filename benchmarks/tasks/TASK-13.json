@@ -1,14 +1,24 @@
 {
   "id": "TASK-13",
-  "repository": "https://github.com/expressjs/express.git",
-  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
-  "language": "javascript",
-  "category": "bug_fix",
-  "title": "Preserve query encoding in res.redirect",
-  "prompt": "Fix res.redirect in lib/response.js to ensure query string parameters with spaces or unicode symbols remain correctly percent-encoded when resolving relative URLs.",
-  "check_command": "npm test -- test/res.redirect.js",
-  "timeout_seconds": 60,
-  "target_files": [
-    "lib/response.js"
-  ]
+  "repository": "https://github.com/pallets/jinja.git",
+  "language": "python",
+  "category": "test_addition",
+  "title": "Tests for sandbox protection of clear and pop",
+  "prompt": "The sandboxed environment treats `clear` and `pop` on known mutable sequence types as unsafe operations, so the immutable sandbox forbids them. The code already does this. Add tests to `tests/test_security.py` that would catch a regression where these methods are allowed again.",
+  "source": "https://github.com/pallets/jinja/commit/b5120582706b9e997cfd3277b02a32fd35b1c9d4",
+  "environment": "python",
+  "timeout_seconds": 900,
+  "commit": "b5120582706b9e997cfd3277b02a32fd35b1c9d4",
+  "reference_commit": "b5120582706b9e997cfd3277b02a32fd35b1c9d4",
+  "check": {
+    "kind": "test_addition",
+    "runner": "pytest",
+    "test_files": [
+      "tests/test_security.py"
+    ],
+    "source_files": [
+      "src/jinja2/sandbox.py"
+    ],
+    "revert_to": "1dc04bccf9384cced4262d7ca7157638b0ebd970"
+  }
 }

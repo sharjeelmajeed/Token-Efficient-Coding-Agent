@@ -1,14 +1,27 @@
 {
   "id": "TASK-16",
   "repository": "https://github.com/expressjs/express.git",
-  "commit": "0436d934e2a149b1a03f4448574be07198a0026e",
   "language": "javascript",
-  "category": "test_addition",
-  "title": "Empty request body handling tests",
-  "prompt": "Add tests in test/req.body.js verifying that empty strings and whitespace-only request payloads are handled properly by middleware without unhandled promise rejections.",
-  "check_command": "npm test -- test/req.body.js",
-  "timeout_seconds": 60,
-  "target_files": [
-    "test/req.body.js"
-  ]
+  "category": "small_feature",
+  "title": "Multiple links with the same rel in res.links",
+  "prompt": "Extend `res.links()` so that a relation can be given an array of URLs, producing one `Link` header entry per URL with the same `rel`.",
+  "source": "https://github.com/expressjs/express/commit/caa4f68ee8d32474676fa29cc2086dcc1d62208b",
+  "environment": "node-express5",
+  "timeout_seconds": 900,
+  "commit": "6ed3439584b6bc77b0f1156f8797700df063fa63",
+  "reference_commit": "caa4f68ee8d32474676fa29cc2086dcc1d62208b",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "mocha",
+    "test_files": [
+      "test/res.links.js"
+    ],
+    "fail_to_pass": [
+      "res .links(obj) should set multiple links for single rel"
+    ],
+    "pass_to_pass": [
+      "res .links(obj) should set Link header field",
+      "res .links(obj) should set Link header field for multiple calls"
+    ]
+  }
 }
