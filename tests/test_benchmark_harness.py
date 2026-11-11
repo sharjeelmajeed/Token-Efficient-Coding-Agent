@@ -77,7 +77,8 @@ def test_load_tasks_loads_all_eighteen_tasks():
         assert t["language"] in {"python", "javascript"}
         assert t["category"] in {"bug_fix", "small_feature", "refactor", "test_addition"}
         assert len(t["prompt"]) > 10
-        assert len(t["check_command"]) > 5
+        assert t["check"]["kind"] in {"fail_to_pass", "test_addition"}
+        assert t["environment"] in {"python", "node-express5", "node-express4"}
 
 
 def test_load_tasks_filtering():
@@ -327,3 +328,88 @@ def test_each_run_is_reconciled_against_its_own_database(tmp_path, monkeypatch, 
 class _Report:
     def summary(self):
         return {}
+
+
+# --- A frozen-style task through the whole harness ---------------------------------------
+
+
+@pytest.fixture
+def frozen_task(tmp_path):
+    """A bug commit and its fix (source and test), with a structured fail_to_pass check."""
+    origin = tmp_path / "frozen"
+    (origin / "src" / "pkg").mkdir(parents=True)
+    (origin / "tests").mkdir()
+    git = ["git", "-c", "user.name=bench", "-c", "user.email=bench@example.com"]
+
+    def commit(code: str, tests: str, message: str) -> str:
+        (origin / "src" / "pkg" / "__init__.py").write_text("")
+        (origin / "src" / "pkg" / "calculator.py").write_text(code)
+        (origin / "tests" / "test_calculator.py").write_text(tests)
+        subprocess.run([*git, "add", "."], cwd=origin, check=True)
+        subprocess.run([*git, "commit", "--quiet", "-m", message], cwd=origin, check=True)
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=origin, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+    subprocess.run([*git, "init", "--quiet"], cwd=origin, check=True)
+    old = "def test_module():\n    import pkg.calculator\n"
+    bug = commit("def add(a, b):\n    return a - b\n", old, "bug")
+    new = (
+        old
+        + "\n\ndef test_add():\n    from pkg.calculator import add\n\n    assert add(2, 3) == 5\n"
+    )
+    fix = commit("def add(a, b):\n    return a + b\n", new, "fix")
+    return {
+        "id": "FROZEN-01",
+        "repository": str(origin),
+        "commit": bug,
+        "reference_commit": fix,
+        "environment": "python",
+        "prompt": "Fix add so it returns the sum",
+        "check": {
+            "kind": "fail_to_pass",
+            "runner": "pytest",
+            "test_files": ["tests/test_calculator.py"],
+            "fail_to_pass": ["tests/test_calculator.py::test_add"],
+            "pass_to_pass": ["tests/test_calculator.py::test_module"],
+        },
+    }
+
+
+class SrcModel(ScriptedModel):
+    async def complete(self, messages, model, user, confidential, request_context=None):
+        result = await super().complete(messages, model, user, confidential, request_context)
+        text = result.content.replace('"calculator.py"', '"src/pkg/calculator.py"')
+        return ProviderResult(text, model, 100, 10, "test_transport")
+
+
+def frozen_runner(tmp_path, monkeypatch, model):
+    from benchmarks.checks import Environment
+
+    runner = bench_runner(tmp_path, monkeypatch, model)
+    runner.environments = {"python": Environment(python=sys.executable)}
+    return runner
+
+
+def test_frozen_task_passes_when_the_agent_fixes_it(tmp_path, monkeypatch, frozen_task):
+    runner = frozen_runner(tmp_path, monkeypatch, SrcModel())
+    record = runner.run_single(frozen_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert record.passed is True
+    assert record.auto_approvals == 1
+    assert "required tests passed" in record.check_output
+
+
+def test_frozen_task_fails_without_a_fix(tmp_path, monkeypatch, frozen_task):
+    runner = frozen_runner(tmp_path, monkeypatch, SrcModel(patch=False))
+    record = runner.run_single(frozen_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert record.passed is False
+    assert "test_add" in record.check_output
+
+
+def test_frozen_task_needs_its_test_environment(tmp_path, monkeypatch, frozen_task):
+    runner = bench_runner(tmp_path, monkeypatch, SrcModel())
+    record = runner.run_single(frozen_task, SYSTEM_OPTIMIZED, 1)
+    assert record.passed is False
+    assert "No test environment configured for python" in record.error

@@ -36,6 +36,15 @@ from token_agent.policy import resolve_repository
 from token_agent.reconcile import load_gateway_log, reconcile
 from token_agent.store import Store
 
+if __package__ in (None, ""):
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from benchmarks.checks import Environment  # noqa: E402
+from benchmarks.checks import evaluate as evaluate_task_check  # noqa: E402
+from benchmarks.checks import prepare as prepare_task_state  # noqa: E402
+
 logger = logging.getLogger("token_agent.benchmarks")
 
 # Benchmark runs are unattended, so every exact pending action is approved automatically.
@@ -264,6 +273,7 @@ class BenchmarkRunner:
         workspace_dir: str | Path = ".benchmark_workspaces",
         gateway_log: str | Path | None = None,
         provider=None,
+        environments: dict[str, Environment] | None = None,
         run_timeout_seconds: float = 900.0,
         reconcile_delay_seconds: float = 2.0,
     ):
@@ -275,6 +285,8 @@ class BenchmarkRunner:
         self.gateway_log = Path(gateway_log) if gateway_log else None
         # None uses the configured mode's provider (Bifrost or fixture); tests inject one.
         self.provider = provider
+        # Test environments by name (see benchmarks/setup_environments.py).
+        self.environments = environments or {}
         self.run_timeout_seconds = run_timeout_seconds
         # Bifrost writes its log after answering; wait briefly before reconciling a run.
         self.reconcile_delay_seconds = reconcile_delay_seconds
@@ -308,15 +320,31 @@ class BenchmarkRunner:
             text=True,
             timeout=300,
         )
-        subprocess.run(
-            ["git", "-c", "advice.detachedHead=false", "checkout", "--quiet", task["commit"]],
-            cwd=str(repo_dir),
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
+        if "check" in task:
+            # Frozen tasks: the start commit, plus removing the fix's tests for test additions.
+            prepare_task_state(repo_dir, task)
+        else:
+            subprocess.run(
+                ["git", "-c", "advice.detachedHead=false", "checkout", "--quiet", task["commit"]],
+                cwd=str(repo_dir),
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
         return repo_dir
+
+    def check_task(self, repo_dir: Path, task: dict[str, Any]) -> tuple[bool, str]:
+        """Run a frozen task's structured check, or a legacy shell check command."""
+        if "check" not in task:
+            return self.evaluate_check_command(
+                repo_dir, task["check_command"], task.get("timeout_seconds", 60)
+            )
+        env = self.environments.get(task["environment"])
+        if env is None:
+            raise ValueError(f"No test environment configured for {task['environment']}")
+        result = evaluate_task_check(repo_dir, task, env)
+        return result.passed, result.detail
 
     def evaluate_check_command(
         self, repo_dir: Path, check_command: str, timeout_seconds: int = 60
@@ -416,9 +444,7 @@ class BenchmarkRunner:
             )
             elapsed = round(time.monotonic() - start_time, 4)
 
-            passed, check_out = self.evaluate_check_command(
-                repo_dir, task["check_command"], task.get("timeout_seconds", 60)
-            )
+            passed, check_out = self.check_task(repo_dir, task)
 
             # Reconcile this run's own database before reading any cost.
             if self.gateway_log and self.gateway_log.exists():
@@ -537,10 +563,19 @@ def run_bench(
     repeats: int = 3,
     output_dir: str | Path = "benchmarks/results",
     gateway_log: str | Path | None = None,
+    python: str | None = None,
+    node_modules: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Clean programmatic harness interface for CLI `agent bench` invocation."""
+    """Clean programmatic harness interface for CLI `agent bench` invocation.
+
+    ``python`` and ``node_modules`` name the test environments that
+    ``benchmarks/setup_environments.py`` creates.
+    """
     settings = load_settings(config_path)
     loaded_tasks = load_tasks(task_ids=tasks)
+    environments = {"python": Environment(python=python)}
+    for name, path in (node_modules or {}).items():
+        environments[name] = Environment(node_modules=path)
 
     runner = BenchmarkRunner(
         base_settings=settings,
@@ -548,6 +583,7 @@ def run_bench(
         systems=systems or ALL_SYSTEMS,
         repeats=repeats,
         gateway_log=gateway_log,
+        environments=environments,
     )
 
     results = runner.run_all()
@@ -575,6 +611,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--gateway-log", help="Path to Bifrost gateway logs.db for billing reconciliation"
     )
+    parser.add_argument("--python", help="Python with pytest for the Python tasks")
+    parser.add_argument(
+        "--node-modules",
+        action="append",
+        default=[],
+        metavar="ENV=PATH",
+        help="node_modules for a JavaScript environment, e.g. node-express5=<path>",
+    )
     args = parser.parse_args()
 
     res = run_bench(
@@ -584,5 +628,7 @@ if __name__ == "__main__":
         repeats=args.repeats,
         output_dir=args.output_dir,
         gateway_log=args.gateway_log,
+        python=args.python,
+        node_modules=dict(item.split("=", 1) for item in args.node_modules),
     )
     print(f"Benchmark run complete. Report saved to: {res.get('report_path')}")
