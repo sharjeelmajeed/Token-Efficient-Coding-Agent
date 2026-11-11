@@ -1,0 +1,46 @@
+{
+  "id": "TASK-06",
+  "repository": "https://github.com/pallets/click.git",
+  "language": "python",
+  "category": "refactor",
+  "title": "Hide the internal UNSET sentinel in lookup_default",
+  "prompt": "`Context.lookup_default()` can return click's internal `Sentinel.UNSET` marker to callers. Refactor it so the internal sentinel never leaks: callers see `None` when there is no default, while an explicit override of `lookup_default` in a subclass is still respected.",
+  "source": "https://github.com/pallets/click/commit/aaf99a3ee6935f321f755bc7c5717a91d321cd39",
+  "environment": "python",
+  "timeout_seconds": 900,
+  "commit": "cdab890e57a30a9f437b88ce9652f7bfce980c1f",
+  "reference_commit": "aaf99a3ee6935f321f755bc7c5717a91d321cd39",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "pytest",
+    "test_files": [
+      "tests/test_defaults.py"
+    ],
+    "fail_to_pass": [
+      "tests/test_defaults.py::test_lookup_default_override_respected",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[None-anything-None]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map1-nonexistent-None]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map3-anything-None]"
+    ],
+    "pass_to_pass": [
+      "tests/test_defaults.py::test_basic_defaults",
+      "tests/test_defaults.py::test_default_map_source[args0-default_map0-cli-COMMANDLINE]",
+      "tests/test_defaults.py::test_default_map_source[args1-default_map1-mapped-DEFAULT_MAP]",
+      "tests/test_defaults.py::test_default_map_source[args2-default_map2-None-DEFAULT_MAP]",
+      "tests/test_defaults.py::test_default_map_source[args3-default_map3--DEFAULT_MAP]",
+      "tests/test_defaults.py::test_default_map_source[args4-default_map4-0-DEFAULT_MAP]",
+      "tests/test_defaults.py::test_default_map_source[args5-None-original-DEFAULT]",
+      "tests/test_defaults.py::test_flag_default_map",
+      "tests/test_defaults.py::test_lookup_default_callable_in_default_map",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map0-email-a@b.com]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map4-key-None]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map5-key-0]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map6-key-]",
+      "tests/test_defaults.py::test_lookup_default_returns_hides_sentinel[default_map7-key-False]",
+      "tests/test_defaults.py::test_multiple_defaults",
+      "tests/test_defaults.py::test_multiple_flag_default",
+      "tests/test_defaults.py::test_nargs_plus_multiple",
+      "tests/test_defaults.py::test_shared_param_prefers_first_default"
+    ]
+  }
+}

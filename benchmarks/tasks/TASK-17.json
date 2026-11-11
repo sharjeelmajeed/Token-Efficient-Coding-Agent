@@ -1,0 +1,45 @@
+{
+  "id": "TASK-17",
+  "repository": "https://github.com/expressjs/express.git",
+  "language": "javascript",
+  "category": "small_feature",
+  "title": "Allow null or undefined options in app.render",
+  "prompt": "Calling `app.render(name, options, callback)` with `options` set to `null` or `undefined` should behave the same as passing no options, instead of raising an error when locals are merged.",
+  "source": "https://github.com/expressjs/express/commit/c9ecf7b658388ccaa2b8470aabad92aabde458a2",
+  "environment": "node-express5",
+  "timeout_seconds": 900,
+  "commit": "a479419b16f5b97eb20f5dbae5848708ff30ce2d",
+  "reference_commit": "c9ecf7b658388ccaa2b8470aabad92aabde458a2",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "mocha",
+    "test_files": [
+      "test/app.render.js"
+    ],
+    "fail_to_pass": [
+      "app .render(name, options, fn) should accept null or undefined options"
+    ],
+    "pass_to_pass": [
+      "app .render(name, fn) caching should always lookup view without cache",
+      "app .render(name, fn) caching should cache with \"view cache\" setting",
+      "app .render(name, fn) should expose app.locals",
+      "app .render(name, fn) should handle render error throws",
+      "app .render(name, fn) should support absolute paths",
+      "app .render(name, fn) should support absolute paths with \"view engine\"",
+      "app .render(name, fn) should support index.<engine>",
+      "app .render(name, fn) when \"view engine\" is given should render the template",
+      "app .render(name, fn) when \"views\" is given should lookup the file in the path",
+      "app .render(name, fn) when \"views\" is given when array of paths should error if file does not exist",
+      "app .render(name, fn) when \"views\" is given when array of paths should lookup in later paths until found",
+      "app .render(name, fn) when \"views\" is given when array of paths should lookup the file in the path",
+      "app .render(name, fn) when a \"view\" constructor is given should create an instance of it",
+      "app .render(name, fn) when an error occurs should invoke the callback",
+      "app .render(name, fn) when an extension is given should render the template",
+      "app .render(name, fn) when the file does not exist should provide a helpful error",
+      "app .render(name, options, fn) caching should cache with cache option",
+      "app .render(name, options, fn) should expose app.locals",
+      "app .render(name, options, fn) should give precedence to app.render() locals",
+      "app .render(name, options, fn) should render the template"
+    ]
+  }
+}
