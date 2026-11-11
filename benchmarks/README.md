@@ -1,60 +1,109 @@
-# Frozen Benchmark Task Suite
+# Frozen benchmark task suite
 
-**Suite Name:** `token-efficient-coding-agent-benchmarks`  
-**Status:** Frozen  
-**Task Count:** 18 tasks  
-**Repositories:** 3  
-**Languages:** Python (12 tasks), JavaScript (6 tasks)  
-**Categories:** Bug fixes (6), Small features (5), Refactors (3), Test additions (4)  
+**Suite name:** `token-efficient-coding-agent-benchmarks`
+**Status:** frozen by PR #33. Record its merge commit in the repository README.
+**Task count:** 18 tasks.
+**Repositories (3):**
+- `pallets/click`: 8 tasks;
+- `pallets/jinja`: 5 tasks;
+- `expressjs/express`: 5 tasks.
+
+**Languages:** Python (13), JavaScript (5).
+**Categories (FSD 10.3 mix):** bug fix (6), small feature (6), refactor (3), test addition (3).
 
 ---
 
-## 1. Timing Deviation Disclosure
+## 1. Timing deviation disclosure
 
 > [!IMPORTANT]
-> **Handoff Disclosure (FSD Section 10.3 & WS1/WS2 Handoff G01):**  
-> FSD section 10.3 specifies that benchmark tasks should be defined and frozen before optimization begins to avoid tuning to the test set. In milestones M1 through M3, core optimization mechanisms (TO-01 through TO-09) and initial test doubles were implemented prior to formal benchmark suite freezing.  
-> 
-> To preserve evaluation integrity, this suite consists of independent, held-out tasks sourced from public open-source repositories (`pallets/click`, `pallets/jinja`, and `expressjs/express`) that were not used during core feature development or unit testing. All comparative evaluation across systems (naive baseline, fully optimized, and nine single-switch ablations) is conducted strictly against these frozen tasks.
+> FSD section 10.3 says benchmark tasks should be defined and frozen before optimization
+> begins, to avoid tuning to the test set. In milestones M1 to M3, the core optimization
+> techniques (TO-01 to TO-09) were implemented before this suite was frozen (handoff G01).
+>
+> To preserve evaluation integrity, the suite consists of held-out tasks from public
+> repositories (`pallets/click`, `pallets/jinja` and `expressjs/express`) that were not used
+> during core development or testing. All comparisons (naive baseline, optimized and the
+> nine single-switch ablations) run against these frozen tasks only.
 
 ---
 
-## 2. Repositories and Pinned Commits
+## 2. How the tasks were chosen and checked
 
-| Repository | Language | Pinned Commit SHA | Task IDs | Automated Test Runner |
-|---|---|---|---|---|
-| [`pallets/click`](https://github.com/pallets/click.git) | Python | `d84bb0ee307d0d0f7a61d154425bc01287c8d929` (v8.1.7) | `TASK-01` – `TASK-06` | `pytest` |
-| [`pallets/jinja`](https://github.com/pallets/jinja.git) | Python | `c87b640e74b3f886f380126ffc59d9f5ea6c4d7e` (v3.1.3) | `TASK-07` – `TASK-12` | `pytest` |
-| [`expressjs/express`](https://github.com/expressjs/express.git) | JavaScript | `0436d934e2a149b1a03f4448574be07198a0026e` (v4.19.2) | `TASK-13` – `TASK-18` | `npm test` |
+Every task is a **real change from the repository's own history**:
 
----
+1. **Candidates:** commits that made a small source change (40 lines or fewer, in at most two
+   source files) together with a test change. Documentation, release, dependency and
+   platform-specific commits were excluded.
+2. **Start state:**
+   - **Bug fixes, small features and refactors:** the task starts at the commit *before* the
+     fix. The agent must make the change.
+   - **Test additions:** the task starts at the fix commit with the fix's tests removed. The
+     agent must write the tests.
+3. **Automated check** (`benchmarks/checks.py`). The repository's own tests run directly
+   through pytest or mocha, never through a shell:
+   - `fail_to_pass`: after the agent finishes, the task's test files are replaced by the
+     reference commit's versions. Every `fail_to_pass` test (failing before the fix) and every
+     `pass_to_pass` test (existing behaviour) must pass. The agent cannot pass by editing
+     these tests.
+   - `test_addition`: the task's test files must pass on the fixed code, and at least one of
+     them must fail when the source files are reverted to the commit before the fix. So the
+     new tests must really test the change.
+4. **Validation:** `benchmarks/validate_tasks.py` proves, in fresh clones from GitHub, that
+   every task's check **fails with no agent work** and **passes with the reference change**.
+   The result is in [`tasks/validation.json`](tasks/validation.json): 18 of 18 valid. Any
+   change to the suite must be revalidated before use.
 
-## 3. Tasks Matrix
+Each task file records:
+- the start commit (`commit`) and the reference commit (`reference_commit`);
+- a link to the real change (`source`);
+- the prompt, its environment and its check.
 
-| Task ID | Repository | Language | Category | Title | Automated Check Command |
+Prompts describe the required behaviour, not the solution. Agents cannot read `.git`, so the
+reference commit stays hidden.
+
+## 3. Test environments
+
+| Environment | Used by | Pinned in |
+|---|---|---|
+| `python` | click and jinja tasks (pytest, run from each repository's `src`) | `environments/requirements-python.txt` |
+| `node-express5` | express 5.x tasks (mocha) | `environments/node-express5/package-lock.json` |
+| `node-express4` | express 4.x tasks (mocha) | `environments/node-express4/package-lock.json` |
+
+```
+python benchmarks/setup_environments.py <directory>     # prints the arguments below
+python benchmarks/validate_tasks.py --python <python> \
+    --node-modules node-express5=<path> --node-modules node-express4=<path> \
+    --out benchmarks/tasks/validation.json
+```
+
+Node.js 18 or later and git are required. Validation was run on Windows 11 with Python 3.12
+and Node.js 24. Before the benchmark, rerun it on the benchmark machine or in its Docker
+image (G05).
+
+## 4. Tasks
+
+| Task | Repository | Category | Title | Real change | Check |
 |---|---|---|---|---|---|
-| `TASK-01` | click | Python | `bug_fix` | Boolean flag toggle with custom prefix | `pytest tests/test_options.py -k test_boolean_flags` |
-| `TASK-02` | click | Python | `small_feature` | Case-insensitive choice matching | `pytest tests/test_types.py -k test_choice_case_insensitive` |
-| `TASK-03` | click | Python | `refactor` | Help option parameter resolution cleanup | `pytest tests/test_help.py` |
-| `TASK-04` | click | Python | `test_addition` | Bash completion edge cases with spaces | `pytest tests/test_shell_completion.py -k test_completion_with_spaces` |
-| `TASK-05` | click | Python | `bug_fix` | Prompt default resolution on empty input | `pytest tests/test_termui.py -k test_prompt_empty_default` |
-| `TASK-06` | click | Python | `small_feature` | Hidden command support in group listing | `pytest tests/test_commands.py -k test_hidden_command_in_group` |
-| `TASK-07` | jinja | Python | `bug_fix` | DebugUndefined chained filter attribute access | `pytest tests/test_runtime.py -k test_chained_debug_undefined` |
-| `TASK-08` | jinja | Python | `small_feature` | Unique filter attribute parameter support | `pytest tests/test_filters.py -k test_unique_by_attribute` |
-| `TASK-09` | jinja | Python | `refactor` | CodeGenerator AST visitor method caching | `pytest tests/test_compiler.py` |
-| `TASK-10` | jinja | Python | `test_addition` | Async loop control test suite | `pytest tests/test_async.py -k test_async_loop_controls` |
-| `TASK-11` | jinja | Python | `bug_fix` | Markup subclass XML auto-escaping | `pytest tests/test_filters.py -k test_markup_subclass_escaping` |
-| `TASK-12` | jinja | Python | `small_feature` | Slice filter negative indexing support | `pytest tests/test_filters.py -k test_slice_negative_indices` |
-| `TASK-13` | express | JavaScript | `bug_fix` | Query encoding preservation in res.redirect | `npm test -- test/res.redirect.js` |
-| `TASK-14` | express | JavaScript | `small_feature` | Header appending via res.appendHeader | `npm test -- test/res.set.js` |
-| `TASK-15` | express | JavaScript | `refactor` | Route parameter regex compilation caching | `npm test -- test/app.router.js` |
-| `TASK-16` | express | JavaScript | `test_addition` | Empty request body handling test coverage | `npm test -- test/req.body.js` |
-| `TASK-17` | express | JavaScript | `bug_fix` | Trailing slash router mount path resolution | `npm test -- test/app.use.js` |
-| `TASK-18` | express | JavaScript | `small_feature` | Custom status message fallback in res.sendStatus | `npm test -- test/res.sendStatus.js` |
+| `TASK-01` | click | bug_fix | show_envvar with a sequence or empty envvar | [`c53d3732b9`](https://github.com/pallets/click/commit/c53d3732b98c764932e146c007146ad402acb229) | pytest: 9 fail-to-pass, 667 pass-to-pass |
+| `TASK-02` | click | bug_fix | Zsh completion items containing colons | [`a1235aacb1`](https://github.com/pallets/click/commit/a1235aacb1be55dc66ddcfefbf64dec44b6ab54d) | pytest: 3 fail-to-pass, 47 pass-to-pass |
+| `TASK-03` | click | small_feature | Option to hide the progress bar | [`fcd85032cf`](https://github.com/pallets/click/commit/fcd85032cff78aa536a6d2b455fb83bfcc02b228) | pytest: 1 fail-to-pass, 79 pass-to-pass |
+| `TASK-04` | click | small_feature | multiple=True for flag options | [`b36e3ede78`](https://github.com/pallets/click/commit/b36e3ede781b388ae8135af61e83269e211acdf1) | pytest: 1 fail-to-pass, 115 pass-to-pass |
+| `TASK-05` | click | refactor | Return value and signature of add_completion_class | [`e002dbc40c`](https://github.com/pallets/click/commit/e002dbc40ceb6a7e78dbe5e5868744690ba3120f) | pytest: 3 fail-to-pass, 37 pass-to-pass |
+| `TASK-06` | click | refactor | Hide the internal UNSET sentinel in lookup_default | [`aaf99a3ee6`](https://github.com/pallets/click/commit/aaf99a3ee6935f321f755bc7c5717a91d321cd39) | pytest: 4 fail-to-pass, 18 pass-to-pass |
+| `TASK-07` | click | refactor | Copy, deepcopy and pickle of Sentinel members | [`f58ca3e814`](https://github.com/pallets/click/commit/f58ca3e81424a35626c8a475eb59ab95589008ce) | pytest: 3 fail-to-pass, 7 pass-to-pass |
+| `TASK-08` | click | test_addition | Tests for show_default with non-string defaults | [`d340b0c120`](https://github.com/pallets/click/commit/d340b0c1202284a1b9d0ca892549208527d586ce) | pytest: agent tests must catch the reverted fix |
+| `TASK-09` | jinja | bug_fix | pass_context tests with the select filter | [`d05bd3858c`](https://github.com/pallets/jinja/commit/d05bd3858c3f4990e91201dae058147caf317462) | pytest: 1 fail-to-pass, 52 pass-to-pass |
+| `TASK-10` | jinja | bug_fix | Reject invalid characters in xmlattr keys | [`d655030770`](https://github.com/pallets/jinja/commit/d655030770081e2dfe46f90e27620472a502289d) | pytest: 7 fail-to-pass, 124 pass-to-pass |
+| `TASK-11` | jinja | bug_fix | Subscripts after filters and calls in async mode | [`a150ff749a`](https://github.com/pallets/jinja/commit/a150ff749a0347c41e8e353c2ce2063e8f84ab42) | pytest: 2 fail-to-pass, 56 pass-to-pass |
+| `TASK-12` | jinja | small_feature | PackageLoader with a single-module package | [`eec0db8642`](https://github.com/pallets/jinja/commit/eec0db8642b25691867890f14fc6c9ca04c8a8c9) | pytest: 3 fail-to-pass, 37 pass-to-pass |
+| `TASK-13` | jinja | test_addition | Tests for sandbox protection of clear and pop | [`b512058270`](https://github.com/pallets/jinja/commit/b5120582706b9e997cfd3277b02a32fd35b1c9d4) | pytest: agent tests must catch the reverted fix |
+| `TASK-14` | express | bug_fix | Settings must ignore Object.prototype values | [`c17fe05861`](https://github.com/expressjs/express/commit/c17fe058613dc7dfb7779fbe68a9738a108fe408) | mocha: 4 fail-to-pass, 22 pass-to-pass |
+| `TASK-15` | express | small_feature | Conditional revalidation for QUERY requests | [`ae6dd37680`](https://github.com/expressjs/express/commit/ae6dd37680e3a00618d6c8a3e522f0ee4eeba1a4) | mocha: 1 fail-to-pass, 5 pass-to-pass |
+| `TASK-16` | express | small_feature | Multiple links with the same rel in res.links | [`caa4f68ee8`](https://github.com/expressjs/express/commit/caa4f68ee8d32474676fa29cc2086dcc1d62208b) | mocha: 1 fail-to-pass, 2 pass-to-pass |
+| `TASK-17` | express | small_feature | Allow null or undefined options in app.render | [`c9ecf7b658`](https://github.com/expressjs/express/commit/c9ecf7b658388ccaa2b8470aabad92aabde458a2) | mocha: 1 fail-to-pass, 20 pass-to-pass |
+| `TASK-18` | express | test_addition | Tests for res.location with non-string values | [`a003cfab03`](https://github.com/expressjs/express/commit/a003cfab034fbadb1c78ae337ee8ab389adda217) | mocha: agent tests must catch the reverted fix |
 
----
-
-## 4. Evaluation Protocol
+## 5. Evaluation protocol
 
 Each task is evaluated across 11 system configurations defined in `docs/OPTIMIZATIONS.md`:
 1. **Naive Baseline:** all nine optimization switches set to `false`.

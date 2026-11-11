@@ -1,14 +1,64 @@
 {
   "id": "TASK-05",
   "repository": "https://github.com/pallets/click.git",
-  "commit": "d84bb0ee307d0d0f7a61d154425bc01287c8d929",
   "language": "python",
-  "category": "bug_fix",
-  "title": "Prompt default resolution on empty input",
-  "prompt": "Fix click.prompt so an empty input line returns the default value without raising Abort when default is empty string.",
-  "check_command": "pytest tests/test_termui.py -k test_prompt_empty_default",
-  "timeout_seconds": 60,
-  "target_files": [
-    "src/click/termui.py"
-  ]
+  "category": "refactor",
+  "title": "Return value and signature of add_completion_class",
+  "prompt": "Refactor `click.shell_completion.add_completion_class` so it can be used as a decorator: it must return the class it registers, and its type signature should express that the same class type is returned. Registering a completion class must keep working as before.",
+  "source": "https://github.com/pallets/click/commit/e002dbc40ceb6a7e78dbe5e5868744690ba3120f",
+  "environment": "python",
+  "timeout_seconds": 900,
+  "commit": "eb1d760fb433d08278816d7ba49477ce86b691a7",
+  "reference_commit": "e002dbc40ceb6a7e78dbe5e5868744690ba3120f",
+  "check": {
+    "kind": "fail_to_pass",
+    "runner": "pytest",
+    "test_files": [
+      "tests/test_shell_completion.py"
+    ],
+    "fail_to_pass": [
+      "tests/test_shell_completion.py::test_add_completion_class",
+      "tests/test_shell_completion.py::test_add_completion_class_decorator",
+      "tests/test_shell_completion.py::test_add_completion_class_with_name"
+    ],
+    "pass_to_pass": [
+      "tests/test_shell_completion.py::test_absolute_path",
+      "tests/test_shell_completion.py::test_add_different_name",
+      "tests/test_shell_completion.py::test_argument_default",
+      "tests/test_shell_completion.py::test_argument_nargs",
+      "tests/test_shell_completion.py::test_argument_order",
+      "tests/test_shell_completion.py::test_chained",
+      "tests/test_shell_completion.py::test_choice_case_sensitive[False-expect0]",
+      "tests/test_shell_completion.py::test_choice_case_sensitive[True-expect1]",
+      "tests/test_shell_completion.py::test_choice_conflicting_prefix",
+      "tests/test_shell_completion.py::test_choice_special_characters",
+      "tests/test_shell_completion.py::test_command",
+      "tests/test_shell_completion.py::test_completion_item_data",
+      "tests/test_shell_completion.py::test_context_settings",
+      "tests/test_shell_completion.py::test_double_dash",
+      "tests/test_shell_completion.py::test_full_complete[bash-env0-plain,a\\nplain,b\\n]",
+      "tests/test_shell_completion.py::test_full_complete[bash-env1-plain,b\\n]",
+      "tests/test_shell_completion.py::test_full_complete[fish-env4-plain,a\\nplain,b\\tbee\\n]",
+      "tests/test_shell_completion.py::test_full_complete[fish-env5-plain,b\\tbee\\n]",
+      "tests/test_shell_completion.py::test_full_complete[zsh-env2-plain\\na\\n_\\nplain\\nb\\nbee\\n]",
+      "tests/test_shell_completion.py::test_full_complete[zsh-env3-plain\\nb\\nbee\\n]",
+      "tests/test_shell_completion.py::test_full_source[bash]",
+      "tests/test_shell_completion.py::test_full_source[fish]",
+      "tests/test_shell_completion.py::test_full_source[zsh]",
+      "tests/test_shell_completion.py::test_group",
+      "tests/test_shell_completion.py::test_group_command_same_option",
+      "tests/test_shell_completion.py::test_help_option",
+      "tests/test_shell_completion.py::test_hidden",
+      "tests/test_shell_completion.py::test_option_count",
+      "tests/test_shell_completion.py::test_option_custom",
+      "tests/test_shell_completion.py::test_option_flag",
+      "tests/test_shell_completion.py::test_option_multiple",
+      "tests/test_shell_completion.py::test_option_nargs",
+      "tests/test_shell_completion.py::test_option_optional",
+      "tests/test_shell_completion.py::test_path_types[type0-file]",
+      "tests/test_shell_completion.py::test_path_types[type1-file]",
+      "tests/test_shell_completion.py::test_path_types[type2-dir]",
+      "tests/test_shell_completion.py::test_type_choice"
+    ]
+  }
 }
