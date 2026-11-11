@@ -454,6 +454,8 @@ def test_budget_options_use_plain_words_and_keep_unknown_codes():
 
 
 FIXTURE_TOML = 'mode = "fixture"\n'
+# CI runs on a narrow, coloured terminal, where error panels wrap and add colour codes.
+PLAIN_TERMINAL = {"COLUMNS": "200", "NO_COLOR": "1", "TERM": "dumb"}
 
 
 class FakeHarness:
@@ -478,7 +480,7 @@ def bench(monkeypatch, tmp_path, *args: str, report: dict | None = None):
         else {"total_runs": 2, "mode": "fixture", "benchmark_evidence": False, "report_path": "r"}
     )
     monkeypatch.setattr(cli_module, "load_harness", lambda: fake)
-    result = CliRunner().invoke(cli_module.app, ["bench", *args])
+    result = CliRunner().invoke(cli_module.app, ["bench", *args], env=PLAIN_TERMINAL)
     return result, fake
 
 
@@ -553,7 +555,7 @@ def test_cli_bench_needs_the_repository_checkout(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     (tmp_path / "agent.toml").write_text(FIXTURE_TOML)
     monkeypatch.setattr(cli_module, "CHECKOUT", tmp_path)
-    result = CliRunner().invoke(cli_module.app, ["bench"])
+    result = CliRunner().invoke(cli_module.app, ["bench"], env=PLAIN_TERMINAL)
     assert result.exit_code == 2
     assert "agent bench needs the repository checkout" in result.output
 
