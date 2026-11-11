@@ -203,3 +203,127 @@ def test_run_bench_mocked(tmp_path, monkeypatch):
 
     saved_data = json.loads(Path(report["report_path"]).read_text(encoding="utf-8"))
     assert saved_data["total_runs"] == 1
+
+
+# --- End-to-end run path (real core, scripted model, local git repository) ----------------
+
+import re  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+
+from token_agent.config import Settings, UserConfig  # noqa: E402
+from token_agent.providers import ProviderResult  # noqa: E402
+
+FIXED = "    return a + b"
+
+
+class ScriptedModel:
+    """Reads the file, patches it using the hash the core reported, then finishes."""
+
+    def __init__(self, patch: bool = True):
+        self.patch, self.calls = patch, 0
+
+    async def complete(self, messages, model, user, confidential, request_context=None):
+        self.calls += 1
+        if self.calls == 1:
+            action = {"tool": "read_file", "path": "calculator.py"}
+        elif self.calls == 2 and self.patch:
+            digest = re.findall(
+                r'"sha256": "([0-9a-f]{64})"', " ".join(m["content"] for m in messages)
+            )[-1]
+            action = {
+                "tool": "apply_patch",
+                "path": "calculator.py",
+                "expected_sha256": digest,
+                "old": "    return a - b",
+                "new": FIXED,
+            }
+        else:
+            action = {"tool": "finish", "summary": "Done"}
+        return ProviderResult(json.dumps({"action": action}), model, 100, 10, "test_transport")
+
+
+@pytest.fixture
+def bench_task(tmp_path):
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    (origin / "calculator.py").write_text("def add(a, b):\n    return a - b\n")
+    git = ["git", "-c", "user.name=bench", "-c", "user.email=bench@example.com"]
+    subprocess.run([*git, "init", "--quiet"], cwd=origin, check=True)
+    subprocess.run([*git, "add", "calculator.py"], cwd=origin, check=True)
+    subprocess.run([*git, "commit", "--quiet", "-m", "bug"], cwd=origin, check=True)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=origin, check=True, capture_output=True, text=True
+    ).stdout.strip()
+    check = f'"{sys.executable}" -c "import calculator; assert calculator.add(2, 3) == 5"'
+    return {
+        "id": "LOCAL-01",
+        "repository": str(origin),
+        "commit": commit,
+        "prompt": "Fix add so it returns the sum",
+        "check_command": check,
+        "timeout_seconds": 60,
+    }
+
+
+def bench_runner(tmp_path, monkeypatch, model, **options):
+    from benchmarks.harness import BenchmarkRunner
+
+    monkeypatch.setenv("BENCH_TOKEN", "x" * 40)
+    settings = Settings(
+        database=str(tmp_path / "base.sqlite3"),
+        users=[UserConfig(id="bench", token_env="BENCH_TOKEN", repo_roots=[str(tmp_path)])],
+    )
+    return BenchmarkRunner(
+        settings,
+        [],
+        systems=[SYSTEM_OPTIMIZED],
+        repeats=1,
+        workspace_dir=tmp_path / "work",
+        provider=model,
+        **options,
+    )
+
+
+def test_real_run_applies_the_approved_fix_and_passes_the_check(tmp_path, monkeypatch, bench_task):
+    runner = bench_runner(tmp_path, monkeypatch, ScriptedModel())
+    record = runner.run_single(bench_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert record.passed is True
+    assert record.auto_approvals == 1
+    assert record.run_status == "completed"
+    assert record.steps == 3 and record.tool_calls >= 2
+    assert record.input_tokens == 300 and record.output_tokens == 30
+    assert record.wall_time_seconds > 0
+
+
+def test_without_a_fix_the_same_check_fails(tmp_path, monkeypatch, bench_task):
+    runner = bench_runner(tmp_path, monkeypatch, ScriptedModel(patch=False))
+    record = runner.run_single(bench_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert record.passed is False
+    assert record.auto_approvals == 0
+
+
+def test_each_run_is_reconciled_against_its_own_database(tmp_path, monkeypatch, bench_task):
+    import benchmarks.harness as harness
+
+    seen = []
+    monkeypatch.setattr(
+        harness, "reconcile", lambda store, rows, tolerance: seen.append(store.path) or _Report()
+    )
+    log = tmp_path / "gateway.json"
+    log.write_text("[]")
+    runner = bench_runner(
+        tmp_path, monkeypatch, ScriptedModel(), gateway_log=log, reconcile_delay_seconds=0
+    )
+    record = runner.run_single(bench_task, SYSTEM_OPTIMIZED, 1)
+    assert record.error is None
+    assert len(seen) == 1
+    assert Path(seen[0]).name.startswith("LOCAL-01_optimized_rep1_")
+    assert Path(seen[0]) != tmp_path / "base.sqlite3"
+
+
+class _Report:
+    def summary(self):
+        return {}

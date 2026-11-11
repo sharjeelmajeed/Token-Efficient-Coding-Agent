@@ -16,8 +16,11 @@ Controls:
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import json
 import logging
+import secrets
 import shutil
 import statistics
 import subprocess
@@ -26,12 +29,19 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from token_agent.api import token_attribution
 from token_agent.config import OptimizationSettings, Settings, load_settings
 from token_agent.engine import Engine
+from token_agent.policy import resolve_repository
 from token_agent.reconcile import load_gateway_log, reconcile
 from token_agent.store import Store
 
 logger = logging.getLogger("token_agent.benchmarks")
+
+# Benchmark runs are unattended, so every exact pending action is approved automatically.
+# Each approval is recorded as an `approval_decision` event by this identity; the report must
+# disclose it. Approval still binds the exact action, and policy checks are unchanged.
+BENCHMARK_APPROVER = "benchmark-auto-approver"
 
 SYSTEM_BASELINE = "naive_baseline"
 SYSTEM_OPTIMIZED = "optimized"
@@ -124,6 +134,9 @@ class RunRecord:
     token_attribution: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
     check_output: str = ""
+    run_status: str = ""
+    outcome: str | None = None
+    auto_approvals: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -183,6 +196,8 @@ def aggregate_system_results(runs: list[RunRecord]) -> dict[str, Any]:
         },
         "cost_micro_usd": calculate_spread([r.cost_micro_usd for r in runs]),
         "total_cost_micro_usd": total_cost_micro_usd,
+        # Costs are gateway-reconciled only when every run's usage was reconciled.
+        "cost_reconciled_runs": sum(1 for r in runs if r.cost_reconciled),
         "cost_per_successful_task_micro_usd": cost_per_success,
         "wall_time_seconds": calculate_spread([r.wall_time_seconds for r in runs]),
         "steps": calculate_spread([r.steps for r in runs]),
@@ -213,6 +228,30 @@ def load_tasks(
     return tasks
 
 
+def approve_pending(store: Store, session_id: str, run_id: str) -> int:
+    """Approve every exact action this run is waiting on, recording who approved it."""
+    with store.connection() as db:
+        rows = db.execute(
+            "SELECT id FROM approvals WHERE run_id=? AND status='pending'", (run_id,)
+        ).fetchall()
+    approved = 0
+    for row in rows:
+        store.decide(row["id"], "approve_once", "")
+        store.event(
+            session_id,
+            run_id,
+            "approval_decision",
+            {
+                "approval_id": row["id"],
+                "decision": "approve_once",
+                "user": BENCHMARK_APPROVER,
+                "feedback": "",
+            },
+        )
+        approved += 1
+    return approved
+
+
 class BenchmarkRunner:
     """Orchestrates benchmark task runs across systems and configurations."""
 
@@ -223,12 +262,37 @@ class BenchmarkRunner:
         systems: list[str] | None = None,
         repeats: int = 3,
         workspace_dir: str | Path = ".benchmark_workspaces",
+        gateway_log: str | Path | None = None,
+        provider=None,
+        run_timeout_seconds: float = 900.0,
+        reconcile_delay_seconds: float = 2.0,
     ):
         self.base_settings = base_settings
         self.tasks = tasks
         self.systems = systems or ALL_SYSTEMS
         self.repeats = max(1, repeats)
-        self.workspace_dir = Path(workspace_dir)
+        self.workspace_dir = Path(workspace_dir).resolve()
+        self.gateway_log = Path(gateway_log) if gateway_log else None
+        # None uses the configured mode's provider (Bifrost or fixture); tests inject one.
+        self.provider = provider
+        self.run_timeout_seconds = run_timeout_seconds
+        # Bifrost writes its log after answering; wait briefly before reconciling a run.
+        self.reconcile_delay_seconds = reconcile_delay_seconds
+
+    def repository_cache(self, repo_url: str) -> Path:
+        """Clone each repository once; every run then copies it locally."""
+        name = hashlib.sha256(repo_url.encode()).hexdigest()[:16]
+        cache = self.workspace_dir / "_cache" / name
+        if not cache.exists():
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            subprocess.run(
+                ["git", "clone", "--no-checkout", "--quiet", repo_url, str(cache)],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=600,
+            )
+        return cache
 
     def prepare_task_workspace(self, task: dict[str, Any], run_identifier: str) -> Path:
         """Create a dedicated working copy of the task repository at its pinned commit."""
@@ -236,25 +300,31 @@ class BenchmarkRunner:
         if repo_dir.exists():
             shutil.rmtree(repo_dir, ignore_errors=True)
         repo_dir.parent.mkdir(parents=True, exist_ok=True)
-
-        repo_url = task["repository"]
-        commit = task["commit"]
-
-        # Shallow clone when possible, then checkout the pinned commit
-        cmd_clone = ["git", "clone", "--no-checkout", repo_url, str(repo_dir)]
-        subprocess.run(cmd_clone, check=True, capture_output=True, text=True, timeout=120)
-
-        cmd_checkout = ["git", "checkout", commit]
+        cache = self.repository_cache(task["repository"])
         subprocess.run(
-            cmd_checkout, cwd=str(repo_dir), check=True, capture_output=True, text=True, timeout=60
+            ["git", "clone", "--no-checkout", "--quiet", str(cache), str(repo_dir)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
-
+        subprocess.run(
+            ["git", "-c", "advice.detachedHead=false", "checkout", "--quiet", task["commit"]],
+            cwd=str(repo_dir),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
         return repo_dir
 
     def evaluate_check_command(
         self, repo_dir: Path, check_command: str, timeout_seconds: int = 60
     ) -> tuple[bool, str]:
-        """Execute automated verification command in the repository workspace."""
+        """Execute the task's frozen check command in the repository workspace.
+
+        The command comes only from the frozen, reviewed task file and runs through a shell.
+        """
         try:
             res = subprocess.run(
                 check_command,
@@ -272,6 +342,28 @@ class BenchmarkRunner:
         except Exception as exc:
             return False, f"Verification failed with exception: {exc}"
 
+    async def execute_session(
+        self, engine: Engine, store: Store, session_id: str, prompt: str
+    ) -> tuple[str, int]:
+        """Run one task inside a single event loop, approving exact pending actions."""
+        run_id = engine.start(session_id, prompt)
+        task = engine.tasks.get(session_id)
+        approvals = 0
+        deadline = time.monotonic() + self.run_timeout_seconds
+        try:
+            while task is not None and not task.done():
+                if time.monotonic() > deadline:
+                    logger.warning(
+                        "Run %s exceeded %ss; cancelling", run_id, self.run_timeout_seconds
+                    )
+                    break
+                approvals += approve_pending(store, session_id, run_id)
+                await asyncio.sleep(0.05)
+        finally:
+            # Cancels anything still running and marks unfinished work as paused.
+            await engine.close()
+        return run_id, approvals
+
     def run_single(
         self,
         task: dict[str, Any],
@@ -282,14 +374,11 @@ class BenchmarkRunner:
         opt = system_optimization(system)
         run_identifier = f"{task['id']}_{system}_rep{repeat}_{int(time.time())}"
         repo_dir: Path | None = None
-
         user = self.base_settings.users[0]
-        start_time = time.monotonic()
+        elapsed = 0.0
 
         try:
             repo_dir = self.prepare_task_workspace(task, run_identifier)
-
-            # Update settings with specific system optimization and repository root
             task_settings = self.base_settings.model_copy(
                 update={
                     "optimization": opt,
@@ -301,73 +390,77 @@ class BenchmarkRunner:
                     ],
                 }
             )
+            run_user = task_settings.users[0]
 
+            # Same wiring as the API server: accounts, confidentiality and a fresh session.
             store = Store(task_settings.database)
-            tokens = {user.token_env: "benchmark-token-40-characters-secret"}
-            engine = Engine(task_settings, store, tokens)
+            store.register_accounts(task_settings.users)
+            engine = Engine(
+                task_settings, store, {run_user.id: secrets.token_urlsafe(40)}, self.provider
+            )
+            repo, sources = resolve_repository(str(repo_dir.resolve()), run_user, task_settings)
+            for source in sources:
+                store.mark_confidential(source)
+            session = store.create_session(run_user.id, repo, bool(sources))
+            store.event(
+                session["id"],
+                None,
+                "session_created",
+                {"mode": task_settings.mode, "confidential": bool(session["confidential"])},
+            )
 
-            session = store.create_session(user.id, str(repo_dir.resolve()))
-            run_id = engine.start(session["id"], task["prompt"])
-
-            # Wait for execution task to complete or pause
-            engine_task = engine.tasks.get(session["id"])
-            if engine_task:
-                import asyncio
-
-                try:
-                    asyncio.run(engine_task)
-                except Exception as exc:
-                    logger.warning("Engine task terminated with %s", exc)
-
+            # Wall time covers the agent's work only, not cloning or checking.
+            start_time = time.monotonic()
+            run_id, approvals = asyncio.run(
+                self.execute_session(engine, store, session["id"], task["prompt"])
+            )
             elapsed = round(time.monotonic() - start_time, 4)
 
-            # Run automated pass/fail verification check command
             passed, check_out = self.evaluate_check_command(
                 repo_dir, task["check_command"], task.get("timeout_seconds", 60)
             )
 
+            # Reconcile this run's own database before reading any cost.
+            if self.gateway_log and self.gateway_log.exists():
+                time.sleep(self.reconcile_delay_seconds)
+                report = reconcile(
+                    store,
+                    load_gateway_log(self.gateway_log),
+                    task_settings.reconciliation_token_tolerance,
+                )
+                logger.info("Reconciliation for %s: %s", run_id, report.summary())
+
             usage_rows = store.usage(run_id)
-            input_tokens = sum(u.get("input_tokens", 0) for u in usage_rows)
-            output_tokens = sum(u.get("output_tokens", 0) for u in usage_rows)
-            cached_tokens = sum(
-                u.get("details", {}).get("cached_tokens", 0)
-                for u in usage_rows
-                if isinstance(u.get("details"), dict)
-            )
-            cost_micro_usd = sum(u.get("amount", 0) for u in usage_rows)
-            reconciled = bool(usage_rows) and all(
-                u.get("state") == "reconciled" for u in usage_rows
-            )
-
-            steps = store.run(run_id).get("step", 0) if store.run(run_id) else 0
+            run = store.run(run_id) or {}
             events = store.events(session["id"])
-            tool_calls = sum(1 for e in events if e.get("type") == "tool_call")
-            research_calls = sum(1 for e in events if e.get("type") == "research_used")
-
-            from token_agent.api import token_attribution
-
-            attr = token_attribution(usage_rows)
-
             return RunRecord(
                 run_id=run_id,
                 task_id=task["id"],
                 system=system,
                 repeat=repeat,
                 passed=passed,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                cached_tokens=cached_tokens,
-                cost_micro_usd=cost_micro_usd,
-                cost_reconciled=reconciled,
+                input_tokens=sum(u.get("input_tokens", 0) for u in usage_rows),
+                output_tokens=sum(u.get("output_tokens", 0) for u in usage_rows),
+                cached_tokens=sum(
+                    u.get("details", {}).get("cached_tokens", 0)
+                    for u in usage_rows
+                    if isinstance(u.get("details"), dict)
+                ),
+                cost_micro_usd=sum(u.get("amount", 0) for u in usage_rows),
+                cost_reconciled=bool(usage_rows)
+                and all(u.get("state") == "reconciled" for u in usage_rows),
                 wall_time_seconds=elapsed,
-                steps=steps,
-                tool_calls=tool_calls,
-                research_calls=research_calls,
-                token_attribution=attr,
+                steps=run.get("step", 0),
+                tool_calls=sum(1 for e in events if e.get("type") == "tool_call"),
+                research_calls=sum(1 for e in events if e.get("type") == "research_used"),
+                token_attribution=token_attribution(usage_rows),
                 check_output=check_out[:2000],
+                run_status=run.get("status", ""),
+                outcome=run.get("outcome"),
+                auto_approvals=approvals,
             )
         except Exception as exc:
-            elapsed = round(time.monotonic() - start_time, 4)
+            logger.exception("Run %s failed", run_identifier)
             return RunRecord(
                 run_id=f"err_{run_identifier}",
                 task_id=task["id"],
@@ -383,7 +476,7 @@ class BenchmarkRunner:
                 steps=0,
                 tool_calls=0,
                 research_calls=0,
-                error=str(exc),
+                error=f"{type(exc).__name__}: {exc}",
             )
         finally:
             if repo_dir and repo_dir.exists():
@@ -391,21 +484,13 @@ class BenchmarkRunner:
 
     def run_all(self, gateway_log: str | Path | None = None) -> dict[str, Any]:
         """Execute the full benchmark suite across all systems and tasks."""
+        if gateway_log:
+            self.gateway_log = Path(gateway_log)
         runs: list[RunRecord] = []
         for system in self.systems:
             for task in self.tasks:
                 for rep in range(1, self.repeats + 1):
-                    record = self.run_single(task, system, rep)
-                    runs.append(record)
-
-        # Reconcile costs if Bifrost gateway logs are provided
-        if gateway_log and Path(gateway_log).exists():
-            try:
-                log_rows = load_gateway_log(gateway_log)
-                reconcile_report = reconcile(self.base_settings, log_rows)
-                logger.info("Reconciliation summary: %s", reconcile_report.summary())
-            except Exception as exc:
-                logger.error("Failed to reconcile gateway log: %s", exc)
+                    runs.append(self.run_single(task, system, rep))
 
         by_system: dict[str, list[RunRecord]] = {}
         for r in runs:
@@ -429,8 +514,13 @@ class BenchmarkRunner:
                 saving_pct = 0.0
             summary["token_saving_vs_baseline_pct"] = saving_pct
 
+        all_reconciled = bool(runs) and all(r.cost_reconciled for r in runs)
         return {
             "timestamp": time.time(),
+            "mode": self.base_settings.mode,
+            # Only live gateway runs with every cost reconciled can be reported as evidence.
+            "benchmark_evidence": self.base_settings.mode == "bifrost" and all_reconciled,
+            "approval_policy": f"every exact pending action auto-approved by {BENCHMARK_APPROVER}",
             "total_runs": len(runs),
             "systems": self.systems,
             "tasks_evaluated": [t["id"] for t in self.tasks],
@@ -457,9 +547,10 @@ def run_bench(
         tasks=loaded_tasks,
         systems=systems or ALL_SYSTEMS,
         repeats=repeats,
+        gateway_log=gateway_log,
     )
 
-    results = runner.run_all(gateway_log=gateway_log)
+    results = runner.run_all()
 
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)

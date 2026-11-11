@@ -66,3 +66,21 @@ Each task is evaluated across 11 system configurations defined in `docs/OPTIMIZA
 - Pinned models, temperatures, prices, budgets, `output_chars` (8,000 default), and `context_chars` (100,000 maximum).
 - Costs reconciled against Bifrost gateway logs (`logs.db`) using `token_agent.reconcile`.
 - Metrics recorded per run: pass/fail, input/output/cached tokens, token attribution breakdown, wall time, tool steps, and research calls.
+
+### How the harness runs (`benchmarks/harness.py`)
+- **Engine and sessions:** each run uses the same core engine and session creation as the API
+  server, including the confidentiality check. Each run gets its own database and a fresh copy
+  of the repository at the pinned commit. Each repository is cloned once, then copied locally
+  for every run.
+- **Approvals (disclosed benchmark setting):** runs are unattended, so every exact pending
+  action is approved automatically. Each approval is recorded as an `approval_decision` event
+  by `benchmark-auto-approver`, and each run records `auto_approvals`. Approval still binds the
+  exact action, and every policy check is unchanged.
+- **Wall time** covers the agent's work only, not cloning or the check command. Each run has a
+  time limit (default 900 s), after which it is cancelled and recorded as unfinished.
+- **Cost:** with `--gateway-log`, each run's own database is reconciled against the Bifrost log
+  before its cost is read. `cost_reconciled` is true only when every usage row was reconciled.
+- **Evidence:** the report's `benchmark_evidence` is true only for `mode = "bifrost"` with every
+  run reconciled. Fixture or scripted runs are never benchmark evidence.
+- **Checks:** a task's `check_command` runs through a shell in the task workspace. It comes only
+  from this frozen, reviewed task suite, never from model output or the repository.
