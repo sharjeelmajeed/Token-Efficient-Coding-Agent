@@ -11,6 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .config import Settings, load_tokens
 from .context import ATTRIBUTION_METHOD
 from .engine import Engine
+from .git_executor import CommandGitExecutor
 from .models import ApplyPatch, ApprovalDecision, SessionCreate, TaskRequest, WriteFile
 from .policy import authenticate, budget_warning_active, resolve_repository
 from .repo import PolicyError
@@ -74,6 +75,8 @@ def create_app(settings: Settings, provider=None, research=None, sandbox=None, g
     tokens = load_tokens(settings)
     store = Store(settings.database)
     store.register_accounts(settings.users)
+    if git is None and settings.git.enabled:
+        git = CommandGitExecutor(settings)
     engine = Engine(settings, store, tokens, provider, research, sandbox, git)
 
     @asynccontextmanager

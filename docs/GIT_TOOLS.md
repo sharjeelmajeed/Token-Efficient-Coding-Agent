@@ -1,7 +1,8 @@
 # Git tools contract
 
-Draft for review by the git executor owner. Status: core side built and tested with a
-test double. **No git executor exists yet, so git tools are off and never offered to the model.**
+Implemented by `src/token_agent/git_executor.py` (`CommandGitExecutor`). Status: core side and
+executor tested with a real `git` binary in temporary repositories. Git tools are offered only
+when `[git].enabled = true`; with git off nothing runs and a git action pauses the run.
 
 FSD 5.2 defines six tools. `git_status`, `git_diff` and `git_log` are read tools and run
 without approval. `git_commit`, `git_checkout` and `git_push` are gated: every call needs
@@ -15,7 +16,7 @@ human approval of that exact action.
 | Read or gated classification | Core | `policy.py` |
 | Push remote, protected-branch and confidential rules | Core | `policy.py`, `config.py` |
 | Approval, expiry, single use, ownership | Core | `engine.py`, `store.py` |
-| Running git commands safely | Git executor | A class implementing `GitExecutor` |
+| Running git commands safely | Git executor | `git_executor.py` (`CommandGitExecutor`) |
 
 The executor never decides whether an action is allowed. When it is called, the core has
 already validated the input, checked policy and, for gated tools, recorded approval.
