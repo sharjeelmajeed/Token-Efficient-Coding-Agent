@@ -99,4 +99,6 @@ keyboard access.
 
 - No token-saving percentage, cost or quality result comes from this demo.
 - Fixture token counts are synthetic.
-- Git approvals in VS Code, `agent bench` and a live PR review are not part of this demo yet.
+- Git approvals (CLI and VS Code) and `agent bench` are built but not part of this demo: git
+  tools stay off until the git executor exists, and bench output from this setup is not
+  benchmark evidence. A live PR review has not been run yet.

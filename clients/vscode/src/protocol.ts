@@ -156,6 +156,31 @@ export function noticeText(kind: string, payload: Record<string, unknown>): stri
   }
 }
 
+/** Git tools the core gates behind an exact-action approval (GIT_TOOLS.md). Same set as the CLI. */
+export const GIT_GATED_TOOLS: ReadonlySet<string> = new Set(['git_commit', 'git_checkout', 'git_push']);
+const GIT_FIELDS = ['branch', 'create', 'remote', 'expected_head', 'message', 'paths'] as const;
+/**
+ * Read-only review text for a gated git action, built only from the core's stored action and
+ * preview. Same order and wording as the CLI's git_summary(). The client never builds or edits
+ * the command; it only approves the approval ID.
+ */
+export function gitApprovalText(action: Approval['action'], diff: string): string {
+  const lines = [`Exact git action requires your approval: ${safeText(action.tool, 100)}`];
+  for (const name of GIT_FIELDS) {
+    if (!(name in action)) { continue; }
+    const value = action[name];
+    lines.push(`  ${name}: ${safeText(Array.isArray(value) ? value.map(String).join(', ') : value, 4000)}`);
+  }
+  const state = action.git;
+  if (record(state) && Object.keys(state).length) {
+    lines.push('  checked by core before running:');
+    for (const [key, value] of Object.entries(state)) { lines.push(`    ${safeText(key, 100)}: ${safeText(value, 500)}`); }
+  }
+  // The core's preview: staged diff for a commit, files/branch for a checkout, commits and remote URL for a push.
+  if (diff) { lines.push('', safeText(diff, 64000)); }
+  return safeText(lines.join('\n'), 64000);
+}
+
 export interface TimelineEntry { kind: string; text: string }
 /**
  * Notices the core sends after a reply's streamed pieces but before its final piece
