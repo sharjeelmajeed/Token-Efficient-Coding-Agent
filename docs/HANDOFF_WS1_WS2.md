@@ -172,6 +172,21 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
      - before: median 221 ms, p95 256 ms.
 
      Large repositories are dominated by tool time (`grep` about 2 s).
+   - **Release re-measurement (2026-11-12, commit `ffa2647`, after PR #41 merged):** a single
+     direct run of the same script is in `docs/evidence/policy-overhead-release.json`. It was
+     measured on Usman's laptop (Core i5-8250U, 16 GB RAM, about 2-5 GB free during the run),
+     so compare times only on the same machine.
+
+     | Repository | Core work per request, median | Policy steps alone, median |
+     |---|---|---|
+     | 1 file | 48.3 ms | 10.4 ms |
+     | Project copy | 119.8 ms | 15.0 ms |
+     | 4,000 files | 518.0 ms | 109.4 ms (the per-request confidentiality rescan is 101.5 ms) |
+
+     The previous release run at `bdfe17d`, on a faster machine, measured 14.1, 60.9 and
+     261.4 ms of core work, and 2.7, 4.5 and 52.5 ms of policy work. On both machines the
+     50 ms policy target is met on small and medium repositories and exceeded on the
+     4,000-file one, where the per-request rescan dominates.
 9. **Not measured:** crash recovery by killing the process (tested from a prepared database).
 
 ## 7. Open items
@@ -180,4 +195,5 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 |---|---|---|
 | Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
-| `GitExecutor` and the Docker sandbox | Sharjeel | — |
+| Docker sandbox image and live acceptance | Sharjeel | Owner agreement with Usman |
+| `GitExecutor` live check in a real repository | Sharjeel, with Usman | PR #41 is merged; follow the runbook in `docs/DEMO_WS3.md` |

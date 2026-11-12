@@ -146,3 +146,27 @@ def test_restart_expires_approval_and_retains_uncertain_spend(environment):
     assert store.approval(approval["id"])["status"] == "expired"
     assert store.usage(run)[0]["state"] == "uncertain"
     assert store.remaining("first") == 999500
+
+
+def test_confidential_roots_count_only_when_they_overlap_the_repository(environment, tmp_path):
+    """A configured confidential root marks a repository at, above or below it, and nothing else."""
+    from pathlib import Path
+
+    from token_agent.policy import confidential_sources
+
+    repo = Path(environment["repo"]).resolve()
+    unrelated = tmp_path / "elsewhere" / "private"
+    unrelated.mkdir(parents=True)
+    above, below = repo.parent, repo / "sub"
+    below.mkdir()
+
+    def sources(*roots):
+        settings = environment["settings"].model_copy(
+            update={"confidential_roots": [str(r) for r in roots]}
+        )
+        return confidential_sources(repo, settings)
+
+    assert sources(unrelated) == []  # neither above nor inside: ignored
+    assert sources(above) == [str(above)]
+    assert sources(below) == [str(below)]
+    assert sources(unrelated, above) == [str(above)]
