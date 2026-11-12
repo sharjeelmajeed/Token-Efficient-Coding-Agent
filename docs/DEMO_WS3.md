@@ -95,6 +95,53 @@ keyboard access.
 - **File already says `return a + b`:** reset the demo repository and start a new session.
 - **CLI disconnected:** it says progress is saved; run `.\.venv\Scripts\agent.exe resume`.
 
+## Live git approval check (after PR #41 merges)
+
+Not part of the demo above. Run it once Sharjeel's git executor (#41) is merged, then record
+the result as evidence. It checks that both clients show a real executor's previews and that
+approve and deny do exactly what the core says.
+
+**Before #41's review fixes land**, keep to the path that works today: give the test
+repository its own `user.name`/`user.email` (the executor ignores global git config), and
+change a file that git already tracks (new files cannot be committed yet).
+
+1. **Test repository.** Use a fresh repository under a configured `repo_roots` folder, never
+   this project. One commit on a branch that is not `main`, then change `calculator.py`.
+   Set `origin` to the URL in the config below. It does not need to exist, because push is
+   denied in this check.
+2. **Config.** The usual config plus:
+
+   ```toml
+   [git]
+   enabled = true
+   protected_branches = ["main", "master"]
+
+   [git.push_remotes]
+   origin = "https://github.com/example/repo.git"
+   ```
+
+3. **CLI.** Ask the agent to commit the change to `calculator.py`, create the branch
+   `feature/live-git-check`, then push it to `origin`. Check each approval and answer:
+
+   | Approval | Check | Answer |
+   | --- | --- | --- |
+   | `git_commit` | `paths: calculator.py`, the head matches `git rev-parse HEAD`, the diff is `return a - b` → `return a + b` | `a` |
+   | `git_checkout` | `create: True`, `target: feature/live-git-check`, the head is the new commit | `a` |
+   | `git_push` | `remote_url` is the configured URL; the commit list is right | `d` |
+
+   Afterwards `git log --oneline --all` shows the commit on both branches, and the current
+   branch is `feature/live-git-check`. Nothing was pushed.
+4. **VS Code.** Repeat with a fresh repository: **Review and decide** opens a read-only
+   `git-commit.diff` (diff colours), then `git-checkout.txt` and `git-push.txt`, each followed
+   by Accept once / Reject. Give the same answers and check the same repository state.
+5. **Record** in `docs/evidence/live/`: the date, the commit of `main`, the client versions,
+   the provider mode, every approval with its answer, and the repository state afterwards.
+   Leave out tokens and keys. A scripted provider or the fixture shows client behaviour only.
+   Say so, and never use it as benchmark evidence.
+
+A rehearsal of steps 1–3 against #41's branch with a scripted provider is in
+[WS3_AREEBA_PLAN.md](WS3_AREEBA_PLAN.md) (progress log, 2026-11-12).
+
 ## What not to claim
 
 - No token-saving percentage, cost or quality result comes from this demo.
