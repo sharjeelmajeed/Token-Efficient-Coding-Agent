@@ -192,6 +192,8 @@ def show_status(data: dict):
 
 
 GIT_GATED_TOOLS = {"git_commit", "git_checkout", "git_push"}
+# Events after which the CLI prints the status table.
+STATUS_EVENTS = {"budget_warning", "budget_hit", "model_switched", "session_paused", "run_complete"}
 GIT_FIELDS = ("branch", "create", "remote", "expected_head", "message", "paths")
 
 
@@ -265,6 +267,9 @@ def watch(http: httpx.Client, state: dict):
     reply_open = False
     # Mid-reply notices, shown once the reply's line is finished.
     held: list[tuple[str, dict]] = []
+    # True when the latest event already printed the status table, so the end of the
+    # stream does not print the same table a second time.
+    status_shown = False
 
     def end_reply(note: str = ""):
         nonlocal reply_open
@@ -277,6 +282,8 @@ def watch(http: httpx.Client, state: dict):
             show_event(*held.pop(0))
 
     def show_event(kind: str, payload: dict):
+        nonlocal status_shown
+        status_shown = kind in STATUS_EVENTS
         if kind == "approval_request":
             current = request(http, "GET", f"/sessions/{session_id}/status")
             for approval in current["pending_approvals"]:
@@ -300,7 +307,7 @@ def watch(http: httpx.Client, state: dict):
         else:
             for text in notice(kind, payload):
                 console.print(text, markup=False, style="yellow")
-            if kind in {"model_switched", "session_paused", "run_complete"}:
+            if kind in STATUS_EVENTS:
                 show_status(request(http, "GET", f"/sessions/{session_id}/status"))
 
     try:
@@ -315,6 +322,7 @@ def watch(http: httpx.Client, state: dict):
                 state["last_event_id"] = event["id"]
                 save_state(state)
                 kind, payload = event["type"], event["payload"]
+                status_shown = False
                 if kind == "message_delta" and payload.get("partial") is True:
                     # Streamed piece: keep building the reply on the same line.
                     console.print(clean(payload["text"]), markup=False, end="", soft_wrap=True)
@@ -335,7 +343,8 @@ def watch(http: httpx.Client, state: dict):
                 end_reply("(reply incomplete)")
                 show_event(kind, payload)
         end_reply()
-        show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+        if not status_shown:
+            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
     except KeyboardInterrupt:
         end_reply()
         request(http, "POST", f"/sessions/{session_id}/cancel")

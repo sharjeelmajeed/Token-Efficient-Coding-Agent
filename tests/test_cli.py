@@ -55,6 +55,8 @@ def test_cli_complete_interactive_flow(environment, tmp_path):
         assert "Fixture completed" in run.stdout  # streaming off: whole message as before
         assert "reply incomplete" not in run.stdout
         assert "completed_unverified" in run.stdout
+        # Once when the run starts and once when it completes, not again at stream end.
+        assert run.stdout.count("Agent status") == 2
         assert "return a + b" in (environment["repo"] / "calculator.py").read_text()
         assert env["AGENT_API_TOKEN"] not in run.stdout + run.stderr
 
@@ -183,6 +185,8 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
     assert "Paused: Model action did not match the permitted schema" in after
     assert "Next step: Resolve the cause, then submit a new instruction" in after
     assert run.stdout.count("(reply incomplete)") == 1
+    # Once when the run starts and once when it pauses, not again at stream end.
+    assert run.stdout.count("Agent status") == 2
     # Readable lines only: no raw event names or JSON payloads.
     assert "session_paused" not in run.stdout
     assert '"reason"' not in run.stdout
