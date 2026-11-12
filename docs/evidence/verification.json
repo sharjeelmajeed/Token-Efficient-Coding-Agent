@@ -2,22 +2,25 @@
   "date": "2026-11-12",
   "application_version": "0.3.0",
   "milestone": "M3 clients, git executor and read-only review; Docker live acceptance, the git live check and the benchmark campaign still pending",
-  "code": "bdfe17d (feature/core-git-executor merged with main 3349170; PR #41 open)",
-  "python": "3.13.13",
-  "python_ci": ["3.11", "3.12"],
-  "node": "v24.15.0",
+  "code": "ffa2647 (test/evaluation-evidence-refresh merged with main 81df3a4, which includes the merged git executor from PR #41)",
+  "python": "3.12.2",
+  "python_ci": [
+    "3.11",
+    "3.12"
+  ],
+  "node": "v24.18.0",
   "tests": {
     "command": "python -m coverage run --branch --source=token_agent -m pytest --junitxml=docs/evidence/junit.xml",
-    "tests": 590,
+    "tests": 599,
     "errors": 0,
-    "failures": 1,
+    "failures": 0,
     "skipped": 0,
-    "time": "219.895",
-    "failure_detail": "tests/test_policy.py::test_symlink_and_parent_symlink_rejected raises OSError [WinError 1314]: creating a symlink needs the Windows symlink privilege (Developer Mode or administrator). Environmental, not a code defect. The same suite is green on the ubuntu-latest CI runners for this commit, where the privilege exists."
+    "time": "401.194",
+    "note": "The Windows symlink test passes on this machine (Developer Mode is on); on Windows without that privilege it fails with WinError 1314, as recorded in the previous refresh."
   },
   "extension_tests": {
     "command": "npm test",
-    "passed": 34,
+    "passed": 35,
     "failed": 0,
     "skipped": 0,
     "scope": "Node transport/protocol, simulated VS Code controller, DOM safety, budget notices, streaming, read-only git approval documents"
@@ -29,9 +32,9 @@
     "policy_statements": 85,
     "policy_branches": 48,
     "policy_missing_statements": 0,
-    "overall_line_and_branch_percent": 85.28,
-    "overall_statements": 2927,
-    "overall_branches": 1006,
+    "overall_line_and_branch_percent": 85.38,
+    "overall_statements": 3084,
+    "overall_branches": 1068,
     "files_measured": 20,
     "cli_subprocess_coverage_collected": false
   },
@@ -53,9 +56,9 @@
   "source_fsd_sha256": "7ce7e214e5b4257f4e47368ca9342476c639e758f84fb188234e03cea96be1a3",
   "vscode_package": {
     "path": "clients/vscode/token-efficient-coding-agent-0.3.0.vsix",
-    "bytes": 18292,
-    "sha256": "bce6b5ff3b27bd6a3c1ed4332aaaf7f7a170734c0654e98f9fcba98678d6ed56",
-    "built_from_commit": "bdfe17d",
+    "bytes": 18464,
+    "sha256": "fb3c4586fff474eef0005db04fa3d43d57f8f311a42f993b19097a789ed7d117",
+    "built_from_commit": "ffa2647",
     "runtime_npm_dependencies": 0,
     "compiled": true,
     "packaged": true,
@@ -69,7 +72,7 @@
     "trusted_base_checkout_checked": true,
     "review_publish_permission_separation_checked": true,
     "github_ci_executed": true,
-    "github_ci_detail": "Core checks green on PR #41 head bdfe17d: core (3.11), core (3.12), extension",
+    "github_ci_detail": "Core checks green on main 81df3a4 (core 3.11, core 3.12, extension); this branch's CI runs on push",
     "github_review_executed": false,
     "github_comments_posted": 0
   },
@@ -87,20 +90,29 @@
       "dependency-audit.json (pip-audit --skip-editable)",
       "npm-audit.json",
       "the packaged VSIX hash",
-      "CI status on the pull request head"
+      "ruff check, ruff format, pip check and the contract export (static_checks)",
+      "policy-overhead-release.json",
+      "clean-machine-setup.json"
     ],
     "not_re_measured": [
       "live_bifrost_verified, live_tavily_verified, live_docker_verified",
       "gateway_costs_reconciled",
       "benchmark_results_available"
     ],
-    "note": "The live service flags were left as recorded on 2026-11-03 and are not restated here. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison."
+    "note": "The live service flags were left as recorded on 2026-11-03 and are not restated here. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison. Re-measured on ffa2647 after PR #41 merged, so the evidence matches the merged executor; the previous refresh at bdfe17d described the executor before its review fixes.",
+    "measured_on": "Usman's laptop (Windows 11 Pro, Intel Core i5-8250U, 4 cores/8 threads, 16 GB RAM; about 2-5 GB free during the run)"
   },
   "remaining_acceptance": [
     "Live Bifrost/local routing, billing and Docker",
     "Real VS Code host and visual interaction for the current VSIX",
     "Authorized GitHub workflow and comment trial",
-    "Live git check of the executor with Usman",
+    "Live git check of the merged executor (runbook in docs/DEMO_WS3.md)",
     "Frozen benchmark and submission rehearsal"
-  ]
+  ],
+  "static_checks": {
+    "ruff_check": "All checks passed (src tests scripts benchmarks)",
+    "ruff_format": "60 files already formatted",
+    "pip_check": "No broken requirements found",
+    "export_contracts": "docs/openapi.json and docs/event.schema.json unchanged"
+  }
 }

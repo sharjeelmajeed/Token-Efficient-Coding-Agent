@@ -1,17 +1,18 @@
 {
-  "code": "bdfe17d3b1931ccd68e812bbfcf9bbcb21a5ea69",
+  "code": "ffa2647ad4a8ef66d0143edf4b73ec396e20f9a9",
   "script": "scripts/measure_overhead.py --runs 10",
   "recorded_utc_date": "2026-11-12",
-  "annotation": "Direct output of the script under 'result'. Only 'code', 'script', 'recorded_utc_date' and this note were added after the run; no measured value was edited, combined or taken from an earlier run. The earlier composed comparison of before and after connection reuse stays in policy-overhead.json.",
+  "machine": "Usman's laptop (Windows 11 Pro, Intel Core i5-8250U, 4 cores/8 threads, 16 GB RAM; about 2-5 GB free during the run)",
+  "annotation": "Direct output of the script under 'result'. Only 'code', 'script', 'recorded_utc_date', 'machine' and this note were added after the run; no measured value was edited, combined or taken from an earlier run. The previous release run (bdfe17d, on a faster machine) measured 14.1 ms, 60.9 ms and 261.4 ms core work; absolute times depend on the machine, so compare runs only on the same one. The composed before/after comparison stays in policy-overhead.json.",
   "result": {
     "measure": "core work between model requests, excluding network and model time",
     "target_ms": 50.0,
-    "worst_p95_ms": 781.35,
+    "worst_p95_ms": 2109.08,
     "within_target": false,
     "machine": {
-      "platform": "Windows-11-10.0.26300-SP0",
-      "processor": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel",
-      "python": "3.13.13",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "processor": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+      "python": "3.12.2",
       "cpus": 8
     },
     "runs_per_repository": 10,
@@ -20,30 +21,30 @@
         "files": 1,
         "core_work_per_request": {
           "session_creation_ms": {
-            "median_ms": 4.39,
-            "p95_ms": 4.64,
-            "max_ms": 6.06
+            "median_ms": 13.76,
+            "p95_ms": 15.08,
+            "max_ms": 15.59
           },
           "requests_measured": 40,
-          "median_ms": 14.07,
-          "p95_ms": 18.72,
-          "max_ms": 26.65,
+          "median_ms": 48.29,
+          "p95_ms": 53.1,
+          "max_ms": 57.77,
           "by_preceding_tool_median_ms": {
-            "grep": 14.23,
-            "list_tree": 14.19,
-            "read_file": 13.74
+            "grep": 50.61,
+            "list_tree": 45.96,
+            "read_file": 48.43
           }
         },
         "policy_steps": {
           "confidentiality_rescan_ms": {
-            "median_ms": 0.8,
-            "p95_ms": 0.91,
-            "max_ms": 1.3
+            "median_ms": 2.03,
+            "p95_ms": 2.9,
+            "max_ms": 3.33
           },
           "secret_scan_full_context_ms": {
-            "median_ms": 1.9,
-            "p95_ms": 1.98,
-            "max_ms": 2.04
+            "median_ms": 8.38,
+            "p95_ms": 9.59,
+            "max_ms": 10.06
           },
           "reply_validation_and_classify_ms": {
             "median_ms": 0.0,
@@ -53,38 +54,38 @@
         }
       },
       "project copy": {
-        "files": 124,
+        "files": 126,
         "core_work_per_request": {
           "session_creation_ms": {
-            "median_ms": 6.51,
-            "p95_ms": 7.49,
-            "max_ms": 7.57
+            "median_ms": 14.9,
+            "p95_ms": 20.33,
+            "max_ms": 23.99
           },
           "requests_measured": 40,
-          "median_ms": 60.93,
-          "p95_ms": 285.97,
-          "max_ms": 326.5,
+          "median_ms": 119.79,
+          "p95_ms": 736.42,
+          "max_ms": 808.21,
           "by_preceding_tool_median_ms": {
-            "grep": 278.75,
-            "list_tree": 97.55,
-            "read_file": 21.59
+            "grep": 703.94,
+            "list_tree": 220.13,
+            "read_file": 69.54
           }
         },
         "policy_steps": {
           "confidentiality_rescan_ms": {
-            "median_ms": 2.53,
-            "p95_ms": 4.17,
-            "max_ms": 5.5
+            "median_ms": 6.53,
+            "p95_ms": 11.61,
+            "max_ms": 12.62
           },
           "secret_scan_full_context_ms": {
-            "median_ms": 2.01,
-            "p95_ms": 2.12,
-            "max_ms": 2.61
+            "median_ms": 8.41,
+            "p95_ms": 14.09,
+            "max_ms": 19.27
           },
           "reply_validation_and_classify_ms": {
-            "median_ms": 0.0,
-            "p95_ms": 0.0,
-            "max_ms": 0.0
+            "median_ms": 0.01,
+            "p95_ms": 0.02,
+            "max_ms": 0.05
           }
         }
       },
@@ -92,35 +93,35 @@
         "files": 4000,
         "core_work_per_request": {
           "session_creation_ms": {
-            "median_ms": 49.53,
-            "p95_ms": 50.92,
-            "max_ms": 52.32
+            "median_ms": 103.05,
+            "p95_ms": 143.92,
+            "max_ms": 162.94
           },
           "requests_measured": 40,
-          "median_ms": 261.43,
-          "p95_ms": 781.35,
-          "max_ms": 914.68,
+          "median_ms": 518.03,
+          "p95_ms": 2109.08,
+          "max_ms": 2571.88,
           "by_preceding_tool_median_ms": {
-            "grep": 767.82,
-            "list_tree": 416.66,
-            "read_file": 106.24
+            "grep": 1898.91,
+            "list_tree": 969.43,
+            "read_file": 257.57
           }
         },
         "policy_steps": {
           "confidentiality_rescan_ms": {
-            "median_ms": 50.28,
-            "p95_ms": 55.69,
-            "max_ms": 73.96
+            "median_ms": 101.54,
+            "p95_ms": 122.66,
+            "max_ms": 128.76
           },
           "secret_scan_full_context_ms": {
-            "median_ms": 2.19,
-            "p95_ms": 2.4,
-            "max_ms": 2.58
+            "median_ms": 7.9,
+            "p95_ms": 9.2,
+            "max_ms": 10.58
           },
           "reply_validation_and_classify_ms": {
             "median_ms": 0.0,
             "p95_ms": 0.0,
-            "max_ms": 0.0
+            "max_ms": 0.01
           }
         }
       }
