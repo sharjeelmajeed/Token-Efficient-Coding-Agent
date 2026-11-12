@@ -5,8 +5,11 @@ tests run a real ``git`` binary in temporary repositories.
 """
 
 import asyncio
+import os
 import shutil
 import subprocess
+import sys
+import time
 from types import SimpleNamespace
 
 import pytest
@@ -20,6 +23,22 @@ from token_agent.repo import PolicyError, Repository
 pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
 
 REMOTE = "https://github.com/example/repo.git"
+
+
+@pytest.fixture(autouse=True)
+def user_git_identity(tmp_path, monkeypatch):
+    """Give every test a user-level identity instead of relying on the machine.
+
+    The executor reads only global/system identity, so a per-repository identity is not
+    used and CI, which has no global identity, would fail the commit tests.
+    """
+    home = tmp_path / "global-home"
+    home.mkdir()
+    (home / ".gitconfig").write_text("[user]\n\tname = Test User\n\temail = test@example.com\n")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
+    yield
 
 
 def run(root, *args):
@@ -253,3 +272,164 @@ def test_executor_is_created_only_when_git_is_enabled(environment):
         assert disabled.state.engine.git is None
     finally:
         disabled.state.store.close()
+
+
+# --- regression tests from review ------------------------------------------------
+
+
+def run_with_identity(root, *args):
+    """Run git with an author and committer for this command only, storing no config."""
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "Seed",
+        "GIT_AUTHOR_EMAIL": "seed@example.com",
+        "GIT_COMMITTER_NAME": "Seed",
+        "GIT_COMMITTER_EMAIL": "seed@example.com",
+    }
+    return subprocess.run(
+        ["git", *args], cwd=root, check=True, capture_output=True, text=True, env=env
+    ).stdout
+
+
+def make_repo_without_local_identity(tmp_path):
+    root = tmp_path / "repo"
+    root.mkdir()
+    run(root, "init", "-b", "main")
+    (root / "a.txt").write_text("one\n")
+    run(root, "add", "a.txt")
+    run_with_identity(root, "commit", "-m", "init")
+    return root
+
+
+def test_full_diff_omits_a_tracked_protected_file(tmp_path):
+    root = make_repo(tmp_path)
+    (root / ".env").write_text("SECRET_TOKEN=initial\n")
+    run(root, "add", ".env")
+    run(root, "commit", "-m", "env")
+    (root / ".env").write_text("SECRET_TOKEN=leaked-value\n")
+    (root / "a.txt").write_text("visible change\n")
+    result = asyncio.run(executor().read(repository(root), GitDiff(tool="git_diff")))
+    assert "a.txt" in result["text"]
+    assert "leaked-value" not in result["text"]
+    assert ".env" not in result["text"]
+
+
+def test_staged_diff_omits_a_rename_away_from_a_protected_name(tmp_path):
+    root = make_repo(tmp_path)
+    (root / ".env").write_text("SECRET_TOKEN=leaked-value\n")
+    run(root, "add", ".env")
+    run(root, "commit", "-m", "env")
+    run(root, "mv", ".env", "plain.txt")
+    result = asyncio.run(executor().read(repository(root), GitDiff(tool="git_diff", staged=True)))
+    assert "leaked-value" not in result["text"]
+    assert "plain.txt" not in result["text"]
+    assert ".env" not in result["text"]
+
+
+def test_commit_refuses_a_directory_holding_a_protected_file(tmp_path):
+    root = make_repo(tmp_path)
+    cfg = root / "cfg"
+    cfg.mkdir()
+    (cfg / "app.py").write_text("value = 1\n")
+    (cfg / ".env").write_text("SECRET_TOKEN=initial\n")
+    run(root, "add", "cfg")
+    run(root, "commit", "-m", "cfg")
+    (cfg / "app.py").write_text("value = 2\n")
+    (cfg / ".env").write_text("SECRET_TOKEN=leaked-value\n")
+    action = commit_action(root, ["cfg"])
+    with pytest.raises(PolicyError, match="[Pp]rotected"):
+        asyncio.run(executor().prepare(repository(root), action))
+
+
+def test_push_refuses_a_mismatched_push_url(tmp_path):
+    root = make_repo(tmp_path)
+    run(root, "remote", "add", "origin", REMOTE)
+    run(root, "remote", "set-url", "--push", "origin", "https://github.com/attacker/repo.git")
+    action = GitPush(
+        tool="git_push", remote="origin", branch="feature/x", expected_head=head_of(root)
+    )
+    with pytest.raises(PolicyError, match="does not match"):
+        asyncio.run(executor().prepare(repository(root), action))
+
+
+def test_commit_includes_a_file_the_agent_created(tmp_path):
+    root = make_repo(tmp_path)
+    (root / "new.txt").write_text("created by the agent\n")
+    action = commit_action(root, ["new.txt"])
+    git = executor()
+    preview = asyncio.run(git.prepare(repository(root), action))
+    assert "new.txt" in preview.diff
+    assert "created by the agent" in preview.diff
+    result = asyncio.run(git.apply(repository(root), action, preview.state))
+    assert result["applied"] is True
+    assert run(root, "show", "--name-only", "--format=", "HEAD").split() == ["new.txt"]
+    status = run(root, "status", "--porcelain")
+    assert status.strip() == ""
+
+
+def test_commit_uses_the_user_identity_when_the_repository_has_none(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".gitconfig").write_text("[user]\n\tname = Config User\n\temail = config@example.com\n")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
+    root = make_repo_without_local_identity(tmp_path)
+    (root / "a.txt").write_text("two\n")
+    action = commit_action(root, ["a.txt"])
+    git = executor()
+    preview = asyncio.run(git.prepare(repository(root), action))
+    result = asyncio.run(git.apply(repository(root), action, preview.state))
+    assert result["applied"] is True
+    assert run(root, "log", "-1", "--format=%an <%ae>").strip() == (
+        "Config User <config@example.com>"
+    )
+
+
+def test_commit_without_any_user_identity_is_refused(tmp_path, monkeypatch):
+    empty = tmp_path / "empty-home"
+    empty.mkdir()
+    monkeypatch.setenv("HOME", str(empty))
+    monkeypatch.setenv("USERPROFILE", str(empty))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(empty / ".config"))
+    root = make_repo(tmp_path)
+    (root / "a.txt").write_text("two\n")
+    action = commit_action(root, ["a.txt"])
+    git = executor()
+    preview = asyncio.run(git.prepare(repository(root), action))
+    before = head_of(root)
+    with pytest.raises(PolicyError, match="identity"):
+        asyncio.run(git.apply(repository(root), action, preview.state))
+    assert head_of(root) == before
+    assert run(root, "status", "--porcelain").strip() == "M a.txt"
+
+
+def test_status_reads_non_ascii_names_without_quoting(tmp_path):
+    root = make_repo(tmp_path)
+    (root / "sécrét.pem").write_text("key\n")
+    (root / "café.txt").write_text("visible\n")
+    result = asyncio.run(executor().read(repository(root), GitStatus(tool="git_status")))
+    assert result["omitted"] == 1
+    assert "pem" not in result["text"]
+    assert "café.txt" in result["text"]
+
+
+def test_timeout_kills_the_whole_process_tree(tmp_path):
+    marker = tmp_path / "marker.txt"
+    child = tmp_path / "child.py"
+    child.write_text(
+        f"import pathlib, time\ntime.sleep(3)\npathlib.Path({str(marker)!r}).write_text('alive')\n",
+        encoding="utf-8",
+    )
+    parent = tmp_path / "parent.py"
+    parent.write_text(
+        "import subprocess, sys, time\n"
+        f"subprocess.Popen([sys.executable, {str(child)!r}])\n"
+        "time.sleep(60)\n",
+        encoding="utf-8",
+    )
+    git = executor(timeout=1.0)
+    with pytest.raises(PolicyError, match="timed out"):
+        asyncio.run(git._spawn([sys.executable, str(parent)], str(tmp_path)))
+    time.sleep(5)
+    assert not marker.exists()

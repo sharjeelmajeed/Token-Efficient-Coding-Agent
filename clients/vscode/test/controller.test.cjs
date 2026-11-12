@@ -157,3 +157,47 @@ for (const [tool, action, diff, file, choice, decision] of [
     } finally { global.fetch = original; h.dispose(); }
   });
 }
+
+test('clicking Review again reopens a decision prompt that VS Code hid, and only the newest one posts', async () => {
+  // A non-modal prompt that moved to the notification centre still waits; the first click
+  // here never answers until the end, like a hidden prompt answered late.
+  let answerHidden;
+  const prompts = [];
+  const h = harness({
+    window: {
+      showTextDocument: async () => {},
+      showInformationMessage: (message, ...buttons) => {
+        prompts.push(buttons);
+        return prompts.length === 1 ? new Promise(resolve => { answerHidden = resolve; }) : Promise.resolve('Accept once');
+      },
+    },
+    workspace: { openTextDocument: async uri => ({ uri }) },
+  });
+  const original = global.fetch;
+  const calls = [];
+  global.fetch = async (url, options = {}) => {
+    calls.push({ url, method: options.method ?? 'GET', body: options.body });
+    if (url.endsWith('/status')) {
+      return Response.json({ session_id: SID, mode: 'fixture', confidential: false, read_only: false,
+        budget_remaining_micro_usd: 1000000, run: null, usage: [],
+        pending_approvals: [{ id: AID, action: { tool: 'git_commit', message: 'Fix', paths: ['calculator.py'], expected_head: HEAD },
+          diff: '+    return a + b', deadline: 9e12 }] });
+    }
+    return Response.json(url.endsWith('/sessions') ? { session_id: SID } : { ok: true });
+  };
+  const posts = () => calls.filter(call => call.method === 'POST' && call.url.includes('/approvals/'));
+  try {
+    await h.callbacks.get('tokenAgent.start')();
+    h.post({ type: 'approval', id: AID });
+    await settle();
+    h.post({ type: 'approval', id: AID });
+    await settle();
+    assert.equal(prompts.length, 2, 'the second click shows the decision prompt again');
+    assert.equal(posts().length, 1);
+    assert.deepEqual(JSON.parse(posts()[0].body), { decision: 'approve_once', feedback: '' });
+    answerHidden('Reject');
+    await settle();
+    assert.equal(posts().length, 1, 'a late answer to the hidden prompt sends nothing');
+    assert.deepEqual(h.errors, []);
+  } finally { global.fetch = original; h.dispose(); }
+});
