@@ -172,6 +172,14 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
      - before: median 221 ms, p95 256 ms.
 
      Large repositories are dominated by tool time (`grep` about 2 s).
+   - **Release re-measurement (2026-11-12, commit `bdfe17d`):** a single direct run of the
+     same script is in `docs/evidence/policy-overhead-release.json`, and it replaces the
+     numbers above for the current code. Core work per request including the tool is
+     14.1 ms median on the 1-file repository, 60.9 ms on the project copy and 261.4 ms on
+     the 4,000-file repository, where the median request following `grep` is 768 ms because
+     `grep` scans the whole tree. The policy steps alone are 2.7 ms, 4.5 ms and 52.5 ms;
+     the 4,000-file figure is the per-request confidentiality rescan, so the 50 ms target is
+     met on small and medium repositories and marginally exceeded on the largest one.
 9. **Not measured:** crash recovery by killing the process (tested from a prepared database).
 
 ## 7. Open items
@@ -180,4 +188,5 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 |---|---|---|
 | Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
-| `GitExecutor` and the Docker sandbox | Sharjeel | — |
+| `Docker sandbox image and live acceptance` | Sharjeel | Owner agreement with Usman |
+| `GitExecutor` live check in a real repository | Sharjeel, with Usman | Merge of PR #41 |
