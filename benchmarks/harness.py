@@ -413,6 +413,7 @@ class BenchmarkRunner:
         opt = system_optimization(system)
         run_identifier = f"{task['id']}_{system}_rep{repeat}_{int(time.time())}"
         repo_dir: Path | None = None
+        store: Store | None = None
         user = self.base_settings.users[0]
         elapsed = 0.0
 
@@ -528,6 +529,8 @@ class BenchmarkRunner:
                 error=f"{type(exc).__name__}: {exc}",
             )
         finally:
+            if store is not None:
+                store.close()
             if repo_dir and repo_dir.exists():
                 shutil.rmtree(repo_dir, ignore_errors=True)
 

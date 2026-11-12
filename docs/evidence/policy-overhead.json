@@ -1,0 +1,239 @@
+{
+  "measure": "core work between model requests, excluding network and model time",
+  "target_ms": 50,
+  "script": "scripts/measure_overhead.py --runs 10",
+  "composition": "Combined from two runs of scripts/measure_overhead.py --runs 10 on the same machine: before_connection_reuse on main 4f20f3f, and after_connection_reuse with this change. Not a single direct output of the script.",
+  "note": "Scripted instant provider; overhead only, not model behaviour and not benchmark evidence. The core work per request includes tool execution, so grep and list_tree on large repositories are tool time, not policy time; policy_steps time the policy alone.",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 142 Stepping 10, GenuineIntel",
+    "python": "3.12.2",
+    "cpus": 8
+  },
+  "before_connection_reuse": {
+    "code": "main 4f20f3f",
+    "results": {
+      "demo (1 file)": {
+        "files": 1,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 44.18,
+            "p95_ms": 56.4,
+            "max_ms": 60.18
+          },
+          "requests_measured": 40,
+          "median_ms": 221.41,
+          "p95_ms": 256.01,
+          "max_ms": 256.27,
+          "by_preceding_tool_median_ms": {
+            "grep": 221.64,
+            "list_tree": 208.8,
+            "read_file": 221.64
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 1.97,
+            "p95_ms": 2.35,
+            "max_ms": 3.18
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 5.99,
+            "p95_ms": 9.7,
+            "max_ms": 10.34
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.01,
+            "max_ms": 0.02
+          }
+        }
+      },
+      "project copy": {
+        "files": 116,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 54.44,
+            "p95_ms": 61.51,
+            "max_ms": 68.88
+          },
+          "requests_measured": 40,
+          "median_ms": 264.75,
+          "p95_ms": 875.5,
+          "max_ms": 985.47,
+          "by_preceding_tool_median_ms": {
+            "grep": 835.44,
+            "list_tree": 404.21,
+            "read_file": 233.81
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 5.77,
+            "p95_ms": 7.13,
+            "max_ms": 7.71
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 8.41,
+            "p95_ms": 9.92,
+            "max_ms": 15.75
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.01,
+            "max_ms": 0.01
+          }
+        }
+      },
+      "large (4,000 files, 400 folders)": {
+        "files": 4000,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 146.7,
+            "p95_ms": 162.51,
+            "max_ms": 192.5
+          },
+          "requests_measured": 40,
+          "median_ms": 620.89,
+          "p95_ms": 2038.11,
+          "max_ms": 2261.54,
+          "by_preceding_tool_median_ms": {
+            "grep": 1990.72,
+            "list_tree": 1078.74,
+            "read_file": 407.33
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 98.89,
+            "p95_ms": 113.48,
+            "max_ms": 149.59
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 11.32,
+            "p95_ms": 18.91,
+            "max_ms": 23.76
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.03,
+            "max_ms": 0.13
+          }
+        }
+      }
+    }
+  },
+  "after_connection_reuse": {
+    "code": "this change",
+    "results": {
+      "demo (1 file)": {
+        "files": 1,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 12.89,
+            "p95_ms": 14.85,
+            "max_ms": 16.91
+          },
+          "requests_measured": 40,
+          "median_ms": 47.81,
+          "p95_ms": 52.56,
+          "max_ms": 56.55,
+          "by_preceding_tool_median_ms": {
+            "grep": 49.36,
+            "list_tree": 47.02,
+            "read_file": 47.81
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 1.94,
+            "p95_ms": 2.56,
+            "max_ms": 2.94
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 8.48,
+            "p95_ms": 10.11,
+            "max_ms": 12.57
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.02,
+            "max_ms": 0.05
+          }
+        }
+      },
+      "project copy": {
+        "files": 118,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 17.28,
+            "p95_ms": 18.49,
+            "max_ms": 18.52
+          },
+          "requests_measured": 40,
+          "median_ms": 158.32,
+          "p95_ms": 797.4,
+          "max_ms": 823.93,
+          "by_preceding_tool_median_ms": {
+            "grep": 697.31,
+            "list_tree": 246.17,
+            "read_file": 68.57
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 5.93,
+            "p95_ms": 7.78,
+            "max_ms": 10.14
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 8.38,
+            "p95_ms": 9.63,
+            "max_ms": 10.27
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.02,
+            "max_ms": 0.03
+          }
+        }
+      },
+      "large (4,000 files, 400 folders)": {
+        "files": 4000,
+        "core_work_per_request": {
+          "session_creation_ms": {
+            "median_ms": 106.1,
+            "p95_ms": 121.34,
+            "max_ms": 123.35
+          },
+          "requests_measured": 40,
+          "median_ms": 647.97,
+          "p95_ms": 2061.45,
+          "max_ms": 2311.86,
+          "by_preceding_tool_median_ms": {
+            "grep": 1926.51,
+            "list_tree": 1024.49,
+            "read_file": 257.8
+          }
+        },
+        "policy_steps": {
+          "confidentiality_rescan_ms": {
+            "median_ms": 105.5,
+            "p95_ms": 129.67,
+            "max_ms": 132.55
+          },
+          "secret_scan_full_context_ms": {
+            "median_ms": 8.56,
+            "p95_ms": 10.65,
+            "max_ms": 16.51
+          },
+          "reply_validation_and_classify_ms": {
+            "median_ms": 0.01,
+            "p95_ms": 0.02,
+            "max_ms": 0.03
+          }
+        }
+      }
+    }
+  }
+}

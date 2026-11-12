@@ -1,7 +1,7 @@
 # Frozen benchmark task suite
 
 **Suite name:** `token-efficient-coding-agent-benchmarks`
-**Status:** frozen by PR #33. Record its merge commit in the repository README.
+**Status:** frozen at commit `7ac9085` (merge of PR #33).
 **Task count:** 18 tasks.
 **Repositories (3):**
 - `pallets/click`: 8 tasks;

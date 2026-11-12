@@ -226,8 +226,10 @@ run, not live-model evidence. A live model switch between streamed pieces, shown
 clients, is recorded by WS2 in
 [evidence/live/live-streaming-clients.json](evidence/live/live-streaming-clients.json).
 
-Still to do before release: git approvals in the editor (waits for the git executor and
-a preview decision), an authorized test PR, fork-injection attempt, private-routing
+Git approvals open in the editor as a read-only document with the core's fields, the state
+the core rechecks and its preview (#39); they are tested with synthetic approvals only.
+
+Still to do before release: a live git approval (waits for the git executor), an authorized test PR, fork-injection attempt, private-routing
 failure and comment publication.
 
 ## Four-person handoff
@@ -236,7 +238,7 @@ failure and comment publication.
 | --- | --- | --- |
 | WS1 | Core permission migration and approval-preview API | Review security changes and Docker/git remaining scope |
 | WS2 | Gateway keys, models, rate ceilings and actual usage | Live routing, fallback and billing reconciliation |
-| WS3 | `clients/vscode/`, CLI (`cli.py`), `github_client.py`, `pr_review.py` | Editor rehearsal done (fixture, 14/14). Next: git approvals in the editor, live PR review on a team PR |
+| WS3 | `clients/vscode/`, CLI (`cli.py`), `github_client.py`, `pr_review.py` | Editor rehearsal done (fixture, 14/14); git approvals in both clients. Next: live git approval once the executor lands, live PR review on a team PR |
 | WS4 | Cross-client tests, `.github/workflows/`, evidence | Authorized GitHub workflow trial, frozen benchmark and submission |
 
 Use the branch/review/merge procedure in `TEAM_PLAN.md`; do not copy four divergent

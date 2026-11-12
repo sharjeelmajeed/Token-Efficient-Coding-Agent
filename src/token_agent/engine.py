@@ -389,9 +389,9 @@ class Engine:
                 parts = prompt_parts(messages)
                 request_context = {"session_id": session_id, "run_id": run_id}
                 if self.settings.optimization.gateway_direct_cache and not confidential:
-                    _, request_context["snapshot_sha256"] = repo.snapshot(
-                        self.settings.sandbox.max_snapshot_bytes
-                    )
+                    # Cache partitioning needs a content fingerprint, not the strict sandbox
+                    # snapshot, which refuses binary files and repositories over 500 files.
+                    request_context["snapshot_sha256"] = repo.fingerprint()
                 reserve_cost = (
                     cost_ceiling(
                         self.settings,

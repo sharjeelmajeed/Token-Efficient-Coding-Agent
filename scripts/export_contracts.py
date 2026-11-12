@@ -23,6 +23,7 @@ try:
         (root / "docs" / "event.schema.json").write_text(
             json.dumps(Event.model_json_schema(), indent=2) + "\n"
         )
+        app.state.store.close()  # release the database before the folder is removed
 finally:
     if previous is None:
         os.environ.pop(variable, None)

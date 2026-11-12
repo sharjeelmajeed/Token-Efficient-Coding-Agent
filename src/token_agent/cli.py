@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -191,6 +192,8 @@ def show_status(data: dict):
 
 
 GIT_GATED_TOOLS = {"git_commit", "git_checkout", "git_push"}
+# Events after which the CLI prints the status table.
+STATUS_EVENTS = {"budget_warning", "budget_hit", "model_switched", "session_paused", "run_complete"}
 GIT_FIELDS = ("branch", "create", "remote", "expected_head", "message", "paths")
 
 
@@ -264,6 +267,9 @@ def watch(http: httpx.Client, state: dict):
     reply_open = False
     # Mid-reply notices, shown once the reply's line is finished.
     held: list[tuple[str, dict]] = []
+    # True when the latest event already printed the status table, so the end of the
+    # stream does not print the same table a second time.
+    status_shown = False
 
     def end_reply(note: str = ""):
         nonlocal reply_open
@@ -276,6 +282,8 @@ def watch(http: httpx.Client, state: dict):
             show_event(*held.pop(0))
 
     def show_event(kind: str, payload: dict):
+        nonlocal status_shown
+        status_shown = kind in STATUS_EVENTS
         if kind == "approval_request":
             current = request(http, "GET", f"/sessions/{session_id}/status")
             for approval in current["pending_approvals"]:
@@ -299,7 +307,7 @@ def watch(http: httpx.Client, state: dict):
         else:
             for text in notice(kind, payload):
                 console.print(text, markup=False, style="yellow")
-            if kind in {"model_switched", "session_paused", "run_complete"}:
+            if kind in STATUS_EVENTS:
                 show_status(request(http, "GET", f"/sessions/{session_id}/status"))
 
     try:
@@ -314,6 +322,7 @@ def watch(http: httpx.Client, state: dict):
                 state["last_event_id"] = event["id"]
                 save_state(state)
                 kind, payload = event["type"], event["payload"]
+                status_shown = False
                 if kind == "message_delta" and payload.get("partial") is True:
                     # Streamed piece: keep building the reply on the same line.
                     console.print(clean(payload["text"]), markup=False, end="", soft_wrap=True)
@@ -334,7 +343,8 @@ def watch(http: httpx.Client, state: dict):
                 end_reply("(reply incomplete)")
                 show_event(kind, payload)
         end_reply()
-        show_status(request(http, "GET", f"/sessions/{session_id}/status"))
+        if not status_shown:
+            show_status(request(http, "GET", f"/sessions/{session_id}/status"))
     except KeyboardInterrupt:
         end_reply()
         request(http, "POST", f"/sessions/{session_id}/cancel")
@@ -396,6 +406,80 @@ def doctor(config: Path = typer.Option(Path("agent.toml"))):
     typer.echo(json.dumps(data, indent=2))
     if not data["ready"]:
         raise typer.Exit(1)
+
+
+# The repository checkout this package was installed from (pip install -e .). The benchmark
+# harness lives there, outside the installed package; it is never loaded from the current folder.
+CHECKOUT = Path(__file__).resolve().parents[2]
+
+
+def load_harness():
+    """Import the benchmark harness from this agent's own source checkout."""
+    if not (CHECKOUT / "benchmarks" / "harness.py").is_file():
+        raise typer.BadParameter(
+            "agent bench needs the repository checkout: install it with "
+            '"pip install -e ." from a clone of the repository.'
+        )
+    if str(CHECKOUT) not in sys.path:
+        sys.path.insert(0, str(CHECKOUT))
+    from benchmarks import harness
+
+    return harness
+
+
+def node_environments(values: list[str]) -> dict[str, str]:
+    environments = {}
+    for value in values:
+        name, separator, path = value.partition("=")
+        if not separator or not name or not path:
+            raise typer.BadParameter(
+                f"Use --node-modules ENV=PATH, for example node-express5=PATH (got {value!r})."
+            )
+        environments[name] = path
+    return environments
+
+
+@app.command()
+def bench(
+    config: Path = typer.Option(
+        Path("agent.toml"), exists=True, dir_okay=False, help="Agent configuration TOML."
+    ),
+    task: list[str] = typer.Option([], "--task", help="Task ID to run; repeat for more."),
+    system: list[str] = typer.Option([], "--system", help="System or ablation; repeat for more."),
+    repeats: int = typer.Option(3, min=1, help="Repeats per task and system."),
+    output_dir: Path = typer.Option(Path("benchmarks/results"), help="Folder for the report."),
+    gateway_log: Path | None = typer.Option(
+        None, help="Bifrost logs.db, to reconcile each run's cost."
+    ),
+    python: str | None = typer.Option(None, help="Python with pytest for the Python tasks."),
+    node_modules: list[str] = typer.Option(
+        [], metavar="ENV=PATH", help="node_modules for a JavaScript environment; repeatable."
+    ),
+):
+    """Run the frozen benchmark suite through the benchmark harness."""
+    environments = node_environments(node_modules)
+    harness = load_harness()
+    report = harness.run_bench(
+        config_path=str(config),
+        tasks=task or None,
+        systems=system or None,
+        repeats=repeats,
+        output_dir=output_dir,
+        gateway_log=gateway_log,
+        python=python,
+        node_modules=environments,
+    )
+    console.print(f"Runs: {report.get('total_runs', 0)}", markup=False)
+    if not report.get("total_runs"):
+        console.print("No runs were made: check the --task IDs and --system names.")
+    console.print(f"Report: {report.get('report_path')}", markup=False)
+    if report.get("benchmark_evidence") is True:
+        console.print("Benchmark evidence: yes (live gateway, every run's cost reconciled).")
+    else:
+        console.print(
+            f"Not benchmark evidence (mode {report.get('mode')}; "
+            "only live gateway runs with every cost reconciled count)."
+        )
 
 
 @app.command()

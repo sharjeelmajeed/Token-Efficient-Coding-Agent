@@ -157,6 +157,33 @@ class Repository:
                         raise PolicyError("Repository file scan exceeds snapshot limit")
                     return
 
+    def fingerprint(self) -> str:
+        """Identify the repository's current contents, for gateway cache partitioning (TO-08).
+
+        Hashes the path, size and modification time of every file outside blocked and hidden
+        folders, without reading any file. So binary files count, there is no file-count
+        limit, and adding, removing or editing a file changes the result. A change only ever
+        costs cache hits. Sandbox execution keeps using the strict snapshot().
+        """
+        state = hashlib.sha256()
+        for directory, dirs, files in os.walk(self.root, followlinks=False):
+            dirs[:] = sorted(
+                d
+                for d in dirs
+                if d not in BLOCKED_PARTS
+                and not d.startswith(".")
+                and not (Path(directory) / d).is_symlink()
+            )
+            for name in sorted(files):
+                path = Path(directory) / name
+                try:
+                    info = path.lstat()
+                except OSError:
+                    continue
+                relative = path.relative_to(self.root).as_posix()
+                state.update(f"{relative}\0{info.st_size}\0{info.st_mtime_ns}\n".encode())
+        return state.hexdigest()
+
     @staticmethod
     def digest(text: str) -> str:
         return hashlib.sha256(text.encode()).hexdigest()

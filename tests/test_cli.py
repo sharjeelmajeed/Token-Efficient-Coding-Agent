@@ -2,9 +2,11 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import httpx
 import pytest
+from typer.testing import CliRunner
 
 import token_agent.cli as cli_module
 from token_agent.api import create_app
@@ -53,6 +55,8 @@ def test_cli_complete_interactive_flow(environment, tmp_path):
         assert "Fixture completed" in run.stdout  # streaming off: whole message as before
         assert "reply incomplete" not in run.stdout
         assert "completed_unverified" in run.stdout
+        # Once when the run starts and once when it completes, not again at stream end.
+        assert run.stdout.count("Agent status") == 2
         assert "return a + b" in (environment["repo"] / "calculator.py").read_text()
         assert env["AGENT_API_TOKEN"] not in run.stdout + run.stderr
 
@@ -181,6 +185,8 @@ def test_cli_marks_streamed_reply_incomplete_when_paused(environment, tmp_path):
     assert "Paused: Model action did not match the permitted schema" in after
     assert "Next step: Resolve the cause, then submit a new instruction" in after
     assert run.stdout.count("(reply incomplete)") == 1
+    # Once when the run starts and once when it pauses, not again at stream end.
+    assert run.stdout.count("Agent status") == 2
     # Readable lines only: no raw event names or JSON payloads.
     assert "session_paused" not in run.stdout
     assert '"reason"' not in run.stdout
@@ -449,3 +455,116 @@ def test_budget_options_use_plain_words_and_keep_unknown_codes():
         "options: continue, cancel"
     )
     assert "options" not in budget_line({**payload, "options": "continue"})
+
+
+FIXTURE_TOML = 'mode = "fixture"\n'
+# CI runs on a narrow, coloured terminal, where error panels wrap and add colour codes.
+PLAIN_TERMINAL = {"COLUMNS": "200", "NO_COLOR": "1", "TERM": "dumb"}
+
+
+class FakeHarness:
+    """Stands in for benchmarks.harness: records the call, runs nothing."""
+
+    def __init__(self, report: dict):
+        self.report = report
+        self.calls: list[dict] = []
+
+    def run_bench(self, **kwargs):
+        self.calls.append(kwargs)
+        return self.report
+
+
+def bench(monkeypatch, tmp_path, *args: str, report: dict | None = None):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "agent.toml").write_text(FIXTURE_TOML)
+    (tmp_path / "team.toml").write_text(FIXTURE_TOML)
+    fake = FakeHarness(
+        report
+        if report is not None
+        else {"total_runs": 2, "mode": "fixture", "benchmark_evidence": False, "report_path": "r"}
+    )
+    monkeypatch.setattr(cli_module, "load_harness", lambda: fake)
+    result = CliRunner().invoke(cli_module.app, ["bench", *args], env=PLAIN_TERMINAL)
+    return result, fake
+
+
+def test_cli_bench_passes_every_option_to_the_harness(monkeypatch, tmp_path):
+    result, fake = bench(
+        monkeypatch,
+        tmp_path,
+        *("--config", "team.toml", "--task", "TASK-01", "--task", "TASK-02"),
+        *("--system", "baseline", "--system", "optimized", "--repeats", "5"),
+        *("--output-dir", str(tmp_path), "--gateway-log", "logs.db", "--python", "py"),
+        *("--node-modules", "node-express5=C:/e5=x", "--node-modules", "node-express4=e4"),
+    )
+    assert result.exit_code == 0, result.output
+    assert fake.calls == [
+        {
+            "config_path": "team.toml",
+            "tasks": ["TASK-01", "TASK-02"],
+            "systems": ["baseline", "optimized"],
+            "repeats": 5,
+            "output_dir": tmp_path,
+            "gateway_log": Path("logs.db"),
+            "python": "py",
+            "node_modules": {"node-express5": "C:/e5=x", "node-express4": "e4"},
+        }
+    ]
+
+
+def test_cli_bench_defaults_leave_the_choice_to_the_harness(monkeypatch, tmp_path):
+    result, fake = bench(monkeypatch, tmp_path)
+    assert result.exit_code == 0, result.output
+    call = fake.calls[0]
+    assert call["tasks"] is None and call["systems"] is None
+    assert call["repeats"] == 3 and call["config_path"] == "agent.toml"
+    assert call["gateway_log"] is None and call["node_modules"] == {}
+
+
+def test_cli_bench_labels_evidence_only_from_the_report(monkeypatch, tmp_path):
+    result, _ = bench(monkeypatch, tmp_path)
+    assert "Report: r" in result.output
+    assert "Not benchmark evidence (mode fixture;" in result.output
+    live = {"total_runs": 6, "mode": "bifrost", "benchmark_evidence": True, "report_path": "r"}
+    result, _ = bench(monkeypatch, tmp_path, report=live)
+    assert "Benchmark evidence: yes" in result.output
+    # A live run whose costs were not all reconciled is still not evidence.
+    result, _ = bench(monkeypatch, tmp_path, report={**live, "benchmark_evidence": False})
+    assert "Not benchmark evidence (mode bifrost;" in result.output
+
+
+def test_cli_bench_says_when_no_runs_were_made(monkeypatch, tmp_path):
+    empty = {"total_runs": 0, "mode": "fixture", "benchmark_evidence": False, "report_path": "r"}
+    result, _ = bench(monkeypatch, tmp_path, "--task", "TASK-99", report=empty)
+    assert result.exit_code == 0
+    assert "No runs were made: check the --task IDs and --system names." in result.output
+
+
+@pytest.mark.parametrize("value", ["node-express5", "=path", "node-express5="])
+def test_cli_bench_rejects_a_malformed_node_modules_value(monkeypatch, tmp_path, value):
+    result, fake = bench(monkeypatch, tmp_path, "--node-modules", value)
+    assert result.exit_code == 2
+    assert "Use --node-modules ENV=PATH" in result.output
+    assert fake.calls == []
+
+
+def test_cli_bench_needs_an_existing_config_file(monkeypatch, tmp_path):
+    result, fake = bench(monkeypatch, tmp_path, "--config", "missing.toml")
+    assert result.exit_code == 2
+    assert "missing.toml" in result.output and "does not exist" in result.output
+    assert fake.calls == []
+
+
+def test_cli_bench_needs_the_repository_checkout(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "agent.toml").write_text(FIXTURE_TOML)
+    monkeypatch.setattr(cli_module, "CHECKOUT", tmp_path)
+    result = CliRunner().invoke(cli_module.app, ["bench"], env=PLAIN_TERMINAL)
+    assert result.exit_code == 2
+    assert "agent bench needs the repository checkout" in result.output
+
+
+def test_cli_bench_loads_the_real_harness_from_the_checkout():
+    harness = cli_module.load_harness()
+    assert Path(harness.__file__).resolve() == cli_module.CHECKOUT / "benchmarks" / "harness.py"
+    assert callable(harness.run_bench)
