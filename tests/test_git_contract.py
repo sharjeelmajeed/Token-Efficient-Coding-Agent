@@ -182,7 +182,9 @@ def test_prompt_only_describes_offered_git_tools(environment):
 @pytest.mark.parametrize("action", [STATUS, COMMIT])
 def test_git_action_without_an_executor_pauses_and_runs_nothing(environment, action):
     provider = ScriptedProvider([action])
-    app = create_app(git_settings(environment), provider)
+    # Git off in configuration means no executor exists, so nothing may run.
+    settings = environment["settings"].model_copy(update={"git": GitSettings(enabled=False)})
+    app = create_app(settings, provider)
     with live_client(app, environment["first"]) as client:
         sid = session(client, environment)
         start(client, sid)
