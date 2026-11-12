@@ -25,6 +25,22 @@ pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="git is not 
 REMOTE = "https://github.com/example/repo.git"
 
 
+@pytest.fixture(autouse=True)
+def user_git_identity(tmp_path, monkeypatch):
+    """Give every test a user-level identity instead of relying on the machine.
+
+    The executor reads only global/system identity, so a per-repository identity is not
+    used and CI, which has no global identity, would fail the commit tests.
+    """
+    home = tmp_path / "global-home"
+    home.mkdir()
+    (home / ".gitconfig").write_text("[user]\n\tname = Test User\n\temail = test@example.com\n")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("USERPROFILE", str(home))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(home / ".config"))
+    yield
+
+
 def run(root, *args):
     return subprocess.run(
         ["git", *args], cwd=root, check=True, capture_output=True, text=True
@@ -368,6 +384,24 @@ def test_commit_uses_the_user_identity_when_the_repository_has_none(tmp_path, mo
     assert run(root, "log", "-1", "--format=%an <%ae>").strip() == (
         "Config User <config@example.com>"
     )
+
+
+def test_commit_without_any_user_identity_is_refused(tmp_path, monkeypatch):
+    empty = tmp_path / "empty-home"
+    empty.mkdir()
+    monkeypatch.setenv("HOME", str(empty))
+    monkeypatch.setenv("USERPROFILE", str(empty))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(empty / ".config"))
+    root = make_repo(tmp_path)
+    (root / "a.txt").write_text("two\n")
+    action = commit_action(root, ["a.txt"])
+    git = executor()
+    preview = asyncio.run(git.prepare(repository(root), action))
+    before = head_of(root)
+    with pytest.raises(PolicyError, match="identity"):
+        asyncio.run(git.apply(repository(root), action, preview.state))
+    assert head_of(root) == before
+    assert run(root, "status", "--porcelain").strip() == "M a.txt"
 
 
 def test_status_reads_non_ascii_names_without_quoting(tmp_path):
