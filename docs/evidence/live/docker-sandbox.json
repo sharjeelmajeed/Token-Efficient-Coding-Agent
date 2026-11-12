@@ -1,0 +1,178 @@
+{
+  "captured_at": "2026-11-13T09:22:41.817640+00:00",
+  "host": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.13",
+  "docker_client": "29.9.3",
+  "docker_server": "29.9.3",
+  "docker_platform": "linux/amd64",
+  "image": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+  "image_present_digest": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+  "image_acquisition": "installed by the operator before this run; the runner never pulls",
+  "image_selection": {
+    "approved_by": null,
+    "status": "pending owner agreement for the benchmark task image"
+  },
+  "runner": {
+    "network": "none",
+    "repository_writable": false,
+    "user": "65534:65534",
+    "memory_mb": 256,
+    "timeout_seconds": 20,
+    "output_chars": 2000,
+    "verification_command": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-v"
+    ]
+  },
+  "checks": [
+    {
+      "check": "pinned image is already installed with that digest",
+      "passed": true,
+      "detail": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b"
+    },
+    {
+      "check": "sandbox reports itself available",
+      "passed": true,
+      "detail": "29.9.3 linux/x86_64"
+    },
+    {
+      "check": "verification command passes",
+      "passed": true,
+      "detail": {
+        "exit_code": 0,
+        "verification_passed": true,
+        "network": "none",
+        "repository_writable": false
+      }
+    },
+    {
+      "check": "snapshot digest unchanged after the run",
+      "passed": true,
+      "detail": "eda353cb97a98cce..."
+    },
+    {
+      "check": "failing command cannot establish verification",
+      "passed": true,
+      "detail": {
+        "exit_code": 3,
+        "verification_passed": false
+      }
+    },
+    {
+      "check": "network is unreachable inside the container",
+      "passed": true,
+      "detail": {
+        "exit_code": 1,
+        "reached_marker": false
+      }
+    },
+    {
+      "check": "repository mount is read-only",
+      "passed": true,
+      "detail": {
+        "exit_code": 1,
+        "host_file_created": false
+      }
+    },
+    {
+      "check": "tmpfs is writable but not executable",
+      "passed": true,
+      "detail": {
+        "exit_code": 1,
+        "tmp_mount": "tmpfs /tmp tmpfs rw,nosuid,nodev,noexec,relatime,size=65536k 0 0"
+      }
+    },
+    {
+      "check": "changed snapshot is rejected before docker runs",
+      "passed": true,
+      "detail": "no container created"
+    },
+    {
+      "check": "timeout is reported and the container is removed",
+      "passed": true,
+      "detail": {
+        "timed_out": true,
+        "containers": []
+      }
+    },
+    {
+      "check": "cancellation kills the container",
+      "passed": true,
+      "detail": {
+        "cancelled": true,
+        "containers": []
+      }
+    },
+    {
+      "check": "secret in command output is withheld",
+      "passed": true,
+      "detail": "refused, canary not echoed"
+    },
+    {
+      "check": "container runs as uid 65534",
+      "passed": true,
+      "detail": "65534"
+    },
+    {
+      "check": "no host environment or canary reaches the container",
+      "passed": true,
+      "detail": {
+        "container_env_keys": [
+          "GPG_KEY",
+          "HOME",
+          "HOSTNAME",
+          "LANG",
+          "PATH",
+          "PYTHONDONTWRITEBYTECODE",
+          "PYTHONUNBUFFERED",
+          "PYTHON_SHA256",
+          "PYTHON_VERSION"
+        ],
+        "leaked": []
+      }
+    },
+    {
+      "check": "output is bounded",
+      "passed": true,
+      "detail": {
+        "chars": 2000,
+        "truncated": true
+      }
+    },
+    {
+      "check": "missing pinned image fails without pulling",
+      "passed": true,
+      "detail": {
+        "containers": []
+      }
+    },
+    {
+      "check": "hardening flags are applied",
+      "passed": true,
+      "detail": {
+        "readonly_rootfs": true,
+        "network": "none",
+        "memory_bytes": 268435456,
+        "pids_limit": 64,
+        "cap_drop": [
+          "ALL"
+        ],
+        "security_opt": [
+          "no-new-privileges=true"
+        ],
+        "nano_cpus": 1000000000,
+        "user": "65534:65534"
+      }
+    },
+    {
+      "check": "no container outlives the run",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "all_passed": true,
+  "note": "Live Docker acceptance only. It is not a benchmark result and says nothing about model quality or token savings."
+}

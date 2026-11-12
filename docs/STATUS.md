@@ -45,15 +45,18 @@ clients on top of M1/M2. This is not complete live acceptance or hackathon submi
 
 Exact verification counts, audit and coverage appear in `evidence/verification.json`.
 API/CLI tests use a real loopback server. Gateway/research/container adapters use
-controlled test transports. Authored host-process tests cover timeout/output handling;
-no model-generated or repository command was executed on the host.
+controlled test transports in the suite. The Docker sandbox additionally passed a
+live acceptance on a real daemon (Docker 29.9.3, `python:3.12-slim` pinned by digest)
+that ran real containers for every documented case
+([docker-sandbox](evidence/live/docker-sandbox.json)). No model-generated or
+repository command was executed on the host.
 
 ## Remaining confirmed scope
 
 | Owner / milestone | Work still required |
 | --- | --- |
 | WS2 / M2 | Live Bifrost, local Ollama, restricted virtual keys, cross-provider fallback (TC-FO-01), confidential routing (TC-CF-01), gateway budget refusal and provider metadata are validated ([HANDOFF_WS1_WS2](HANDOFF_WS1_WS2.md)). Remaining: live cache behavior and rate-limit handling under benchmark load |
-| WS1+2 / M2 | Live Docker isolation/cancellation acceptance; pinned image containing actual task dependencies; process-crash/orphan-container recovery |
+| WS1+2 / M2 | Docker isolation, timeout and cancellation are accepted live; remaining: owner agreement on the image that carries the actual benchmark task dependencies, and process-crash/orphan-container recovery |
 | WS2 / M2 | Measured research cost-benefit accounting. Bifrost log reconciliation (`token_agent.reconcile`) and all four FSD 7.2 research triggers are implemented |
 | WS1 / M2 | Remaining FSD tools including git, fuller restart recovery, native provider tool calls/streaming where needed |
 | WS1+4 / M2–M4 | All nine optimization techniques are switchable (`docs/OPTIMIZATIONS.md`); measure overhead and setup targets |
@@ -76,9 +79,11 @@ ceilings are not reconciled provider invoices. No token-saving percentage is cla
 VS Code development/packaging packages were installed and the VSIX was built. The host
 smoke test passed on VS Code 1.144.0, and the installed VSIX passed manual acceptance in
 VS Code 1.145.2 against the fixture core only; that run is not live-model evidence.
-Bifrost, Ollama and Tavily were exercised live for WS2 acceptance (`docs/evidence/live/`); no Docker
-sandbox, external GitHub repository or workflow was deployed. No real comment was posted. Supply real-service credentials only through the team environment, never through
-chat/source.
+Bifrost, Ollama and Tavily were exercised live for WS2 acceptance (`docs/evidence/live/`), and
+the Docker sandbox was exercised live on a local Docker Desktop daemon
+(`docs/evidence/live/docker-sandbox.json`); no external GitHub repository or workflow
+was deployed. No real comment was posted. Supply real-service credentials only through
+the team environment, never through chat/source.
 
 The deadline, portal and team names remain unspecified. These do not reopen scope.
 Next joint checkpoint: WS1 validates Docker/git remaining scope, WS2 validates
