@@ -107,21 +107,42 @@ class GitExecutor(Protocol):
 The core cannot check these, so the executor's own tests must cover them.
 
 - Run `git` with an argv list, never a shell. Put `--` before paths.
-- Set `GIT_TERMINAL_PROMPT=0`, ignore the user's global and system config, and disable
-  hooks, aliases, external diff tools, pagers and editors.
+- Set `GIT_TERMINAL_PROMPT=0`, do not load the user's global or system config into the
+  command, and disable hooks, external diff tools, text conversion, pagers, GPG signing,
+  tag pushing and the `ext` transport. Repository-local filter drivers and
+  `core.sshCommand` are **not** disabled: a repository's own config is still trusted.
 - Operate only on `repository.root`. Refuse a `.git` file that points elsewhere.
-- For push, resolve the remote's URL from git config and refuse unless it equals the
-  configured URL. Push exactly `expected_head` to `refs/heads/<branch>`, with no force and
-  no other refs.
-- Commit only the listed `paths`, as their content was when previewed. Never stage anything
-  else.
+- Match protected paths with `Repository.path` (which applies `Repository.protected`); there
+  is no second matcher. A full `git_diff` with no paths excludes protected files with
+  `:(exclude,literal)` pathspecs, so their content never reaches the preview, and a rename
+  that starts from a protected name is excluded on both sides. A commit directory is
+  expanded to the tracked and untracked files below it, and the whole commit is refused if
+  any of them is protected.
+- For push, resolve the remote's *push* URL with `git remote get-url --push --all`, require
+  exactly one URL equal to the configured URL, then push exactly `expected_head` to
+  `refs/heads/<branch>`, with no force and no other refs.
+- Commit only the listed `paths`, as their content was when previewed. Previewing an
+  untracked file reads it without touching the index. At apply time new paths are recorded
+  with `git add --intent-to-add`, and `commit --only` commits the listed paths, so nothing
+  else is staged.
+- Read only `user.name` and `user.email` from the user's global or system config, and pass
+  them as `GIT_AUTHOR_*` and `GIT_COMMITTER_*`. The repository's own identity is never used,
+  and a missing identity is refused before git runs.
 - Checkout must refuse when uncommitted changes would be overwritten.
-- Credentials come from the environment or a credential helper. Never put them in argv,
-  output or results.
-- Time-limit every command and bound its output.
+- Credentials may come from the environment, `GIT_ASKPASS` or an ssh agent. Because global
+  and system config are not loaded, git credential helpers are not available to the
+  command. Never put credentials in argv, output or results.
+- Time-limit every command and kill the whole process tree on timeout, so child processes
+  such as `git-remote-https` or `ssh` cannot outlive it. Bound the output.
+
+## VS Code
+
+Showing a git approval in VS Code is implemented (#39): the extension opens a read-only
+`token-agent:` document with the core's preview text and the approved `state`, and approve
+or deny reuses the existing prompt. The editor does not run git and does not call `/preview`
+for git actions.
 
 ## Not decided yet
 
 - Whether a confidential repository may ever push. The default is no.
 - Commits with no parent, which `expected_head` cannot represent.
-- Showing git previews in VS Code. The editor's native diff preview works only for file changes.
