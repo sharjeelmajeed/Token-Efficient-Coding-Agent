@@ -195,5 +195,5 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 |---|---|---|
 | Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
-| `Docker sandbox image and live acceptance` | Sharjeel | Owner agreement with Usman |
+| Docker sandbox image and live acceptance | Sharjeel | Owner agreement with Usman |
 | `GitExecutor` live check in a real repository | Sharjeel, with Usman | PR #41 is merged; follow the runbook in `docs/DEMO_WS3.md` |
