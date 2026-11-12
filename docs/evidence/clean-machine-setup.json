@@ -1,0 +1,48 @@
+{
+  "purpose": "Timed clean-clone setup rehearsal; the release requirement is under 15 minutes",
+  "date": "2026-11-12",
+  "cloned": {
+    "url": "https://github.com/sharjeelmajeed/Token-Efficient-Coding-Agent.git",
+    "branch": "main",
+    "commit": "3349170642920180d3113d02a0bbfdc071a78f44",
+    "full_clone": true,
+    "working_tree_dirty_after_rehearsal": false
+  },
+  "machine": {
+    "platform": "Microsoft Windows 11 Home",
+    "python": "3.13.13",
+    "node": "v24.15.0",
+    "npm": "11.12.1",
+    "cpus": 8
+  },
+  "steps_seconds": {
+    "clone": 3.8,
+    "venv": 4.4,
+    "pip_install_locked": 29.8,
+    "pip_install_project": 2.6,
+    "npm_ci": 8.1,
+    "npm_test": 1.7,
+    "ruff_check": 0.4,
+    "ruff_format": 0.2,
+    "pytest": 296.9
+  },
+  "setup_without_tests_seconds": 51.0,
+  "total_seconds": 347.9,
+  "total_minutes": 5.8,
+  "target_minutes": 15,
+  "within_target": true,
+  "results": {
+    "pip_install_locked": "all packages installed with --require-hashes",
+    "pytest": "590 collected, 589 passed, 1 failed",
+    "pytest_failure": "tests/test_policy.py::test_symlink_and_parent_symlink_rejected, OSError [WinError 1314]: creating a symlink needs the Windows privilege. Environmental, not a code defect.",
+    "npm_test": "34 passed, 0 failed",
+    "ruff": "check and format clean"
+  },
+  "network": "clone, pip and npm need network. No model keys and no credentials were needed for this rehearsal.",
+  "notes": [
+    "The README documents `py -3.12 -m venv .venv`. Python 3.12 is not installed on this machine, so the rehearsal used 3.13.13. `requirements-dev.lock` installed under `--require-hashes` on 3.13, so the lock still works on that interpreter, but the documented 3.12 path was not exercised here.",
+    "One pytest step in this run reported 9,701 s, which is not plausible for this suite; the machine was most likely suspended or under heavy load. The same command was re-run on the same clone and took 296.9 s, and that value is the one recorded.",
+    "These are single-run timings on one laptop. The judging machine will differ; rerun this rehearsal on the submission machine and replace this file.",
+    "The rehearsal needs the private repository, so the clone step used the stored Git credential. No secret value is recorded here."
+  ]
+}
