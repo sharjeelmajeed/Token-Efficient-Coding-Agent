@@ -27,6 +27,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.12'
+
       - name: Build the benchmark image
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
@@ -49,6 +53,7 @@ jobs:
               --node-modules node-express5=/opt/bench/node-express5/node_modules
 
       - name: Push the validated image
+        id: push
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
           GH_TOKEN: ${{ github.token }}
@@ -57,4 +62,23 @@ jobs:
           printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
           docker push "$IMAGE"
           digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")"
+          echo "reference=$digest" >> "$GITHUB_OUTPUT"
           echo "Pinned reference: $digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the live Docker acceptance against the pushed digest
+        env:
+          REFERENCE: ${{ steps.push.outputs.reference }}
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.lock
+          python -m pip install --no-deps --no-build-isolation -e .
+          python scripts/accept_docker_sandbox.py \
+            --image "$REFERENCE" \
+            --approved-by "Muhammad Usman Khan" \
+            --out docs/evidence/live/docker-sandbox.json
+
+      - name: Upload the acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-sandbox-evidence
+          path: docs/evidence/live/docker-sandbox.json
