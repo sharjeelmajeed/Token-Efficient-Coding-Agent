@@ -59,6 +59,13 @@ Every task is a **real change from the repository's own history**:
    that ran the checks under `checks.python`, separate from the interpreter that ran the
    validator under `machine.python`.
 
+   The checks are also platform-sensitive. TASK-03 originally listed 21 Windows-only
+   `msvcrt` tests in `pass_to_pass`; pytest skips them on Linux, and a skipped test is not
+   a passing test, so the task was invalid in the Linux benchmark image. Those 21 entries
+   were removed on 2026-11-13. The prompt, the reference change and the other 58
+   pass-to-pass tests are unchanged, and the list now matches the platform the benchmark
+   runs on.
+
 Each task file records:
 - the start commit (`commit`) and the reference commit (`reference_commit`);
 - a link to the real change (`source`);
@@ -99,13 +106,29 @@ agent bench --task TASK-01 --system optimized --repeats 3 \
 Repeat `--task` and `--system` for a batch. Without `--gateway-log`, or in fixture
 mode, the report is not benchmark evidence.
 
+### Pinned benchmark image
+
+`benchmarks/environments/Dockerfile` puts the same three environments into one
+`linux/amd64` image: CPython 3.12 with `requirements-python.txt` at
+`/opt/bench/python`, Node 24.15.0 LTS at `/opt/bench/node`, and both `npm ci`
+trees at `/opt/bench/node-express4/node_modules` and
+`/opt/bench/node-express5/node_modules`. It starts from the approved
+`python:3.12-slim` digest and checks the Node tarball against its published
+SHA-256.
+
+Build and push it with `python scripts/build_benchmark_image.py --push`, or run
+the manual **Benchmark image** workflow. Both build, validate all 18 tasks inside
+the image and only then publish to GHCR. Pull the pinned digest once on every
+machine; the sandbox runner never pulls or installs. The `[sandbox]` image in
+`agent.toml` is the reference the benchmark uses.
+
 ## 4. Tasks
 
 | Task | Repository | Category | Title | Real change | Check |
 |---|---|---|---|---|---|
 | `TASK-01` | click | bug_fix | show_envvar with a sequence or empty envvar | [`c53d3732b9`](https://github.com/pallets/click/commit/c53d3732b98c764932e146c007146ad402acb229) | pytest: 9 fail-to-pass, 667 pass-to-pass |
 | `TASK-02` | click | bug_fix | Zsh completion items containing colons | [`a1235aacb1`](https://github.com/pallets/click/commit/a1235aacb1be55dc66ddcfefbf64dec44b6ab54d) | pytest: 3 fail-to-pass, 47 pass-to-pass |
-| `TASK-03` | click | small_feature | Option to hide the progress bar | [`fcd85032cf`](https://github.com/pallets/click/commit/fcd85032cff78aa536a6d2b455fb83bfcc02b228) | pytest: 1 fail-to-pass, 79 pass-to-pass |
+| `TASK-03` | click | small_feature | Option to hide the progress bar | [`fcd85032cf`](https://github.com/pallets/click/commit/fcd85032cff78aa536a6d2b455fb83bfcc02b228) | pytest: 1 fail-to-pass, 58 pass-to-pass |
 | `TASK-04` | click | small_feature | multiple=True for flag options | [`b36e3ede78`](https://github.com/pallets/click/commit/b36e3ede781b388ae8135af61e83269e211acdf1) | pytest: 1 fail-to-pass, 115 pass-to-pass |
 | `TASK-05` | click | refactor | Return value and signature of add_completion_class | [`e002dbc40c`](https://github.com/pallets/click/commit/e002dbc40ceb6a7e78dbe5e5868744690ba3120f) | pytest: 3 fail-to-pass, 37 pass-to-pass |
 | `TASK-06` | click | refactor | Hide the internal UNSET sentinel in lookup_default | [`aaf99a3ee6`](https://github.com/pallets/click/commit/aaf99a3ee6935f321f755bc7c5717a91d321cd39) | pytest: 4 fail-to-pass, 18 pass-to-pass |
