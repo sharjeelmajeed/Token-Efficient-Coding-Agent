@@ -9,6 +9,10 @@ on:
         description: Image tag under ghcr.io/<owner>/token-efficient-coding-agent-bench
         required: true
         default: bench-2026-11-13
+  # Temporary: allows the first publish from the feature branch before this
+  # workflow is on the default branch. Remove before the pull request.
+  push:
+    branches: [feature/benchmark-image]
 
 permissions:
   contents: read
@@ -25,7 +29,7 @@ jobs:
 
       - name: Build the benchmark image
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
         run: |
           docker build --platform linux/amd64 \
             --file benchmarks/environments/Dockerfile \
@@ -35,7 +39,7 @@ jobs:
 
       - name: Validate all 18 tasks inside the image
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
         run: |
           docker run --rm --user "$(id -u):$(id -g)" \
             -v "$PWD:/repo" -w /repo "$IMAGE" \
@@ -46,7 +50,7 @@ jobs:
 
       - name: Push the validated image
         env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
           GH_TOKEN: ${{ github.token }}
           ACTOR: ${{ github.actor }}
         run: |
