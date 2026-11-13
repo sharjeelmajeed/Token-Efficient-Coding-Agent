@@ -137,12 +137,18 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 1. **No live run ended `completed_verified`.** The sandbox and its live acceptance now
    exist (section 7), so this needs a live model run on the owner-approved task image with
    exact verification commands.
-2. **The research benefit is not measured.** Research cost is recorded per request (FR-62), but
-   whether it saves more than it costs needs the frozen tasks, run with research on and off.
+2. **The research benefit is not measured; its cost is.** On all 18 frozen tasks with Cohere
+   Command A, research on used about 3–4× the tokens of research off (median per run), every
+   run reconciled, and neither mode solved a task. A model strong enough to solve tasks is
+   needed for the benefit side. See [`RESEARCH_COMPARISON.md`](RESEARCH_COMPARISON.md).
 3. **Free tiers are unreliable for benchmarks:**
    - `gemini-2.5-flash` is refused for new keys, and other Gemini models returned 503 or hung;
    - Groq `qwen/qwen3.8-27b` allows only 1,000 output tokens per minute;
-   - `groq/openai/gpt-oss-120b` was reliable.
+   - `groq/openai/gpt-oss-120b` was reliable for single requests, but returned
+     `tool_use_failed` on agent prompts in the G08 runs;
+   - most free models expect native tool calling and return empty or wrapped replies to the
+     JSON-in-text action format, which the core refuses
+     ([`RESEARCH_COMPARISON.md`](RESEARCH_COMPARISON.md) section 4.1).
 4. **Some models misreport themselves.** Once, Gemini's response body named a different model than
    Bifrost's routing header. The core trusts the header. Recording both and flagging a mismatch
    is open (FR-22).
@@ -194,7 +200,7 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 
 | Item | Owner | Depends on |
 |---|---|---|
-| Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
+| Research on-vs-off: the benefit side (cost side measured in `RESEARCH_COMPARISON.md`) | Usman | A model that solves tasks; rerun `research_comparison.py` with the G10 credits |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
 | Docker image that carries the benchmark task dependencies | Usman (owner agreement) | Benchmark task freeze |
 | `GitExecutor` live check in a real repository | Sharjeel, with Usman | PR #41 is merged; follow the runbook in `docs/DEMO_WS3.md` |

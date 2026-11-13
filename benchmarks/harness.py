@@ -146,6 +146,9 @@ class RunRecord:
     run_status: str = ""
     outcome: str | None = None
     auto_approvals: int = 0
+    research_enabled: bool = False
+    research_input_tokens: int = 0
+    research_credits: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -212,6 +215,8 @@ def aggregate_system_results(runs: list[RunRecord]) -> dict[str, Any]:
         "steps": calculate_spread([r.steps for r in runs]),
         "tool_calls": calculate_spread([r.tool_calls for r in runs]),
         "research_calls": calculate_spread([r.research_calls for r in runs]),
+        "research_input_tokens": calculate_spread([r.research_input_tokens for r in runs]),
+        "research_credits_total": round(sum(r.research_credits for r in runs), 4),
     }
 
 
@@ -274,36 +279,65 @@ class BenchmarkRunner:
         gateway_log: str | Path | None = None,
         provider=None,
         environments: dict[str, Environment] | None = None,
+        cache_dir: str | Path | None = None,
+        clone_attempts: int = 3,
+        research: bool = False,
         run_timeout_seconds: float = 900.0,
         reconcile_delay_seconds: float = 2.0,
+        reconcile_attempts: int = 3,
     ):
         self.base_settings = base_settings
         self.tasks = tasks
         self.systems = systems or ALL_SYSTEMS
         self.repeats = max(1, repeats)
         self.workspace_dir = Path(workspace_dir).resolve()
+        # Repository clones; shareable between runners (for example research off and on).
+        self.cache_dir = Path(cache_dir).resolve() if cache_dir else self.workspace_dir / "_cache"
+        self.clone_attempts = max(1, clone_attempts)
         self.gateway_log = Path(gateway_log) if gateway_log else None
         # None uses the configured mode's provider (Bifrost or fixture); tests inject one.
         self.provider = provider
         # Test environments by name (see benchmarks/setup_environments.py).
         self.environments = environments or {}
+        # Explicit user permission for public research on every run (FSD 7.2), for the
+        # research on-vs-off comparison. Research still needs [research] enabled in the config.
+        self.research = research
         self.run_timeout_seconds = run_timeout_seconds
         # Bifrost writes its log after answering; wait briefly before reconciling a run.
         self.reconcile_delay_seconds = reconcile_delay_seconds
+        self.reconcile_attempts = reconcile_attempts
 
     def repository_cache(self, repo_url: str) -> Path:
-        """Clone each repository once; every run then copies it locally."""
+        """Clone each repository once; every run then copies it locally.
+
+        A clone is written to a temporary folder and only renamed into the cache once it is
+        complete, so a failed or interrupted clone never leaves a partial repository behind
+        for later runs. Network clones are retried a few times.
+        """
         name = hashlib.sha256(repo_url.encode()).hexdigest()[:16]
-        cache = self.workspace_dir / "_cache" / name
-        if not cache.exists():
-            cache.parent.mkdir(parents=True, exist_ok=True)
-            subprocess.run(
-                ["git", "clone", "--no-checkout", "--quiet", repo_url, str(cache)],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=600,
-            )
+        cache = self.cache_dir / name
+        if cache.exists():
+            return cache
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        partial = cache.with_name(name + ".partial")
+        for attempt in range(1, self.clone_attempts + 1):
+            shutil.rmtree(partial, ignore_errors=True)
+            try:
+                subprocess.run(
+                    ["git", "clone", "--no-checkout", "--quiet", repo_url, str(partial)],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=600,
+                )
+                partial.rename(cache)
+                return cache
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                shutil.rmtree(partial, ignore_errors=True)
+                if attempt == self.clone_attempts:
+                    raise
+                logger.warning("Clone of %s failed (attempt %s); retrying", repo_url, attempt)
+                time.sleep(5 * attempt)
         return cache
 
     def prepare_task_workspace(self, task: dict[str, Any], run_identifier: str) -> Path:
@@ -374,7 +408,7 @@ class BenchmarkRunner:
         self, engine: Engine, store: Store, session_id: str, prompt: str
     ) -> tuple[str, int]:
         """Run one task inside a single event loop, approving exact pending actions."""
-        run_id = engine.start(session_id, prompt)
+        run_id = engine.start(session_id, prompt, self.research)
         task = engine.tasks.get(session_id)
         approvals = 0
         deadline = time.monotonic() + self.run_timeout_seconds
@@ -449,15 +483,24 @@ class BenchmarkRunner:
 
             # Reconcile this run's own database before reading any cost.
             if self.gateway_log and self.gateway_log.exists():
-                time.sleep(self.reconcile_delay_seconds)
-                report = reconcile(
-                    store,
-                    load_gateway_log(self.gateway_log),
-                    task_settings.reconciliation_token_tolerance,
-                )
-                logger.info("Reconciliation for %s: %s", run_id, report.summary())
+                # Bifrost records a request's cost shortly after the request itself, so a
+                # row still open after one pass is retried a few times before giving up.
+                for attempt in range(1, self.reconcile_attempts + 1):
+                    time.sleep(self.reconcile_delay_seconds * attempt)
+                    report = reconcile(
+                        store,
+                        load_gateway_log(self.gateway_log),
+                        task_settings.reconciliation_token_tolerance,
+                    )
+                    logger.info(
+                        "Reconciliation for %s, attempt %s: %s", run_id, attempt, report.summary()
+                    )
+                    if all(u["state"] == "reconciled" for u in store.usage(run_id)):
+                        break
 
             usage_rows = store.usage(run_id)
+            attribution = token_attribution(usage_rows)
+            research_rows = store.research_usage(run_id)
             run = store.run(run_id) or {}
             events = store.events(session["id"])
             return RunRecord(
@@ -480,11 +523,14 @@ class BenchmarkRunner:
                 steps=run.get("step", 0),
                 tool_calls=sum(1 for e in events if e.get("type") == "tool_call"),
                 research_calls=sum(1 for e in events if e.get("type") == "research_used"),
-                token_attribution=token_attribution(usage_rows),
+                token_attribution=attribution,
                 check_output=check_out[:2000],
                 run_status=run.get("status", ""),
                 outcome=run.get("outcome"),
                 auto_approvals=approvals,
+                research_enabled=self.research,
+                research_input_tokens=attribution.get("research_input_tokens", 0),
+                research_credits=sum(float(r.get("credits") or 0) for r in research_rows),
             )
         except Exception as exc:
             logger.exception("Run %s failed", run_identifier)
