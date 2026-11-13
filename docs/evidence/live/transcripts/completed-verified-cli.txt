@@ -1,0 +1,79 @@
+== core started on port 8767
+== agent init
+Session created: 5245f735-8acf-4148-aa1b-9be2cd7ced5f
+Mode: bifrost
+== agent run
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ running                  │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 0                        │
+│ Budget remaining      │ $19.9732                 │
+│ Input / output tokens │ 0 / 0                    │
+└───────────────────────┴──────────────────────────┘
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool: read_file (read)
+Tool: apply_patch (gated)
+Exact file change requires your approval
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,3 +1,3 @@
+ def add(a, b):
+     """Return the sum of a and b."""
+-    return a - b
++    return a + b
+
+Approve once / deny / deny with feedback [a/d/f] (d): Tool: run_shell (gated)
+Exact isolated command requires your approval
+{
+  "tool": "run_shell",
+  "argv": [
+    "python",
+    "-m",
+    "unittest",
+    "discover",
+    "-v"
+  ],
+  "purpose": "verification",
+  "execution": {
+    "snapshot_sha256": 
+"92ff71c52edafa833547d802f3bc40ed1b109e5f4464cbbd1753a1ee6d98a1a2",
+    "image": 
+"python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
+",
+    "timeout_seconds": 60,
+    "memory_mb": 256,
+    "network": "none",
+    "repository_writable": false
+  }
+}
+Approve once / deny / deny with feedback [a/d/f] (d): Run finished: completed_verified
+Note: All configured checks passed on the unchanged sanitized snapshot
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ completed                │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 4                        │
+│ Budget remaining      │ $19.9786                 │
+│ Input / output tokens │ 7441 / 275               │
+└───────────────────────┴──────────────────────────┘
+
+== answers given: [('file', 'a'), ('verify', 'a')]
+== agent status
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ completed                │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 4                        │
+│ Budget remaining      │ $19.9786                 │
+│ Input / output tokens │ 7441 / 275               │
+└───────────────────────┴──────────────────────────┘
+== core stopped

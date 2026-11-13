@@ -1,0 +1,87 @@
+== core started on port 8766
+== agent init
+Session created: f4142c61-4fab-413b-a8a3-5690dd98ae4b
+Mode: bifrost
+== agent run
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ running                  │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 0                        │
+│ Budget remaining      │ $19.9157                 │
+│ Input / output tokens │ 0 / 0                    │
+└───────────────────────┴──────────────────────────┘
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool: git_log (read)
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool: git_commit (gated)
+Exact git action requires your approval: git_commit
+  expected_head: 44bcc441a9f272535f3a4392f0588c74677c0c56
+  message: Fix calculator addition
+  paths: calculator.py
+  checked by core before running:
+    head: 44bcc441a9f272535f3a4392f0588c74677c0c56
+    branch: work
+    paths: calculator.py
+    new: 
+    paths_digest: 
+c100e7e094821be304af2c49f29e2ceb57cc7e3623fcea0a1f54b72e19aab661
+diff --git a/calculator.py b/calculator.py
+index 12ee743..4693ad3 100644
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
+
+Approve once / deny / deny with feedback [a/d/f] (d): Tool: git_log (read)
+Tool: git_checkout (gated)
+Exact git action requires your approval: git_checkout
+  branch: feature/live-git-check
+  create: True
+  expected_head: da7c7ebff2211a5ebbd5eed8360363e04f776553
+  checked by core before running:
+    head: da7c7ebff2211a5ebbd5eed8360363e04f776553
+    branch: work
+    target: feature/live-git-check
+    target_sha: 
+    create: yes
+Create branch feature/live-git-check at 
+da7c7ebff2211a5ebbd5eed8360363e04f776553
+Approve once / deny / deny with feedback [a/d/f] (d): Blocked by policy: Repeated action detected; paused without progress
+Paused: Repeated action detected; paused without progress
+Next step: Resolve the cause, then submit a new instruction
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ paused                   │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 8                        │
+│ Budget remaining      │ $19.8899                 │
+│ Input / output tokens │ 20275 / 890              │
+└───────────────────────┴──────────────────────────┘
+
+== answers given: [('git_commit', 'a'), ('git_checkout', 'a')]
+== agent status
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ paused                   │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 8                        │
+│ Budget remaining      │ $19.8899                 │
+│ Input / output tokens │ 20275 / 890              │
+└───────────────────────┴──────────────────────────┘
+== core stopped
