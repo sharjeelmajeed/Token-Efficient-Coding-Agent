@@ -172,3 +172,10 @@ It reports numbers and spread only; no saving is claimed from a small sample.
 `benchmarks/research.example.toml` restricts research to each library's official
 documentation site. The default sample is two tasks per repository (TASK-01, 03, 09, 12, 14
 and 15) with three repeats per mode.
+
+Both modes share one clone of each repository. A clone goes into a `.partial` directory and is
+renamed into the cache only when complete; a failed or timed-out clone is removed and retried.
+
+The first live measurement (Cohere Command A, all 18 tasks, every run reconciled) is in
+[`docs/RESEARCH_COMPARISON.md`](../docs/RESEARCH_COMPARISON.md), with the raw runs in
+`docs/evidence/live/research-comparison.json`.
