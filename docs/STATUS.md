@@ -62,7 +62,7 @@ repository command was executed on the host.
 | WS1+4 / M2–M4 | All nine optimization techniques are switchable (`docs/OPTIMIZATIONS.md`); measure overhead and setup targets |
 | WS3 / M3 | Done: VS Code host test and installed-editor acceptance 14/14 on the fixture ([ws3-editor-acceptance](evidence/ws3-editor-acceptance.md)); CLI and VS Code streaming, budget status, readable notices; git approvals in the CLI (#25) and in VS Code as a read-only document (#39), tested with synthetic approvals; `agent bench` wiring to the benchmark harness (#37); live model switch between streamed pieces in both clients ([live-streaming-clients](evidence/live/live-streaming-clients.json), recorded by WS2). Remaining: a live git approval in both clients (waits for the git executor), live PR review on a team PR (waits for the workflow and its secrets) |
 | WS4 / M3 | Authorized GitHub workflow deployment, real fork/private-routing trials and opt-in comment publication |
-| WS4 / M4 | Frozen 15–20 tasks across >=3 repositories and >=2 languages, >=3 repeats/system/task; baseline, optimized and ablations; medians/spread and quality parity |
+| WS4 / M4 | Frozen 15–20 tasks across >=3 repositories and >=2 languages, >=3 repeats/system/task; baseline, optimized and ablations; medians/spread and quality parity. The suite and harness are ready; the run itself is not done, needing paid credits ([BENCHMARK_REPORT](BENCHMARK_REPORT.md)) |
 | Team / M4 | Fresh-machine rehearsal, demo recording, final evidence and actual submission confirmation |
 
 ## Evidence boundaries
