@@ -112,6 +112,12 @@ and contain the required language/runtime/dependencies. The runner never pulls a
 image or installs packages. `agent doctor` checks the daemon and pinned image.
 Do not copy a fabricated digest or use a mutable image tag.
 
+`scripts/accept_docker_sandbox.py --image <pinned reference> --out <path>` runs the
+live acceptance below against a real daemon and records each check. It refuses
+nothing itself; the shipped policy does, so a failing check means the runner
+changed behaviour. The last recorded run is
+`docs/evidence/live/docker-sandbox.json`.
+
 All commands require a separate approve-once decision showing argv, image, snapshot
 hash, time/memory limits and isolation. A command cannot change the original repo;
 file edits happen only through separate approved patch/write tools. Tests requiring

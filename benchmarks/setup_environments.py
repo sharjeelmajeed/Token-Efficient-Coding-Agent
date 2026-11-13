@@ -2,18 +2,20 @@
 
 - ``python``: a virtual environment with ``environments/requirements-python.txt`` (pytest and
   the libraries the click and jinja tests need). The repositories themselves are not
-  installed; checks run them from their ``src`` folder.
+  installed; checks run them from their ``src`` folder. CPython 3.12 is required: on 3.13,
+  TASK-05, TASK-11 and TASK-12 fail even with their reference change (recorded 2026-11-13).
 - ``node-express5`` and ``node-express4``: ``npm ci`` from the committed package files and
   lockfiles, matching the express 5.x and 4.x tasks. The repositories' own code is used from
   the task workspace, and their test dependencies come from ``NODE_PATH``.
 
-    python benchmarks/setup_environments.py <directory>
+    python benchmarks/setup_environments.py <directory> [--allow-other-python]
 
 Prints the arguments to pass to ``validate_tasks.py`` and the harness.
 """
 
 from __future__ import annotations
 
+import platform
 import shutil
 import subprocess
 import sys
@@ -22,13 +24,25 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent / "environments"
 NODE_ENVIRONMENTS = ("node-express5", "node-express4")
+CHECK_PYTHON = (3, 12)
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
+    arguments = [item for item in sys.argv[1:] if not item.startswith("--")]
+    allow_other = "--allow-other-python" in sys.argv[1:]
+    if len(arguments) != 1:
         print(__doc__)
         return 2
-    target = Path(sys.argv[1]).resolve()
+    if sys.version_info[:2] != CHECK_PYTHON and not allow_other:
+        print(
+            "The frozen task checks were validated with CPython 3.12. This interpreter is "
+            f"{platform.python_version()}: on 3.13, TASK-05, TASK-11 and TASK-12 fail even "
+            "with their reference change. Run this script with Python 3.12, or pass "
+            "--allow-other-python for a non-evidence environment.",
+            file=sys.stderr,
+        )
+        return 1
+    target = Path(arguments[0]).resolve()
     target.mkdir(parents=True, exist_ok=True)
 
     python_dir = target / "python"

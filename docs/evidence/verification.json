@@ -1,36 +1,48 @@
 {
-  "date": "2026-11-03",
+  "date": "2026-11-12",
   "application_version": "0.3.0",
-  "milestone": "M3 clients and read-only review; live editor/GitHub acceptance pending",
-  "python": "3.12.14",
-  "node": "v24.22.1",
+  "milestone": "M3 clients, git executor and read-only review; Docker live acceptance, the git live check and the benchmark campaign still pending",
+  "code": "ffa2647 (test/evaluation-evidence-refresh merged with main 81df3a4, which includes the merged git executor from PR #41); tests re-run after adding the confidential-roots policy test (no source change)",
+  "python": "3.12.2",
+  "python_ci": [
+    "3.11",
+    "3.12"
+  ],
+  "node": "v24.18.0",
   "tests": {
-    "tests": "150",
-    "errors": "0",
-    "failures": "0",
-    "skipped": "0",
-    "time": "23.317"
+    "command": "python -m coverage run --branch --source=token_agent -m pytest --junitxml=docs/evidence/junit.xml",
+    "tests": 600,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "time": "260.873",
+    "note": "The Windows symlink test passes on this machine (Developer Mode is on); on Windows without that privilege it fails with WinError 1314, as recorded in the previous refresh."
   },
   "extension_tests": {
     "command": "npm test",
-    "passed": 12,
+    "passed": 35,
     "failed": 0,
     "skipped": 0,
-    "scope": "Node transport/protocol, simulated VS Code controller, DOM safety"
+    "scope": "Node transport/protocol, simulated VS Code controller, DOM safety, budget notices, streaming, read-only git approval documents"
   },
-  "test_transport": "Real loopback API/CLI/Node client; PR shared-core ASGI; GitHub/Bifrost/Tavily mocked; Docker process transport mocked",
+  "test_transport": "Real loopback API/CLI/Node client; PR shared-core ASGI; GitHub/Bifrost/Tavily mocked; Docker process transport mocked; git executor tests run a real git binary in temporary repositories",
   "coverage": {
     "tool_version": "7.17.0",
     "policy_line_and_branch_percent": 100.0,
-    "policy_statements": 51,
-    "policy_branches": 24,
-    "overall_line_and_branch_percent": 80.19599836668027,
-    "cli_subprocess_coverage_collected": false
+    "policy_statements": 85,
+    "policy_branches": 48,
+    "policy_missing_statements": 0,
+    "overall_line_and_branch_percent": 85.4,
+    "overall_statements": 3084,
+    "overall_branches": 1068,
+    "files_measured": 20,
+    "cli_subprocess_coverage_collected": false,
+    "policy_note": "100%: tests/test_policy.py now covers a configured confidential root that is unrelated to the repository (ignored), as well as roots above and below it."
   },
   "dependency_audit": {
     "tool_version": "2.10.1",
     "known_vulnerabilities": 0,
-    "reported_entries": 52,
+    "reported_entries": 53,
     "editable_project_skipped": true
   },
   "npm_audit": {
@@ -39,42 +51,70 @@
     "moderate": 0,
     "high": 0,
     "critical": 0,
-    "total": 0
+    "total": 0,
+    "dependencies": 193
   },
   "source_fsd_sha256": "7ce7e214e5b4257f4e47368ca9342476c639e758f84fb188234e03cea96be1a3",
   "vscode_package": {
     "path": "clients/vscode/token-efficient-coding-agent-0.3.0.vsix",
-    "bytes": 15128,
-    "sha256": "45c068908051ff9a820d56f5cf9d5a51f085d32b8a66558e51cc0dfb650e62d8",
+    "bytes": 18464,
+    "sha256": "fb3c4586fff474eef0005db04fa3d43d57f8f311a42f993b19097a789ed7d117",
+    "built_from_commit": "ffa2647",
     "runtime_npm_dependencies": 0,
     "compiled": true,
     "packaged": true,
     "editor_host_executed": false,
-    "manual_ui_acceptance": false
+    "manual_ui_acceptance": false,
+    "acceptance_note": "This build has not been opened in an editor. Earlier host and manual acceptance used an older VSIX; see ws3-editor-acceptance.md."
   },
   "workflow_checks": {
     "yaml_parsed": true,
     "actions_commit_pinned": true,
     "trusted_base_checkout_checked": true,
     "review_publish_permission_separation_checked": true,
-    "github_ci_executed": false,
+    "github_ci_executed": true,
+    "github_ci_detail": "Core checks green on main 81df3a4 (core 3.11, core 3.12, extension); this branch's CI runs on push",
     "github_review_executed": false,
     "github_comments_posted": 0
   },
-  "ruff_check": "passed",
-  "ruff_format": "passed",
-  "pip_check": "passed",
   "live_bifrost_verified": false,
   "live_tavily_verified": false,
-  "live_docker_verified": false,
+  "live_docker_verified": true,
+  "live_git_verified": false,
   "benchmark_results_available": false,
   "gateway_costs_reconciled": false,
   "prior_m2_evidence": "verification-m2.json",
+  "refresh": {
+    "re_measured": [
+      "test counts and junit.xml",
+      "coverage.json",
+      "dependency-audit.json (pip-audit --skip-editable)",
+      "npm-audit.json",
+      "the packaged VSIX hash",
+      "ruff check, ruff format, pip check and the contract export (static_checks)",
+      "policy-overhead-release.json",
+      "clean-machine-setup.json",
+      "live_docker_verified (docs/evidence/live/docker-sandbox.json)"
+    ],
+    "not_re_measured": [
+      "live_bifrost_verified, live_tavily_verified",
+      "gateway_costs_reconciled",
+      "benchmark_results_available"
+    ],
+    "note": "The live gateway and research flags were left as recorded on 2026-11-03 and are not restated here. The Docker flag is set by its own live acceptance run, not by this refresh. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison. Re-measured on ffa2647 after PR #41 merged, so the evidence matches the merged executor; the previous refresh at bdfe17d described the executor before its review fixes.",
+    "measured_on": "Usman's laptop (Windows 11 Pro, Intel Core i5-8250U, 4 cores/8 threads, 16 GB RAM; about 2-5 GB free during the run)"
+  },
   "remaining_acceptance": [
-    "Live Bifrost/local routing, billing and Docker",
-    "Real VS Code host and visual interaction",
+    "Live Bifrost/local routing and billing",
+    "Real VS Code host and visual interaction for the current VSIX",
     "Authorized GitHub workflow and comment trial",
-    "Remaining git tools/native provider streaming",
+    "Live git check of the merged executor (runbook in docs/DEMO_WS3.md)",
     "Frozen benchmark and submission rehearsal"
-  ]
+  ],
+  "static_checks": {
+    "ruff_check": "All checks passed (src tests scripts benchmarks)",
+    "ruff_format": "60 files already formatted",
+    "pip_check": "No broken requirements found",
+    "export_contracts": "docs/openapi.json and docs/event.schema.json unchanged"
+  }
 }

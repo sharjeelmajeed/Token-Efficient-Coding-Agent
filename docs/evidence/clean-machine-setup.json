@@ -1,0 +1,47 @@
+{
+  "purpose": "Timed clean-clone setup rehearsal; the release requirement is under 15 minutes",
+  "date": "2026-11-12",
+  "cloned": {
+    "url": "https://github.com/sharjeelmajeed/Token-Efficient-Coding-Agent.git",
+    "branch": "main",
+    "commit": "81df3a46863507c17b0fe6a8a6f6b16ec9fe4128",
+    "full_clone": true,
+    "working_tree_dirty_after_rehearsal": false
+  },
+  "machine": {
+    "platform": "Microsoft Windows 11 Pro",
+    "python": "3.12.2",
+    "node": "v24.18.0",
+    "npm": "11.16.0",
+    "cpus": 8,
+    "ram_gb": 16
+  },
+  "steps_seconds": {
+    "clone": 9,
+    "venv": 21,
+    "pip_install_locked": 160,
+    "pip_install_project": 5,
+    "npm_ci": 12,
+    "npm_test": 4,
+    "ruff_check": 0,
+    "ruff_format": 0,
+    "pytest": 408
+  },
+  "setup_without_tests_seconds": 207,
+  "total_seconds": 619,
+  "total_minutes": 10.3,
+  "target_minutes": 15,
+  "within_target": true,
+  "results": {
+    "pip_install_locked": "all packages installed with --require-hashes",
+    "pytest": "599 collected, all passed",
+    "npm_test": "35 passed, 0 failed",
+    "ruff": "check and format clean"
+  },
+  "network": "clone, pip and npm need network. No model keys and no credentials were needed for this rehearsal.",
+  "notes": [
+    "Python 3.12.2 via `py -3.12`, as the README documents.",
+    "Timed with whole seconds per step. pip_install_locked (160 s) dominates setup on this connection; the previous rehearsal on a faster machine took 29.8 s for the same step.",
+    "The clone is main 81df3a4 (PR #41 merged); the evidence branch adds only documentation on top."
+  ]
+}

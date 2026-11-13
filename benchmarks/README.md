@@ -52,6 +52,12 @@ Every task is a **real change from the repository's own history**:
    every task's check **fails with no agent work** and **passes with the reference change**.
    The result is in [`tasks/validation.json`](tasks/validation.json): 18 of 18 valid. Any
    change to the suite must be revalidated before use.
+   The checks are interpreter-sensitive. They are validated with **CPython 3.12**: on
+   CPython 3.13, TASK-05, TASK-11 and TASK-12 fail even with their reference change
+   (observed 2026-11-13). `setup_environments.py` therefore refuses to build a 3.13
+   environment unless `--allow-other-python` is passed. The report records the interpreter
+   that ran the checks under `checks.python`, separate from the interpreter that ran the
+   validator under `machine.python`.
 
 Each task file records:
 - the start commit (`commit`) and the reference commit (`reference_commit`);
@@ -76,9 +82,22 @@ python benchmarks/validate_tasks.py --python <python> \
     --out benchmarks/tasks/validation.json
 ```
 
-Node.js 18 or later and git are required. Validation was run on Windows 11 with Python 3.12
-and Node.js 24. Before the benchmark, rerun it on the benchmark machine or in its Docker
-image (G05).
+Node.js 18 or later, git and **CPython 3.12** are required. Validation was rerun on
+Windows 11 with Python 3.12.10 and Node.js 24 on 2026-11-13; `checks.python` in
+`tasks/validation.json` names the interpreter that ran the checks. Before the
+benchmark, rerun it on the benchmark machine or in its Docker image (G05).
+
+The harness takes the same two environment arguments:
+
+```
+agent bench --task TASK-01 --system optimized --repeats 3 \
+    --python <python> \
+    --node-modules node-express5=<path> --node-modules node-express4=<path> \
+    --gateway-log <bifrost logs.db> --output-dir benchmarks/results
+```
+
+Repeat `--task` and `--system` for a batch. Without `--gateway-log`, or in fixture
+mode, the report is not benchmark evidence.
 
 ## 4. Tasks
 
