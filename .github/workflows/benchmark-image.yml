@@ -1,0 +1,56 @@
+name: Benchmark image
+
+# Manual only: a rebuild changes the digest that [sandbox] pins, so publishing is
+# an explicit operator action, never a side effect of a push or pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag under ghcr.io/<owner>/token-efficient-coding-agent-bench
+        required: true
+        default: bench-2026-11-13
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Build the benchmark image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+        run: |
+          docker build --platform linux/amd64 \
+            --file benchmarks/environments/Dockerfile \
+            --tag "$IMAGE" \
+            benchmarks/environments
+          docker run --rm "$IMAGE" sh -c 'python -m pytest --version && node --version'
+
+      - name: Validate all 18 tasks inside the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/repo" -w /repo "$IMAGE" \
+            /opt/bench/python/bin/python benchmarks/validate_tasks.py \
+              --python /opt/bench/python/bin/python \
+              --node-modules node-express4=/opt/bench/node-express4/node_modules \
+              --node-modules node-express5=/opt/bench/node-express5/node_modules
+
+      - name: Push the validated image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker push "$IMAGE"
+          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")"
+          echo "Pinned reference: $digest" >> "$GITHUB_STEP_SUMMARY"
