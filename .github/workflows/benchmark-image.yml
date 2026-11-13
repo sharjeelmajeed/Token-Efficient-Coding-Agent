@@ -50,7 +50,8 @@ jobs:
             /opt/bench/python/bin/python benchmarks/validate_tasks.py \
               --python /opt/bench/python/bin/python \
               --node-modules node-express4=/opt/bench/node-express4/node_modules \
-              --node-modules node-express5=/opt/bench/node-express5/node_modules
+              --node-modules node-express5=/opt/bench/node-express5/node_modules \
+              --out /repo/validation-in-image.json
 
       - name: Push the validated image
         id: push
@@ -76,9 +77,11 @@ jobs:
             --approved-by "Muhammad Usman Khan" \
             --out docs/evidence/live/docker-sandbox.json
 
-      - name: Upload the acceptance evidence
+      - name: Upload the evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: docker-sandbox-evidence
-          path: docs/evidence/live/docker-sandbox.json
+          name: benchmark-image-evidence
+          path: |
+            docs/evidence/live/docker-sandbox.json
+            validation-in-image.json
