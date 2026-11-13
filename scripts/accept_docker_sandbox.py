@@ -15,6 +15,11 @@ cleanup, secret withholding, a non-root user, no host environment leakage,
 bounded output, a missing image that fails without pulling, the hardening flags
 reported by Docker, and that no container outlives the run.
 
+Pass ``--approved-by`` when the image owner has approved this image for the
+benchmark tasks; the evidence then records the approval instead of the pending
+state. The script still checks only the sandbox behaviour, not the benchmark
+checks.
+
 Exit code 0 means every check passed. The evidence file records the Docker
 version, the pinned image and each check with its observed values; it is not a
 benchmark result.
@@ -55,7 +60,11 @@ TMP_ARGV = [
     " subprocess.run(['/tmp/payload.sh'], check=True);"
     " print('TMP-EXECUTED')",
 ]
-MOUNT_ARGV = ["python", "-c", "print(open('/proc/mounts').read())"]
+MOUNT_ARGV = [
+    "python",
+    "-c",
+    "print(next(line for line in open('/proc/mounts') if line.split()[1] == '/tmp'))",
+]
 SLEEP_ARGV = ["python", "-c", "import time; time.sleep(60)"]
 ID_ARGV = ["id", "-u"]
 ENV_ARGV = ["python", "-c", "import os, json; print(json.dumps(sorted(os.environ)))"]
@@ -63,8 +72,9 @@ FLOOD_ARGV = ["python", "-c", "import sys; sys.stdout.write('x' * 200000)"]
 
 
 class Acceptance:
-    def __init__(self, image: str, timeout: int, memory: int):
+    def __init__(self, image: str, timeout: int, memory: int, approved_by: str | None = None):
         self.image = image
+        self.approved_by = approved_by
         self.settings = SandboxSettings(
             enabled=True,
             image=image,
@@ -94,6 +104,16 @@ class Acceptance:
         self.checks.append({"check": name, "passed": bool(passed), "detail": detail})
         print(("PASS " if passed else "FAIL ") + name + ": " + str(detail)[:300])
 
+    def repo_digests(self) -> list[str]:
+        inspected = self.docker("image", "inspect", self.image, "--format", "{{json .RepoDigests}}")
+        if inspected.returncode != 0:
+            return []
+        try:
+            digests = json.loads(inspected.stdout.strip() or "[]")
+        except json.JSONDecodeError:
+            return []
+        return digests if isinstance(digests, list) else []
+
     def fixture(self, root: Path) -> Repository:
         root.mkdir(parents=True, exist_ok=True)
         (root / "calculator.py").write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
@@ -111,13 +131,11 @@ class Acceptance:
     async def run(self, repo: Repository, digest: str, work: Path) -> dict:
         os.environ["TOKEN_AGENT_ACCEPTANCE_CANARY"] = self.canary
 
-        present = self.docker(
-            "image", "inspect", self.image, "--format", "{{index .RepoDigests 0}}"
-        )
+        digests = self.repo_digests()
         self.record(
             "pinned image is already installed with that digest",
-            present.returncode == 0 and present.stdout.strip() == self.image,
-            present.stdout.strip() or present.stderr.strip()[:200],
+            self.image in digests,
+            digests or "image is not present",
         )
         self.record(
             "sandbox reports itself available",
@@ -325,15 +343,19 @@ class Acceptance:
                 "version", "--format", "{{.Server.Os}}/{{.Server.Arch}}"
             ).stdout.strip(),
             "image": self.image,
-            "image_present_digest": self.docker(
-                "image", "inspect", self.image, "--format", "{{index .RepoDigests 0}}"
-            ).stdout.strip(),
+            "image_present_digest": next(
+                (digest for digest in self.repo_digests() if digest == self.image), ""
+            ),
             "image_acquisition": (
                 "installed by the operator before this run; the runner never pulls"
             ),
             "image_selection": {
-                "approved_by": None,
-                "status": "pending owner agreement for the benchmark task image",
+                "approved_by": self.approved_by,
+                "status": (
+                    "approved for the benchmark task image"
+                    if self.approved_by
+                    else "pending owner agreement for the benchmark task image"
+                ),
             },
             "runner": {
                 "network": "none",
@@ -362,9 +384,13 @@ async def main() -> int:
     parser.add_argument("--out", type=Path, help="write the evidence JSON here")
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--memory", type=int, default=256)
+    parser.add_argument(
+        "--approved-by",
+        help="record who approved this image for the benchmark tasks",
+    )
     args = parser.parse_args()
 
-    acceptance = Acceptance(args.image, args.timeout, args.memory)
+    acceptance = Acceptance(args.image, args.timeout, args.memory, args.approved_by)
     work = Path(tempfile.mkdtemp(prefix="token-agent-acceptance-"))
     repo = acceptance.fixture(work / "repo")
     _, digest = repo.snapshot()
