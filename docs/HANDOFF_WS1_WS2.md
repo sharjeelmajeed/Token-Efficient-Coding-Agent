@@ -134,9 +134,13 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 
 ## 6. Known limitations
 
-1. **No live run ended `completed_verified`.** The sandbox and its live acceptance now
-   exist (section 7), so this needs a live model run on the owner-approved task image with
-   exact verification commands.
+1. **One live run has ended `completed_verified`, on a scratch repository, not a benchmark
+   task.** Cohere fixed `add()` in a calculator, and the configured
+   `python -m unittest discover -v` passed in the Docker sandbox on the unchanged snapshot
+   (4 steps, every cost row reconciled;
+   [`completed-verified-run.json`](evidence/live/completed-verified-run.json)). No benchmark
+   task has ended `completed_verified` yet: that needs the task image and a model that solves
+   the tasks.
 2. **The research benefit is not measured; its cost is.** On all 18 frozen tasks with Cohere
    Command A, research on used about 3–4× the tokens of research off (median per run), every
    run reconciled, and neither mode solved a task. A model strong enough to solve tasks is
@@ -203,8 +207,8 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 | Research on-vs-off: the benefit side (cost side measured in `RESEARCH_COMPARISON.md`) | Usman | A model that solves tasks; rerun `research_comparison.py` with the G10 credits |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
 | Docker image that carries the benchmark task dependencies | Usman (owner agreement) | Benchmark task freeze |
-| `GitExecutor` live check in a real repository | Sharjeel, with Usman | PR #41 is merged; follow the runbook in `docs/DEMO_WS3.md` |
-| A live model run that ends `completed_verified` | Sharjeel, with Usman's gateway | Pinned task image and a running gateway |
+| `GitExecutor` live check: the CLI part passed ([`live-git-cli.json`](evidence/live/live-git-cli.json)); the VS Code part remains | Usman, in VS Code | The installed VSIX |
+| A live benchmark task that ends `completed_verified` (a scratch-repository run already has) | Sharjeel, with Usman's gateway | The task image and a model that solves the tasks |
 
 The Docker sandbox itself is accepted live: `scripts/accept_docker_sandbox.py` ran
 every documented case on Docker 29.9.3 with `python:3.12-slim` pinned by digest, and

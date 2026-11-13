@@ -1,0 +1,68 @@
+== core started on port 8766
+== agent init
+Session created: 7f67bd70-234d-48f7-9517-1b026ae219b0
+Mode: bifrost
+== agent run
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ running                  │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 0                        │
+│ Budget remaining      │ $19.8567                 │
+│ Input / output tokens │ 0 / 0                    │
+└───────────────────────┴──────────────────────────┘
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool: git_log (read)
+Tool error (the agent can correct this): Reply did not match the action schema.
+Return exactly one JSON object with an action using only the listed tools and 
+fields.
+Tool: git_push (gated)
+Exact git action requires your approval: git_push
+  branch: feature/live-git-check
+  remote: origin
+  expected_head: da7c7ebff2211a5ebbd5eed8360363e04f776553
+  checked by core before running:
+    head: da7c7ebff2211a5ebbd5eed8360363e04f776553
+    branch: feature/live-git-check
+    remote: origin
+    remote_url: https://github.com/example/repo.git
+    remote_sha: 
+Push da7c7ebff2211a5ebbd5eed8360363e04f776553 to origin 
+(https://github.com/example/repo.git) as refs/heads/feature/live-git-check
+Commits:
+da7c7eb Fix calculator addition
+44bcc44 Describe the scratch repository
+61e350f Initial calculator
+
+Approve once / deny / deny with feedback [a/d/f] (d): Denied: git_push origin feature/live-git-check 
+da7c7ebff2211a5ebbd5eed8360363e04f776553
+Run finished: completed_unverified
+Note: No complete set of configured behavior checks passed
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ completed                │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 5                        │
+│ Budget remaining      │ $19.8578                 │
+│ Input / output tokens │ 11694 / 284              │
+└───────────────────────┴──────────────────────────┘
+
+== answers given: [('git_push', 'd')]
+== agent status
+                    Agent status                    
+┌───────────────────────┬──────────────────────────┐
+│ Mode                  │ bifrost                  │
+│ Repository            │ standard                 │
+│ Run                   │ completed                │
+│ Model                 │ cohere/command-a-03-2025 │
+│ Steps                 │ 5                        │
+│ Budget remaining      │ $19.8578                 │
+│ Input / output tokens │ 11694 / 284              │
+└───────────────────────┴──────────────────────────┘
+== core stopped

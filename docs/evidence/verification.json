@@ -108,7 +108,7 @@
     "Live Bifrost/local routing and billing",
     "Real VS Code host and visual interaction for the current VSIX",
     "Authorized GitHub workflow and comment trial",
-    "Live git check of the merged executor (runbook in docs/DEMO_WS3.md)",
+    "Live git check of the merged executor: CLI part passed (docs/evidence/live/live-git-cli.json); VS Code part pending",
     "Frozen benchmark and submission rehearsal"
   ],
   "static_checks": {

@@ -1,0 +1,60 @@
+{
+  "measure": "Live git approval check, CLI part (docs/DEMO_WS3.md, \"Live git approval check\")",
+  "core_version": "0.3.0",
+  "main_commit_when_run": "a8d8a69",
+  "client": "agent CLI (token-agent 0.3.0)",
+  "provider_mode": "bifrost",
+  "model": "cohere/command-a-03-2025 (standard virtual key, no fallbacks)",
+  "docker": "28.3.3 (Docker Desktop)",
+  "captured_on": "2026-11-13",
+  "config": {
+    "git": {
+      "enabled": true,
+      "protected_branches": [
+        "main",
+        "master"
+      ],
+      "push_remotes": {
+        "origin": "https://github.com/example/repo.git"
+      }
+    }
+  },
+  "repository": "scratch repository outside the project: one commit on main, one on branch work, then calculator.py changed in the working tree; origin set to the configured URL, which does not exist",
+  "approvals": [
+    {
+      "tool": "git_commit",
+      "shown": "paths calculator.py, expected_head 44bcc441, the head the core rechecks, and the diff \"- return a - b\" / \"+ return a + b\"",
+      "answer": "approve once",
+      "result": "commit da7c7eb \"Fix calculator addition\""
+    },
+    {
+      "tool": "git_checkout",
+      "shown": "branch feature/live-git-check, create True, expected_head da7c7eb",
+      "answer": "approve once",
+      "result": "branch created and checked out"
+    },
+    {
+      "tool": "git_push",
+      "shown": "remote origin, remote_url https://github.com/example/repo.git, refs/heads/feature/live-git-check, commits da7c7eb, 44bcc44, 61e350f",
+      "answer": "deny",
+      "result": "Denied; run finished completed_unverified"
+    }
+  ],
+  "repository_after": {
+    "log": "da7c7eb (HEAD -> feature/live-git-check, work) Fix calculator addition; 61e350f (main); 44bcc44",
+    "current_branch": "feature/live-git-check",
+    "pushed": false
+  },
+  "model_notes": [
+    "Cohere first filled expected_head with \"absent\"; the core refused it. The task text then asked the model to call git_log first and copy the commit id.",
+    "Cohere sent several malformed replies; the core refused each and the model corrected itself.",
+    "After the checkout it repeated an action and the core paused it, so the push was sent as a second instruction in a new session."
+  ],
+  "vscode_part": "pending: to be run by a person in VS Code with the installed VSIX",
+  "transcripts": [
+    "docs/evidence/live/transcripts/live-git-cli-commit-checkout.txt",
+    "docs/evidence/live/transcripts/live-git-cli-push.txt"
+  ],
+  "benchmark_evidence": false,
+  "note": "Approval answers were given by a script following the runbook table: approve git_commit and git_checkout, deny git_push."
+}

@@ -1,0 +1,68 @@
+{
+  "measure": "First live model run that ends completed_verified (handoff open item)",
+  "core_version": "0.3.0",
+  "main_commit_when_run": "a8d8a69",
+  "client": "agent CLI (token-agent 0.3.0)",
+  "provider_mode": "bifrost",
+  "model": "cohere/command-a-03-2025 (standard virtual key, no fallbacks)",
+  "docker": "28.3.3 (Docker Desktop)",
+  "captured_on": "2026-11-13",
+  "repository": "scratch repository outside the project: calculator.py with add() returning a - b, and test_calculator.py (2 unittest cases), one commit on main",
+  "before": "python -m unittest discover: FAILED (failures=2)",
+  "sandbox": {
+    "enabled": true,
+    "image": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+    "verification_commands": [
+      [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-v"
+      ]
+    ],
+    "timeout_seconds": 60,
+    "memory_mb": 256,
+    "network": "none",
+    "repository_writable": false
+  },
+  "approvals": [
+    {
+      "tool": "apply_patch",
+      "shown": "diff of calculator.py: \"-    return a - b\" / \"+    return a + b\"",
+      "answer": "approve once"
+    },
+    {
+      "tool": "run_shell",
+      "purpose": "verification",
+      "argv": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-v"
+      ],
+      "shown": "the exact argv, the snapshot SHA-256 92ff71c5..., the pinned image, timeout 60 s, memory 256 MB, network none, repository not writable",
+      "answer": "approve once"
+    }
+  ],
+  "result": {
+    "run_status": "completed",
+    "outcome": "completed_verified",
+    "note": "All configured checks passed on the unchanged sanitized snapshot",
+    "steps": 4,
+    "input_tokens": 7441,
+    "output_tokens": 275,
+    "model_corrections": 1,
+    "reconciliation": {
+      "rows_checked": 4,
+      "reconciled": 4,
+      "cost_micro_usd_at_list_price": 21354,
+      "note": "Cohere free tier: nothing was billed; Bifrost records list price"
+    }
+  },
+  "after": "python -m unittest discover on the host: OK",
+  "transcript": "docs/evidence/live/transcripts/completed-verified-cli.txt",
+  "benchmark_evidence": false,
+  "note": "One live end-to-end run on a scratch repository, not a benchmark task. The approval answers were given by a script that approved only the file change and the exact configured verification command."
+}

@@ -68,7 +68,9 @@ repository command was executed on the host.
 ## Evidence boundaries
 
 `completed_verified` means configured commands passed against the unchanged sanitized
-snapshot. It does not prove correctness beyond those checks or the full original
+snapshot. One live run has reached it, on a scratch repository with Cohere and the Docker
+sandbox ([completed-verified-run](evidence/live/completed-verified-run.json)); no benchmark
+task has yet. It does not prove correctness beyond those checks or the full original
 repository environment. Hidden/protected files, symlinks and dependency directories
 are excluded; unsupported/binary/oversized accessible files cause rejection.
 
