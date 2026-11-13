@@ -79,7 +79,7 @@
   },
   "live_bifrost_verified": false,
   "live_tavily_verified": false,
-  "live_docker_verified": false,
+  "live_docker_verified": true,
   "live_git_verified": false,
   "benchmark_results_available": false,
   "gateway_costs_reconciled": false,
@@ -93,18 +93,19 @@
       "the packaged VSIX hash",
       "ruff check, ruff format, pip check and the contract export (static_checks)",
       "policy-overhead-release.json",
-      "clean-machine-setup.json"
+      "clean-machine-setup.json",
+      "live_docker_verified (docs/evidence/live/docker-sandbox.json)"
     ],
     "not_re_measured": [
-      "live_bifrost_verified, live_tavily_verified, live_docker_verified",
+      "live_bifrost_verified, live_tavily_verified",
       "gateway_costs_reconciled",
       "benchmark_results_available"
     ],
-    "note": "The live service flags were left as recorded on 2026-11-03 and are not restated here. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison. Re-measured on ffa2647 after PR #41 merged, so the evidence matches the merged executor; the previous refresh at bdfe17d described the executor before its review fixes.",
+    "note": "The live gateway and research flags were left as recorded on 2026-11-03 and are not restated here. The Docker flag is set by its own live acceptance run, not by this refresh. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison. Re-measured on ffa2647 after PR #41 merged, so the evidence matches the merged executor; the previous refresh at bdfe17d described the executor before its review fixes.",
     "measured_on": "Usman's laptop (Windows 11 Pro, Intel Core i5-8250U, 4 cores/8 threads, 16 GB RAM; about 2-5 GB free during the run)"
   },
   "remaining_acceptance": [
-    "Live Bifrost/local routing, billing and Docker",
+    "Live Bifrost/local routing and billing",
     "Real VS Code host and visual interaction for the current VSIX",
     "Authorized GitHub workflow and comment trial",
     "Live git check of the merged executor (runbook in docs/DEMO_WS3.md)",

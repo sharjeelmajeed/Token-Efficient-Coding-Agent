@@ -134,8 +134,9 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 
 ## 6. Known limitations
 
-1. **No live run ended `completed_verified`.** That needs the Docker sandbox and exact
-   verification commands (WS4, handoff G05).
+1. **No live run ended `completed_verified`.** The sandbox and its live acceptance now
+   exist (section 7), so this needs a live model run on the owner-approved task image with
+   exact verification commands.
 2. **The research benefit is not measured.** Research cost is recorded per request (FR-62), but
    whether it saves more than it costs needs the frozen tasks, run with research on and off.
 3. **Free tiers are unreliable for benchmarks:**
@@ -195,5 +196,11 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
 |---|---|---|
 | Research on-vs-off measurement | Usman | Benchmark task freeze (WS4) |
 | Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
-| Docker sandbox image and live acceptance | Sharjeel | Owner agreement with Usman |
+| Docker image that carries the benchmark task dependencies | Usman (owner agreement) | Benchmark task freeze |
 | `GitExecutor` live check in a real repository | Sharjeel, with Usman | PR #41 is merged; follow the runbook in `docs/DEMO_WS3.md` |
+| A live model run that ends `completed_verified` | Sharjeel, with Usman's gateway | Pinned task image and a running gateway |
+
+The Docker sandbox itself is accepted live: `scripts/accept_docker_sandbox.py` ran
+every documented case on Docker 29.9.3 with `python:3.12-slim` pinned by digest, and
+`docs/evidence/live/docker-sandbox.json` records each check. The image there proves
+the isolation and cleanup, not the benchmark tasks, so it is not the final task image.
