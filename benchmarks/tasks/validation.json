@@ -1,11 +1,11 @@
 {
-  "validated_at": "2026-11-13T09:55:55Z",
+  "validated_at": "2026-11-13T10:16:52Z",
   "machine": {
-    "platform": "Windows-11-10.0.26300-SP0",
-    "python": "3.13.13"
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "python": "3.12.16"
   },
   "checks": {
-    "python": "3.12.10",
+    "python": "3.12.16",
     "node": "v24.15.0",
     "environments": [
       "node-express4",
@@ -33,7 +33,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 9
       },
-      "seconds": 8.2
+      "seconds": 9.2
     },
     {
       "id": "TASK-02",
@@ -53,7 +53,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 2.1
+      "seconds": 1.2
     },
     {
       "id": "TASK-03",
@@ -62,18 +62,18 @@
       "without_agent_work": {
         "passed": false,
         "detail": "1 required tests did not pass: ['tests/test_termui.py::test_progressbar_hidden_manual']",
-        "required": 80,
+        "required": 59,
         "failed_or_missing": 1,
         "fail_to_pass_passing": 0
       },
       "with_reference_change": {
         "passed": true,
-        "detail": "all 80 required tests passed",
-        "required": 80,
+        "detail": "all 59 required tests passed",
+        "required": 59,
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 2.1
+      "seconds": 1.1
     },
     {
       "id": "TASK-04",
@@ -93,7 +93,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 2.3
+      "seconds": 1.4
     },
     {
       "id": "TASK-05",
@@ -113,7 +113,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 2.3
+      "seconds": 1.1
     },
     {
       "id": "TASK-06",
@@ -133,7 +133,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 4
       },
-      "seconds": 1.9
+      "seconds": 0.9
     },
     {
       "id": "TASK-07",
@@ -153,7 +153,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 1.9
+      "seconds": 0.9
     },
     {
       "id": "TASK-08",
@@ -173,7 +173,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 6.8
+      "seconds": 5.4
     },
     {
       "id": "TASK-09",
@@ -193,7 +193,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 6.3
+      "seconds": 13.2
     },
     {
       "id": "TASK-10",
@@ -213,7 +213,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 7
       },
-      "seconds": 2.6
+      "seconds": 1.6
     },
     {
       "id": "TASK-11",
@@ -233,7 +233,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 2
       },
-      "seconds": 2.6
+      "seconds": 1.5
     },
     {
       "id": "TASK-12",
@@ -253,7 +253,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 2.2
+      "seconds": 1.2
     },
     {
       "id": "TASK-13",
@@ -273,7 +273,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 3.5
+      "seconds": 2.0
     },
     {
       "id": "TASK-14",
@@ -293,7 +293,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 4
       },
-      "seconds": 7.3
+      "seconds": 11.7
     },
     {
       "id": "TASK-15",
@@ -313,7 +313,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 1.6
+      "seconds": 0.8
     },
     {
       "id": "TASK-16",
@@ -333,7 +333,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 1.6
+      "seconds": 0.8
     },
     {
       "id": "TASK-17",
@@ -353,7 +353,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 1.5
+      "seconds": 0.8
     },
     {
       "id": "TASK-18",
@@ -373,7 +373,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 2.8
+      "seconds": 1.5
     }
   ]
 }

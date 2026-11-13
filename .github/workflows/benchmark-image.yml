@@ -1,0 +1,87 @@
+name: Benchmark image
+
+# Manual only: a rebuild changes the digest that [sandbox] pins, so publishing is
+# an explicit operator action, never a side effect of a push or pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag under ghcr.io/<owner>/token-efficient-coding-agent-bench
+        required: true
+        default: bench-2026-11-13
+  # Temporary: allows the first publish from the feature branch before this
+  # workflow is on the default branch. Remove before the pull request.
+  push:
+    branches: [feature/benchmark-image]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.12'
+
+      - name: Build the benchmark image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
+        run: |
+          docker build --platform linux/amd64 \
+            --file benchmarks/environments/Dockerfile \
+            --tag "$IMAGE" \
+            benchmarks/environments
+          docker run --rm "$IMAGE" sh -c 'python -m pytest --version && node --version'
+
+      - name: Validate all 18 tasks inside the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/repo" -w /repo "$IMAGE" \
+            /opt/bench/python/bin/python benchmarks/validate_tasks.py \
+              --python /opt/bench/python/bin/python \
+              --node-modules node-express4=/opt/bench/node-express4/node_modules \
+              --node-modules node-express5=/opt/bench/node-express5/node_modules \
+              --out /repo/validation-in-image.json
+
+      - name: Push the validated image
+        id: push
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/token-efficient-coding-agent-bench:${{ github.event.inputs.tag || 'bench-2026-11-13' }}
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker push "$IMAGE"
+          digest="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")"
+          echo "reference=$digest" >> "$GITHUB_OUTPUT"
+          echo "Pinned reference: $digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the live Docker acceptance against the pushed digest
+        env:
+          REFERENCE: ${{ steps.push.outputs.reference }}
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.lock
+          python -m pip install --no-deps --no-build-isolation -e .
+          python scripts/accept_docker_sandbox.py \
+            --image "$REFERENCE" \
+            --approved-by "Muhammad Usman Khan" \
+            --out docs/evidence/live/docker-sandbox.json
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: benchmark-image-evidence
+          path: |
+            docs/evidence/live/docker-sandbox.json
+            validation-in-image.json
