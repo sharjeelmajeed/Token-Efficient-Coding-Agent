@@ -1,0 +1,44 @@
+# Configuration for benchmarks/research_comparison.py (handoff G08): the live gateway setup
+# from infra/bifrost/agent.live.example.toml, plus a trusted research catalog for the
+# frozen tasks' libraries. Research may only use these official documentation sites.
+# Secrets are read from the environment variables named here, never written in this file.
+mode = "bifrost"
+database = "state/research.sqlite3"
+gateway_url = "http://127.0.0.1:8080/v1/chat/completions"
+standard_model = "groq/openai/gpt-oss-120b"
+standard_allowlist = ["groq/openai/gpt-oss-120b"]
+local_model = "ollama/qwen2.5-coder:7b"
+local_allowlist = ["ollama/qwen2.5-coder:7b"]
+gateway_attempt_ceiling = 1
+streaming = false
+max_steps = 20
+# Reasoning models need room for reasoning tokens.
+max_output_tokens = 1024
+approval_timeout_seconds = 1800
+context_chars = 40000
+input_micro_usd_per_million = 2000000
+output_micro_usd_per_million = 12000000
+
+[research]
+enabled = true
+max_calls_per_run = 3
+
+[research.packages.click]
+name = "click"
+domains = ["click.palletsprojects.com"]
+
+[research.packages.jinja2]
+name = "jinja2"
+domains = ["jinja.palletsprojects.com"]
+
+[research.packages.express]
+name = "express"
+domains = ["expressjs.com"]
+
+[[users]]
+id = "benchmark"
+token_env = "AGENT_API_TOKEN"
+repo_roots = ["benchmark-repos"]
+budget_micro_usd = 20000000
+bifrost_key_env = "BIFROST_VIRTUAL_KEY"
+local_key_env = "BIFROST_LOCAL_VIRTUAL_KEY"
