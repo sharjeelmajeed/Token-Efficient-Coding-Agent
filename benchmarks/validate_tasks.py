@@ -89,6 +89,32 @@ def validate(task: dict, envs: dict[str, Environment], cache: dict[str, Path], b
     }
 
 
+def runtime_version(python: str | None) -> str | None:
+    if not python:
+        return None
+    try:
+        result = subprocess.run(
+            [python, "-c", "import platform; print(platform.python_version())"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip() or None
+
+
+def node_version() -> str | None:
+    node = shutil.which("node")
+    if node is None:
+        return None
+    try:
+        result = subprocess.run([node, "--version"], capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip() or None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the frozen benchmark tasks")
     parser.add_argument("--python", help="Python interpreter with pytest for Python tasks")
@@ -113,6 +139,11 @@ def main() -> int:
     report = {
         "validated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "machine": {"platform": platform.platform(), "python": platform.python_version()},
+        "checks": {
+            "python": runtime_version(args.python),
+            "node": node_version() if args.node_modules else None,
+            "environments": sorted(envs),
+        },
         "all_valid": bool(results) and all(r["valid"] for r in results),
         "tasks": results,
     }

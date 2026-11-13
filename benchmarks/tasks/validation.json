@@ -1,8 +1,17 @@
 {
-  "validated_at": "2026-11-11T06:51:16Z",
+  "validated_at": "2026-11-13T09:55:55Z",
   "machine": {
-    "platform": "Windows-11-10.0.26200-SP0",
-    "python": "3.12.2"
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.13"
+  },
+  "checks": {
+    "python": "3.12.10",
+    "node": "v24.15.0",
+    "environments": [
+      "node-express4",
+      "node-express5",
+      "python"
+    ]
   },
   "all_valid": true,
   "tasks": [
@@ -24,7 +33,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 9
       },
-      "seconds": 17.3
+      "seconds": 8.2
     },
     {
       "id": "TASK-02",
@@ -44,7 +53,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 5.6
+      "seconds": 2.1
     },
     {
       "id": "TASK-03",
@@ -64,7 +73,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 6.1
+      "seconds": 2.1
     },
     {
       "id": "TASK-04",
@@ -84,7 +93,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 6.9
+      "seconds": 2.3
     },
     {
       "id": "TASK-05",
@@ -104,7 +113,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 5.6
+      "seconds": 2.3
     },
     {
       "id": "TASK-06",
@@ -124,7 +133,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 4
       },
-      "seconds": 5.0
+      "seconds": 1.9
     },
     {
       "id": "TASK-07",
@@ -144,7 +153,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 4.9
+      "seconds": 1.9
     },
     {
       "id": "TASK-08",
@@ -164,7 +173,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 20.0
+      "seconds": 6.8
     },
     {
       "id": "TASK-09",
@@ -184,7 +193,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 14.5
+      "seconds": 6.3
     },
     {
       "id": "TASK-10",
@@ -204,7 +213,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 7
       },
-      "seconds": 8.1
+      "seconds": 2.6
     },
     {
       "id": "TASK-11",
@@ -224,7 +233,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 2
       },
-      "seconds": 7.2
+      "seconds": 2.6
     },
     {
       "id": "TASK-12",
@@ -244,7 +253,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 3
       },
-      "seconds": 5.9
+      "seconds": 2.2
     },
     {
       "id": "TASK-13",
@@ -264,7 +273,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 9.9
+      "seconds": 3.5
     },
     {
       "id": "TASK-14",
@@ -284,7 +293,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 4
       },
-      "seconds": 14.5
+      "seconds": 7.3
     },
     {
       "id": "TASK-15",
@@ -304,7 +313,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 5.5
+      "seconds": 1.6
     },
     {
       "id": "TASK-16",
@@ -324,7 +333,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 5.2
+      "seconds": 1.6
     },
     {
       "id": "TASK-17",
@@ -344,7 +353,7 @@
         "failed_or_missing": 0,
         "fail_to_pass_passing": 1
       },
-      "seconds": 4.6
+      "seconds": 1.5
     },
     {
       "id": "TASK-18",
@@ -364,7 +373,7 @@
         "failing_on_fixed_code": 0,
         "fail_when_fix_reverted": 1
       },
-      "seconds": 11.4
+      "seconds": 2.8
     }
   ]
 }
