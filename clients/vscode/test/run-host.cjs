@@ -8,6 +8,8 @@ async function main() {
   try {
     await runTests({
       version: '1.144.0',
+      // Idle timeout for the VS Code download. The 15 s default failed CI runs on slow mirrors.
+      timeout: 120000,
       extensionDevelopmentPath: path.resolve(__dirname, '..'),
       extensionTestsPath: path.join(__dirname, 'host-suite.cjs'),
       launchArgs: [folder, '--disable-extensions', '--disable-workspace-trust',
