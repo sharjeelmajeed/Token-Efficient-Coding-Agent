@@ -146,6 +146,11 @@ def test_research_off_hides_research_and_on_uses_it(tmp_path, monkeypatch, task,
     row = report["per_task"]["LOCAL-RESEARCH"]
     assert row["research_on"]["research_calls"] == 1
     assert report["benchmark_evidence"] is False
+    # Both modes cloned the repository once, into one shared cache.
+    work = tmp_path / "work"
+    assert len(list((work / "_cache").iterdir())) == 1
+    assert not (work / "research_off" / "_cache").exists()
+    assert not (work / "research_on" / "_cache").exists()
 
 
 def test_research_must_be_enabled_in_the_config(tmp_path, monkeypatch, task):

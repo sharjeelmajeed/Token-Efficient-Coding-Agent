@@ -95,6 +95,8 @@ def run(
             systems=[SYSTEM_OPTIMIZED],
             repeats=repeats,
             workspace_dir=Path(workspace) / mode,
+            # Both modes share one clone of each repository.
+            cache_dir=Path(workspace) / "_cache",
             gateway_log=gateway_log,
             provider=provider,
             environments=environments,

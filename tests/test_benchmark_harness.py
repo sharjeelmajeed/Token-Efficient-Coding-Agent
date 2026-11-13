@@ -440,3 +440,42 @@ def test_reconciliation_retries_stop_once_every_row_is_reconciled(
     assert record.error is None
     assert len(attempts) == 2
     assert record.cost_reconciled is True
+
+
+# --- Repository cache: atomic, retried, shareable --------------------------------------
+
+
+def test_a_failed_clone_leaves_nothing_in_the_cache(tmp_path):
+    from benchmarks.harness import BenchmarkRunner
+
+    runner = BenchmarkRunner(
+        None, [], workspace_dir=tmp_path / "work", clone_attempts=1, systems=[SYSTEM_OPTIMIZED]
+    )
+    with pytest.raises(subprocess.CalledProcessError):
+        runner.repository_cache(str(tmp_path / "no-such-repository"))
+    assert list((tmp_path / "work" / "_cache").iterdir()) == []
+
+
+def test_a_clone_that_fails_once_is_retried_and_left_complete(tmp_path, monkeypatch, bench_task):
+    import benchmarks.harness as harness
+
+    real = subprocess.run
+    calls = []
+
+    def flaky(argv, *args, **kwargs):
+        if argv[:2] == ["git", "clone"] and not calls:
+            calls.append(argv)
+            Path(argv[-1]).mkdir(parents=True)  # a partial clone, then a failure
+            raise subprocess.CalledProcessError(128, argv)
+        return real(argv, *args, **kwargs)
+
+    monkeypatch.setattr(harness.subprocess, "run", flaky)
+    monkeypatch.setattr(harness.time, "sleep", lambda seconds: None)
+    runner = harness.BenchmarkRunner(None, [], workspace_dir=tmp_path / "work")
+    cache = runner.repository_cache(bench_task["repository"])
+    assert calls  # the first attempt failed
+    assert sorted(p.name for p in cache.parent.iterdir()) == [cache.name]  # no ".partial" left
+    commit = subprocess.run(
+        ["git", "-C", str(cache), "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    assert commit == bench_task["commit"]
