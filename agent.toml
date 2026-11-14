@@ -8,6 +8,22 @@ approval_timeout_seconds = 120
 context_chars = 40000
 output_chars = 8000
 
+# The approved benchmark test image. It contains CPython 3.12 with pytest, Node
+# 24.15.0 LTS and both express node_modules trees. The runner never pulls or
+# installs, so this exact digest must already be installed on the machine:
+#   docker pull ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039
+# The GHCR package is private; authenticate with a token that has read:packages.
+[sandbox]
+enabled = true
+image = "ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039"
+timeout_seconds = 300
+memory_mb = 512
+# The frozen benchmark checks are applied after each run, so there is no single
+# safe command that proves a task is fixed. A generic pytest command could pass
+# before the fix and trigger a false early termination. Per-task commands need
+# owner agreement; until then verified early termination stays inactive.
+verification_commands = []
+
 [[users]]
 id = "developer"
 token_env = "AGENT_API_TOKEN"

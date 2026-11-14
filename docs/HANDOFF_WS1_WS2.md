@@ -139,8 +139,11 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
    `python -m unittest discover -v` passed in the Docker sandbox on the unchanged snapshot
    (4 steps, every cost row reconciled;
    [`completed-verified-run.json`](evidence/live/completed-verified-run.json)). No benchmark
-   task has ended `completed_verified` yet: that needs the task image and a model that solves
-   the tasks.
+   task has ended `completed_verified` yet: the task image is now published and pinned
+   (section 7), so this needs a model that solves the tasks. `agent.toml` also leaves
+   `verification_commands` empty because the frozen checks run after the agent and a
+   generic command can falsely verify the start commit; verified early termination
+   therefore stays inactive until per-task commands are agreed.
 2. **The research benefit is not measured; its cost is.** On all 18 frozen tasks with Cohere
    Command A, research on used about 3–4× the tokens of research off (median per run), every
    run reconciled, and neither mode solved a task. A model strong enough to solve tasks is
@@ -199,18 +202,29 @@ Bifrost's log shows what the gateway sent. It is not network-level egress captur
      50 ms policy target is met on small and medium repositories and exceeded on the
      4,000-file one, where the per-request rescan dominates.
 9. **Not measured:** crash recovery by killing the process (tested from a prepared database).
+10. **The benchmark cannot start in the sandbox yet.** `Repository.snapshot()` rejects every
+    frozen task repository: click has PNG/JPEG assets and a lock file over 128 KB, jinja has
+    a binary `tests/res/package.zip`, express has `History.md` over 128 KB, and express
+    `lib/response.js` plus click `tests/test_utils.py` match the heuristic secret pattern.
+    These are real files the tests need, not removable fixtures. A byte-faithful snapshot or
+    an explicit benchmark execution profile is a WS1 policy decision; do not disable
+    isolation or delete source/test files to make the benchmark run.
 
 ## 7. Open items
 
 | Item | Owner | Depends on |
 |---|---|---|
 | Research on-vs-off: the benefit side (cost side measured in `RESEARCH_COMPARISON.md`) | Usman | A model that solves tasks; rerun `research_comparison.py` with the G10 credits |
-| Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Freeze and harness |
-| Docker image that carries the benchmark task dependencies | Usman (owner agreement) | Benchmark task freeze |
+| Benchmark runs through Bifrost, with reconciliation per batch | Sharjeel, with Usman's setup | Snapshot decision, freeze and harness |
+| Benchmark sandbox snapshot for binary/oversized/secret-like task files | WS1 (Usman), with WS4 examples | A byte-faithful snapshot or an explicit benchmark execution profile |
 | `GitExecutor` live check: the CLI part passed ([`live-git-cli.json`](evidence/live/live-git-cli.json)); the VS Code part remains | Usman, in VS Code | The installed VSIX |
-| A live benchmark task that ends `completed_verified` (a scratch-repository run already has) | Sharjeel, with Usman's gateway | The task image and a model that solves the tasks |
+| A live benchmark task that ends `completed_verified` (a scratch-repository run already has) | Sharjeel, with Usman's gateway | Per-task verification commands and a model that solves the tasks |
 
 The Docker sandbox itself is accepted live: `scripts/accept_docker_sandbox.py` ran
-every documented case on Docker 29.9.3 with `python:3.12-slim` pinned by digest, and
-`docs/evidence/live/docker-sandbox.json` records each check. The image there proves
-the isolation and cleanup, not the benchmark tasks, so it is not the final task image.
+every documented case on a GitHub runner (Docker 28.0.4) against the owner-approved
+benchmark image pinned by digest, and `docs/evidence/live/docker-sandbox.json`
+records each check. The workflow also validated all 18 frozen tasks inside that
+image (`benchmarks/tasks/validation.json`). Build, run and pull instructions are in
+[`benchmark-image`](evidence/live/benchmark-image.md). The image proves isolation,
+cleanup and the test environments; it does not fix the strict snapshot limitation
+in item 10.

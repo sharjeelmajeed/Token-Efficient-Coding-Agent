@@ -2,8 +2,9 @@
 
 **Status, 2026-11-14.** The benchmark machinery is built, validated and exercised live. **The full
 benchmark (baseline against optimized, plus per-technique ablations) has not been run, so no
-token or cost saving is claimed.** Running it needs paid model credits (section 5). Everything below
-is a measured result with its evidence file, or is stated as not measured.
+token or cost saving is claimed.** Running it needs paid model credits and a WS1 snapshot
+decision (sections 4 and 5). Everything below is a measured result with its evidence file, or
+is stated as not measured.
 
 ## 1. Frozen task suite
 
@@ -11,7 +12,7 @@ is a measured result with its evidence file, or is stated as not measured.
 |---|---|
 | Tasks | 18 real fix or feature commits from 3 repositories and 2 languages: `pallets/click` (8) and `pallets/jinja` (5) in Python, `expressjs/express` (5) in JavaScript |
 | Freeze | `7ac9085` ([`benchmarks/tasks/manifest.json`](../benchmarks/tasks/manifest.json)) |
-| Validity | Each task's check fails with no agent work and passes with the reference change (`benchmarks/validate_tasks.py`): 18/18 on Windows with CPython 3.12 ([`validation.json`](../benchmarks/tasks/validation.json)) |
+| Validity | Each task's check fails with no agent work and passes with the reference change (`benchmarks/validate_tasks.py`): 18/18 in the pinned Linux benchmark image with CPython 3.12.16 and Node 24.15.0 ([`validation.json`](../benchmarks/tasks/validation.json)) |
 | Interpreter | The checks need CPython 3.12. On 3.13, TASK-05, 11 and 12 fail even with the reference change (#45) |
 | Platform | TASK-03 listed 21 Windows-only tests, so it could not pass on Linux. PR #50 removes them, after the freeze, and records why; with that change all 18 tasks validate inside the Linux benchmark image |
 
@@ -64,7 +65,7 @@ reconciled ([`completed-verified-run.json`](evidence/live/completed-verified-run
 | Check | Result | Evidence |
 |---|---|---|
 | Confidential routing (TC-CF-01) | 0 requests reached a non-local model; 3/3 core requests matched local gateway rows | [`tc-cf-01-injection.json`](evidence/live/tc-cf-01-injection.json) |
-| Docker sandbox | 18/18 live checks: no network, read-only repository, non-executable tmpfs, timeout and cancel cleanup, secrets withheld, uid 65534, no pulling | [`docker-sandbox.json`](evidence/live/docker-sandbox.json) |
+| Docker sandbox | 18/18 live checks against the pinned benchmark image (approved by Muhammad Usman Khan, GitHub runner): no network, read-only repository, non-executable tmpfs, timeout and cancel cleanup, secrets withheld, uid 65534, no pulling | [`docker-sandbox.json`](evidence/live/docker-sandbox.json) |
 | Git approvals (CLI) | Commit and branch approved and made; push denied, nothing pushed. The VS Code part is pending | [`live-git-cli.json`](evidence/live/live-git-cli.json) |
 | Policy tests | 600 tests, 0 failures; policy line and branch coverage 100%, overall 85.4% | [`verification.json`](evidence/verification.json) |
 
@@ -89,10 +90,17 @@ reconciled ([`completed-verified-run.json`](evidence/live/completed-verified-run
 4. **TASK-03 changed after the freeze** (PR #50). Its prompt, reference change and remaining 58
    checks are unchanged.
 5. **Policy overhead exceeds the target on very large repositories** (section 3.5).
-6. **Live evidence is from pilots**, each recorded with `benchmark_evidence: false`, on one
-   Windows laptop.
+6. **Live evidence is from pilots**, each recorded with `benchmark_evidence: false`. The model
+   runs were on one Windows laptop; the final Docker acceptance was on a GitHub runner.
 7. **The live PR-review workflow trial is not done.** It posts to GitHub and needs a team test
    repository.
+8. **The benchmark cannot start in the sandbox yet.** `Repository.snapshot()` rejects every
+   frozen task repository: click has PNG/JPEG assets and a lock file over 128 KB, jinja has a
+   binary `tests/res/package.zip`, express has `History.md` over 128 KB, and express
+   `lib/response.js` plus click `tests/test_utils.py` match the heuristic secret pattern.
+   Those files are needed by the tests. A byte-faithful snapshot or an explicit benchmark
+   execution profile is a WS1 policy decision; disabling isolation or deleting task files is
+   not an option. No benchmark run has used `run_shell` yet.
 
 ## 5. How to run the full benchmark
 
@@ -100,6 +108,8 @@ Requirements:
 - a model that solves a meaningful share of the tasks, with credits: about $1–5 for one model,
   from our measured token use;
 - Bifrost running;
+- a WS1 decision on the benchmark snapshot (limitation 8). Until then `run_shell` refuses every
+  frozen task repository;
 - the benchmark image or the environments from `benchmarks/setup_environments.py`.
 
 ```

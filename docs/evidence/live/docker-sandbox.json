@@ -1,16 +1,16 @@
 {
-  "captured_at": "2026-11-13T09:22:41.817640+00:00",
-  "host": "Windows-11-10.0.26300-SP0",
-  "python": "3.13.13",
-  "docker_client": "29.9.3",
-  "docker_server": "29.9.3",
+  "captured_at": "2026-11-13T10:32:04.434210+00:00",
+  "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "python": "3.12.16",
+  "docker_client": "28.0.4",
+  "docker_server": "28.0.4",
   "docker_platform": "linux/amd64",
-  "image": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
-  "image_present_digest": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+  "image": "ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039",
+  "image_present_digest": "ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039",
   "image_acquisition": "installed by the operator before this run; the runner never pulls",
   "image_selection": {
-    "approved_by": null,
-    "status": "pending owner agreement for the benchmark task image"
+    "approved_by": "Muhammad Usman Khan",
+    "status": "approved for the benchmark task image"
   },
   "runner": {
     "network": "none",
@@ -31,12 +31,14 @@
     {
       "check": "pinned image is already installed with that digest",
       "passed": true,
-      "detail": "python@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b"
+      "detail": [
+        "ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039"
+      ]
     },
     {
       "check": "sandbox reports itself available",
       "passed": true,
-      "detail": "29.9.3 linux/x86_64"
+      "detail": "28.0.4 linux/x86_64"
     },
     {
       "check": "verification command passes",
@@ -51,7 +53,7 @@
     {
       "check": "snapshot digest unchanged after the run",
       "passed": true,
-      "detail": "eda353cb97a98cce..."
+      "detail": "b3c6eba315e949a8..."
     },
     {
       "check": "failing command cannot establish verification",
@@ -82,7 +84,7 @@
       "passed": true,
       "detail": {
         "exit_code": 1,
-        "tmp_mount": "tmpfs /tmp tmpfs rw,nosuid,nodev,noexec,relatime,size=65536k 0 0"
+        "tmp_mount": "tmpfs /tmp tmpfs rw,nosuid,nodev,noexec,relatime,size=65536k,inode64 0 0"
       }
     },
     {
@@ -121,11 +123,17 @@
       "passed": true,
       "detail": {
         "container_env_keys": [
+          "BENCH_NODE_EXPRESS4",
+          "BENCH_NODE_EXPRESS5",
+          "BENCH_PYTHON",
+          "DEBIAN_FRONTEND",
           "GPG_KEY",
           "HOME",
           "HOSTNAME",
           "LANG",
           "PATH",
+          "PIP_DISABLE_PIP_VERSION_CHECK",
+          "PIP_NO_CACHE_DIR",
           "PYTHONDONTWRITEBYTECODE",
           "PYTHONUNBUFFERED",
           "PYTHON_SHA256",

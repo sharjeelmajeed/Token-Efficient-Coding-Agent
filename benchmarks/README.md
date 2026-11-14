@@ -1,7 +1,10 @@
 # Frozen benchmark task suite
 
 **Suite name:** `token-efficient-coding-agent-benchmarks`
-**Status:** frozen at commit `7ac9085` (merge of PR #33).
+**Status:** frozen at commit `7ac9085` (merge of PR #33). Revised after the freeze
+on 2026-11-13 for Linux portability: TASK-03 removed 21 Windows-only `msvcrt`
+tests from `pass_to_pass` (79 to 58), and `manifest.json` was synced (PR #50).
+Record the TASK-03 revision in every benchmark report.
 **Task count:** 18 tasks.
 **Repositories (3):**
 - `pallets/click`: 8 tasks;
@@ -89,10 +92,11 @@ python benchmarks/validate_tasks.py --python <python> \
     --out benchmarks/tasks/validation.json
 ```
 
-Node.js 18 or later, git and **CPython 3.12** are required. Validation was rerun on
-Windows 11 with Python 3.12.10 and Node.js 24 on 2026-11-13; `checks.python` in
-`tasks/validation.json` names the interpreter that ran the checks. Before the
-benchmark, rerun it on the benchmark machine or in its Docker image (G05).
+Node.js 18 or later, git and **CPython 3.12** are required. The final validation was
+run inside the pinned benchmark image on a GitHub runner: Linux, CPython 3.12.16,
+Node 24.15.0, 18/18 tasks valid (`tasks/validation.json`). `checks.python` names
+the interpreter that ran the checks. Rerun it on the benchmark machine after pulling
+the image; do not substitute a different Python or Node version.
 
 The harness takes the same two environment arguments:
 
@@ -118,9 +122,30 @@ SHA-256.
 
 Build and push it with `python scripts/build_benchmark_image.py --push`, or run
 the manual **Benchmark image** workflow. Both build, validate all 18 tasks inside
-the image and only then publish to GHCR. Pull the pinned digest once on every
-machine; the sandbox runner never pulls or installs. The `[sandbox]` image in
-`agent.toml` is the reference the benchmark uses.
+the image and only then publish to GHCR. The published reference is:
+
+```
+ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039
+```
+
+That digest is pinned in `agent.toml`. The GHCR package is private, so the
+benchmark machine needs a token with `read:packages` to pull it once; the runner
+itself never pulls or installs. The same workflow ran the live Docker acceptance
+against the pushed digest and validated all 18 tasks inside the image. The run is
+recorded in `docs/evidence/live/docker-sandbox.json` and
+`benchmarks/tasks/validation.json`.
+
+`agent.toml` leaves `verification_commands` empty on purpose. The frozen check is
+applied after the agent's run, and a generic command can pass on the start commit
+and falsely verify it. Verified early termination stays inactive until per-task
+commands are agreed; the campaign report must disclose that.
+
+The image is ready, but the benchmark cannot start yet: every frozen repository has
+an accessible binary file, a file over 128,000 bytes, or a source/test file that
+matches the heuristic secret pattern, and `Repository.snapshot()` rejects those.
+The task checks still validate outside the sandbox, but `run_shell` inside a
+benchmark run needs a WS1-owned snapshot decision. Do not remove task files or
+disable isolation to work around it.
 
 ## 4. Tasks
 
