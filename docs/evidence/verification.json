@@ -1,8 +1,8 @@
 {
-  "date": "2026-11-12",
+  "date": "2026-11-17",
   "application_version": "0.3.0",
-  "milestone": "M3 clients, git executor and read-only review; Docker live acceptance, the git live check and the benchmark campaign still pending",
-  "code": "ffa2647 (test/evaluation-evidence-refresh merged with main 81df3a4, which includes the merged git executor from PR #41); tests re-run after adding the confidential-roots policy test (no source change)",
+  "milestone": "Release candidate: M3 clients, git executor, Docker sandbox and benchmark image; the VS Code git check and the full benchmark campaign still pending",
+  "code": "fe20a70 (main after PR #52)",
   "python": "3.12.2",
   "python_ci": [
     "3.11",
@@ -11,11 +11,11 @@
   "node": "v24.18.0",
   "tests": {
     "command": "python -m coverage run --branch --source=token_agent -m pytest --junitxml=docs/evidence/junit.xml",
-    "tests": 600,
+    "tests": 605,
     "errors": 0,
     "failures": 0,
     "skipped": 0,
-    "time": "260.873",
+    "time": "269.895",
     "note": "The Windows symlink test passes on this machine (Developer Mode is on); on Windows without that privilege it fails with WinError 1314, as recorded in the previous refresh."
   },
   "extension_tests": {
@@ -58,14 +58,14 @@
   "vscode_package": {
     "path": "clients/vscode/token-efficient-coding-agent-0.3.0.vsix",
     "bytes": 18464,
-    "sha256": "fb3c4586fff474eef0005db04fa3d43d57f8f311a42f993b19097a789ed7d117",
-    "built_from_commit": "ffa2647",
+    "sha256": "b6832728e4ea2aa2ade7fbbdacbeb8ef3d068799f7386ae21fdd4c64d56a5e86",
+    "built_from_commit": "fe20a70",
     "runtime_npm_dependencies": 0,
     "compiled": true,
     "packaged": true,
     "editor_host_executed": false,
     "manual_ui_acceptance": false,
-    "acceptance_note": "This build has not been opened in an editor. Earlier host and manual acceptance used an older VSIX; see ws3-editor-acceptance.md."
+    "acceptance_note": "Rebuilt from fe20a70; the extension source is unchanged since the earlier build (the hash differs because the package records file times). Host and manual acceptance used an earlier VSIX; see ws3-editor-acceptance.md."
   },
   "workflow_checks": {
     "yaml_parsed": true,
@@ -73,16 +73,16 @@
     "trusted_base_checkout_checked": true,
     "review_publish_permission_separation_checked": true,
     "github_ci_executed": true,
-    "github_ci_detail": "Core checks green on main 81df3a4 (core 3.11, core 3.12, extension); this branch's CI runs on push",
+    "github_ci_detail": "Core checks green on main fe20a70 (core 3.11, core 3.12, extension) and on PR #52",
     "github_review_executed": false,
     "github_comments_posted": 0
   },
-  "live_bifrost_verified": false,
-  "live_tavily_verified": false,
+  "live_bifrost_verified": true,
+  "live_tavily_verified": true,
   "live_docker_verified": true,
   "live_git_verified": false,
   "benchmark_results_available": false,
-  "gateway_costs_reconciled": false,
+  "gateway_costs_reconciled": true,
   "prior_m2_evidence": "verification-m2.json",
   "refresh": {
     "re_measured": [
@@ -92,29 +92,34 @@
       "npm-audit.json",
       "the packaged VSIX hash",
       "ruff check, ruff format, pip check and the contract export (static_checks)",
-      "policy-overhead-release.json",
-      "clean-machine-setup.json",
-      "live_docker_verified (docs/evidence/live/docker-sandbox.json)"
+      "live_bifrost_verified, live_tavily_verified and gateway_costs_reconciled, from the live evidence named in live_evidence"
     ],
     "not_re_measured": [
-      "live_bifrost_verified, live_tavily_verified",
-      "gateway_costs_reconciled",
+      "policy-overhead-release.json (ffa2647)",
+      "clean-machine-setup.json (ffa2647)",
+      "live_docker_verified (docker-sandbox.json)",
       "benchmark_results_available"
     ],
-    "note": "The live gateway and research flags were left as recorded on 2026-11-03 and are not restated here. The Docker flag is set by its own live acceptance run, not by this refresh. WS2's separate live runs are in docs/evidence/live/. policy-overhead-release.json is a new direct run; policy-overhead.json keeps the earlier before/after comparison. Re-measured on ffa2647 after PR #41 merged, so the evidence matches the merged executor; the previous refresh at bdfe17d described the executor before its review fixes.",
+    "note": "Release-candidate refresh at fe20a70. The live flags are set from the dated live runs, not from this refresh itself.",
     "measured_on": "Usman's laptop (Windows 11 Pro, Intel Core i5-8250U, 4 cores/8 threads, 16 GB RAM; about 2-5 GB free during the run)"
   },
   "remaining_acceptance": [
-    "Live Bifrost/local routing and billing",
-    "Real VS Code host and visual interaction for the current VSIX",
+    "Real VS Code host and visual interaction for the current VSIX, including the VS Code part of the live git check",
     "Authorized GitHub workflow and comment trial",
-    "Live git check of the merged executor: CLI part passed (docs/evidence/live/live-git-cli.json); VS Code part pending",
-    "Frozen benchmark and submission rehearsal"
+    "Full benchmark campaign (paid credits; strict-snapshot decision)",
+    "Branch protection on main and the actual submission (repository owner)"
   ],
   "static_checks": {
     "ruff_check": "All checks passed (src tests scripts benchmarks)",
-    "ruff_format": "60 files already formatted",
+    "ruff_format": "64 files already formatted",
     "pip_check": "No broken requirements found",
     "export_contracts": "docs/openapi.json and docs/event.schema.json unchanged"
+  },
+  "live_evidence": {
+    "live_bifrost_verified": "docs/evidence/live/research-comparison.json and completed-verified-run.json: live runs through Bifrost on 2026-11-12/13",
+    "live_tavily_verified": "docs/evidence/live/research-comparison.json: research-on runs made 41 live Tavily calls; tavily-adapter.json and tavily-triggers.json",
+    "gateway_costs_reconciled": "every run in research-comparison.json (54 runs) and all 4 rows of completed-verified-run.json reconciled against the Bifrost log",
+    "live_git_verified": "false until the VS Code part runs; the CLI part passed (live-git-cli.json)",
+    "benchmark_results_available": "false: the full campaign needs paid credits and the strict-snapshot decision (BENCHMARK_REPORT.md)"
   }
 }

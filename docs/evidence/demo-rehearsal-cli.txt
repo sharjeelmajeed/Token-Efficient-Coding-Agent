@@ -1,0 +1,98 @@
+== fresh demo repository: calculator.py has 'return a - b': True
+== step 1: agent init --repo sandbox-repos\demo
+Session created: 376b0604-cc2c-4f8b-bf71-0e86a09b4fa9
+Mode: fixture
+
+== steps 2-3: agent run, answer f with a reason
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ running       │
+│ Model                 │ fixture/local │
+│ Steps                 │ 1             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 923 / 22      │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+Tool: read_file (read)
+Tool: apply_patch (gated)
+Exact file change requires your approval
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
+
+Approve once / deny / deny with feedback [a/d/f] (d): Feedback: Change was denied. No patch was applied.
+Run finished: completed_unverified
+Note: No complete set of configured behavior checks passed
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ completed     │
+│ Model                 │ fixture/local │
+│ Steps                 │ 3             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 3720 / 91     │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+
+== file after the denial still says 'return a - b': True
+
+== step 4: agent run again, answer a
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ running       │
+│ Model                 │ fixture/local │
+│ Steps                 │ 1             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 1495 / 22     │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+Tool: read_file (read)
+Tool: apply_patch (gated)
+Exact file change requires your approval
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,2 @@
+ def add(a, b):
+-    return a - b
++    return a + b
+
+Approve once / deny / deny with feedback [a/d/f] (d): Tool: syntax_check (read)
+Fixture completed. Python syntax was checked; run the repository tests separately to verify behavior.
+Run finished: completed_unverified
+Note: No complete set of configured behavior checks passed
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ completed     │
+│ Model                 │ fixture/local │
+│ Steps                 │ 4             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 6468 / 121    │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+
+== file after the approval says 'return a + b': True
+
+== step 5: agent status
+              Agent status               
+┌───────────────────────┬───────────────┐
+│ Mode                  │ fixture       │
+│ Repository            │ standard      │
+│ Run                   │ completed     │
+│ Model                 │ fixture/local │
+│ Steps                 │ 4             │
+│ Budget remaining      │ $1.0000       │
+│ Input / output tokens │ 6468 / 121    │
+└───────────────────────┴───────────────┘
+OFFLINE FIXTURE: token counts are synthetic, not benchmark evidence.
+
+== core stopped; demo repository reset for the next rehearsal
