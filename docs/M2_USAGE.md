@@ -112,7 +112,7 @@ and contain the required language/runtime/dependencies. The runner never pulls a
 image or installs packages. `agent doctor` checks the daemon and pinned image.
 Do not copy a fabricated digest or use a mutable image tag.
 
-`agent.toml` pins the benchmark image
+`agent.sandbox.toml` pins the benchmark image
 `ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039`.
 The GHCR package is private: authenticate with a token that has `read:packages`,
 then pull that exact digest before running `agent doctor` or the benchmark. The

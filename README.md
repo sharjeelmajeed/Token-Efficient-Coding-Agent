@@ -126,12 +126,12 @@ validated image.
 
 ## Persistent local use
 
-`agent.toml` is the default trusted configuration. It enables the sandbox and pins
-the private benchmark image by digest, so `agent doctor` and command execution need
-Docker plus a one-time `docker pull` with a token that has `read:packages` (see
-[benchmarks/README](benchmarks/README.md)). For a fixture-only demo without Docker,
-set `[sandbox] enabled = false`; command execution then pauses rather than running
-on the host. Run `python scripts/make_demo.py` once to create `sandbox-repos/demo`.
+`agent.toml` is the default trusted configuration. It leaves the Docker sandbox off,
+so a fresh clone and the fixture demo need no image; command execution then pauses
+rather than running on the host. `agent.sandbox.toml` is the same configuration with
+the sandbox enabled and the private benchmark image pinned by digest. Use it with
+`--config agent.sandbox.toml` after a one-time `docker pull` with a token that has
+`read:packages` (see [benchmarks/README](benchmarks/README.md)). Run `python scripts/make_demo.py` once to create `sandbox-repos/demo`.
 Supply a random `AGENT_API_TOKEN` (32+ characters) to both server and client
 processes through the environment. `.env.example` documents names; the application
 does not automatically load `.env` files.
@@ -190,7 +190,7 @@ cannot select a provider URL from a task or repository file.
 ## Before live integration
 
 See [LIVE_INTEGRATION](docs/LIVE_INTEGRATION.md). Bifrost, Ollama and Tavily were
-exercised live for WS2 acceptance. The sandbox is enabled in `agent.toml` with the
+exercised live for WS2 acceptance. The sandbox is enabled in `agent.sandbox.toml` with the
 owner-approved, digest-pinned benchmark image; the GHCR package is private, so a
 benchmark machine needs a token with `read:packages` and a one-time pull. Missing
 Docker pauses command execution; it never falls back to host execution. Git

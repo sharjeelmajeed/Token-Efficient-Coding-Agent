@@ -128,7 +128,8 @@ the image and only then publish to GHCR. The published reference is:
 ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039
 ```
 
-That digest is pinned in `agent.toml`. The GHCR package is private, so the
+That digest is pinned in `agent.sandbox.toml` (the default `agent.toml` leaves the
+sandbox off). The GHCR package is private, so the
 benchmark machine needs a token with `read:packages` to pull it once; the runner
 itself never pulls or installs. The same workflow ran the live Docker acceptance
 against the pushed digest and validated all 18 tasks inside the image. The run is

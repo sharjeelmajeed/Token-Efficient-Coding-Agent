@@ -67,7 +67,7 @@ pinned image.
 
 - The benchmark campaign itself. It is 0/594 runs; gateway credits and the
   sandbox snapshot decision are still needed.
-- Verified early termination. `agent.toml` leaves `verification_commands` empty
+- Verified early termination. `agent.sandbox.toml` leaves `verification_commands` empty
   because the frozen check is applied after the run and a generic command can
   falsely verify the start commit.
 - The strict snapshot blocker. Every frozen task repository contains an accessible
