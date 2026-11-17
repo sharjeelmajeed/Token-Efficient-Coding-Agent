@@ -112,17 +112,44 @@ and contain the required language/runtime/dependencies. The runner never pulls a
 image or installs packages. `agent doctor` checks the daemon and pinned image.
 Do not copy a fabricated digest or use a mutable image tag.
 
+`agent.sandbox.toml` pins the benchmark image
+`ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:4c9cc21dcc726f8611dc1b326fec05192fda6baf5345261aa3ee72420b142039`.
+The GHCR package is private: authenticate with a token that has `read:packages`,
+then pull that exact digest before running `agent doctor` or the benchmark. The
+workflow that built it is `.github/workflows/benchmark-image.yml`; it validates
+all 18 tasks inside the image before pushing.
+
+`verification_commands` is deliberately empty in the benchmark configuration.
+The frozen task check is applied after the run, so a generic command such as
+`python -m pytest` can pass on the start commit and trigger a false early
+termination before the fix exists. Until per-task commands are agreed, TO-09
+remains switchable and tested but cannot terminate a benchmark run early; the
+campaign report must say so.
+
 `scripts/accept_docker_sandbox.py --image <pinned reference> --out <path>` runs the
 live acceptance below against a real daemon and records each check. It refuses
 nothing itself; the shipped policy does, so a failing check means the runner
 changed behaviour. The last recorded run is
-`docs/evidence/live/docker-sandbox.json`.
+`docs/evidence/live/docker-sandbox.json`; it names the same digest, records
+`approved_by = "Muhammad Usman Khan"` and passed all 18 checks on a GitHub runner.
+The workflow run, artifact and pull instructions are in
+[benchmark-image](evidence/live/benchmark-image.md).
 
 All commands require a separate approve-once decision showing argv, image, snapshot
 hash, time/memory limits and isolation. A command cannot change the original repo;
 file edits happen only through separate approved patch/write tools. Tests requiring
 network, `.git`, hidden configuration or in-repo writes need an explicitly designed
 future execution profile; do not disable isolation to make them pass.
+
+The current snapshot policy supports bounded UTF-8 repositories only. Every frozen
+task repository contains at least one accessible file that `Repository.snapshot()`
+refuses: binary assets or `tests/res/package.zip`, a lock or history file over
+128,000 bytes, or a source/test file that matches the heuristic secret pattern
+(for example express `lib/response.js` and click `tests/test_utils.py`). The
+benchmark therefore cannot run in the sandbox yet, even though the image and its
+18/18 validation are ready. This is recorded in [STATUS](STATUS.md); it needs a
+WS1-owned decision on a byte-faithful snapshot or an explicit benchmark execution
+profile, not a benchmark-side disablement of isolation.
 
 ## File connections
 

@@ -2,6 +2,8 @@ name: Benchmark image
 
 # Manual only: a rebuild changes the digest that [sandbox] pins, so publishing is
 # an explicit operator action, never a side effect of a push or pull request.
+# Dispatch this workflow only after it is on the default branch; the dispatch API
+# does not see workflow files that exist only on another branch.
 on:
   workflow_dispatch:
     inputs:
@@ -9,10 +11,6 @@ on:
         description: Image tag under ghcr.io/<owner>/token-efficient-coding-agent-bench
         required: true
         default: bench-2026-11-13
-  # Temporary: allows the first publish from the feature branch before this
-  # workflow is on the default branch. Remove before the pull request.
-  push:
-    branches: [feature/benchmark-image]
 
 permissions:
   contents: read

@@ -27,15 +27,17 @@ in [STATUS](docs/STATUS.md), with human ownership in [TEAM_PLAN](docs/TEAM_PLAN.
 
 The fixture is explicitly scripted. It supports `demo: fix calculator addition` only.
 It is not an AI model and its synthetic token counts are not benchmark evidence.
-The real Bifrost adapter is implemented but has not been tested against a running
-team gateway or paid provider in this environment.
+The real Bifrost adapter is implemented and was exercised live for WS2 acceptance;
+the full benchmark campaign has not run.
 
 ## Frozen benchmark suite
 
 The benchmark task suite is in [`benchmarks/tasks/`](benchmarks/tasks/), frozen at commit
 `7ac9085` (`7ac908565c52a06fb27f10e5b2f6c8f17eb58e50`, the merge of PR #33 into `main`). It
-is the reference for every benchmark report: name this commit in each report, and revalidate
-before using any later change to `benchmarks/tasks/`.
+was revised on 2026-11-13 for Linux portability: TASK-03 removed 21 Windows-only `msvcrt`
+tests from `pass_to_pass` (79 to 58), and `manifest.json` was synced; the prompt and
+reference change are unchanged (PR #50). Record the TASK-03 revision in every benchmark
+report, and revalidate before using any later change to `benchmarks/tasks/`.
 
 It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja` and
 `expressjs/express`) and 2 languages (Python, JavaScript), covering bug fixes, small features,
@@ -117,16 +119,22 @@ Linux/macOS:
 
 Tests exercise a real loopback HTTP server and a real CLI subprocess. Gateway
 and research tests use deterministic HTTP transports. Container tests use a process
-transport double; Docker isolation has not been exercised on this host. Re-running
-the dependency audit needs network access. The CI workflow is supplied but has
-not run on GitHub; no remote repository has been created or pushed.
+transport double; the Docker sandbox also has a live acceptance against the pinned
+benchmark image on a GitHub runner. Re-running the dependency audit needs network
+access. CI runs on GitHub, and the benchmark image workflow publishes only a
+validated image.
 
 ## Persistent local use
 
-`agent.toml` is the default trusted configuration. Run `python scripts/make_demo.py`
-once to create `sandbox-repos/demo`. Supply a random `AGENT_API_TOKEN` (32+ characters)
-to both server and client processes through the environment. `.env.example` documents
-names; the application does not automatically load `.env` files.
+`agent.toml` is the default trusted configuration. It leaves the Docker sandbox off,
+so a fresh clone and the fixture demo need no image; command execution then pauses
+rather than running on the host. `agent.sandbox.toml` is the same configuration with
+the sandbox enabled and the private benchmark image pinned by digest. Use it with
+`--config agent.sandbox.toml` after a one-time `docker pull` with a token that has
+`read:packages` (see [benchmarks/README](benchmarks/README.md)). Run `python scripts/make_demo.py` once to create `sandbox-repos/demo`.
+Supply a random `AGENT_API_TOKEN` (32+ characters) to both server and client
+processes through the environment. `.env.example` documents names; the application
+does not automatically load `.env` files.
 
 Run `agent serve --config agent.toml` in one terminal, then these commands in a
 terminal with the same API token:
@@ -181,12 +189,15 @@ cannot select a provider URL from a task or repository file.
 
 ## Before live integration
 
-See [LIVE_INTEGRATION](docs/LIVE_INTEGRATION.md). Bifrost, Ollama and Tavily were not
-installed here. This host has no Docker executable. Research/sandbox features are
-disabled by default and require explicitly configured prerequisites. Missing Docker
-pauses command execution; it never falls back to host execution. Git tooling,
-live acceptance and billing reconciliation remain in scope. M3 client source/tests
-are delivered; real-editor visual acceptance and actual GitHub deployment are pending.
+See [LIVE_INTEGRATION](docs/LIVE_INTEGRATION.md). Bifrost, Ollama and Tavily were
+exercised live for WS2 acceptance. The sandbox is enabled in `agent.sandbox.toml` with the
+owner-approved, digest-pinned benchmark image; the GHCR package is private, so a
+benchmark machine needs a token with `read:packages` and a one-time pull. Missing
+Docker pauses command execution; it never falls back to host execution. Git
+tooling, live acceptance and billing reconciliation remain in scope. M3 client
+source/tests are delivered; real-editor visual acceptance and actual GitHub
+deployment are pending. The benchmark campaign is still blocked by the strict
+snapshot limitation described in [STATUS](docs/STATUS.md).
 
 Read [SECURITY](docs/SECURITY.md) for actual protections and remaining boundaries.
 There are no measured savings or full benchmark results yet.

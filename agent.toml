@@ -8,6 +8,9 @@ approval_timeout_seconds = 120
 context_chars = 40000
 output_chars = 8000
 
+# The Docker sandbox is off here so a fresh clone needs no private image.
+# agent.sandbox.toml adds the approved, digest-pinned benchmark image.
+
 [[users]]
 id = "developer"
 token_env = "AGENT_API_TOKEN"
