@@ -39,11 +39,16 @@ package.
 |---|---|---|
 | VS Code part of the live git check | A team member in VS Code (about 10 minutes) | Steps in [DEMO_WS3.md](DEMO_WS3.md), "Live git approval check". Then set `live_git_verified` |
 | Demo recording | Team | Follow [DEMO_WS3.md](DEMO_WS3.md) |
-| Branch protection on `main` | Repository owner (admin rights) | Required checks: `core (3.11)`, `core (3.12)`, `extension` |
 | Submission | Team | The deadline and portal are not yet recorded in [STATUS.md](STATUS.md). Submit this commit and save the confirmation |
 | Benchmark image access | Repository owner | The GHCR package is private; make it public or document the token step for judges |
 
 ## 4. Known limitations (not blockers for submission)
+
+- **No branch protection on `main`.** The repository is private and owned by a personal account
+  on GitHub Free, so protected branches and rulesets are unavailable, and collaborators cannot be
+  given an admin role. The team merges through pull requests with the required checks green
+  (`core (3.11)`, `core (3.12)`, `extension`). Making the repository public, or moving it to a
+  paid organization, would allow branch protection.
 
 - **No full benchmark result and no claimed saving.** The 594-run campaign needs paid model
   credits ([BENCHMARK_REPORT.md](BENCHMARK_REPORT.md)).

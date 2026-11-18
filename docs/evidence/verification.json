@@ -107,7 +107,7 @@
     "Real VS Code host and visual interaction for the current VSIX, including the VS Code part of the live git check",
     "Authorized GitHub workflow and comment trial",
     "Full benchmark campaign (paid credits; strict-snapshot decision)",
-    "Branch protection on main and the actual submission (repository owner)"
+    "The actual submission (team); branch protection is unavailable for this private personal repository on GitHub Free (docs/RELEASE.md)"
   ],
   "static_checks": {
     "ruff_check": "All checks passed (src tests scripts benchmarks)",
