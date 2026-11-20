@@ -1,62 +1,91 @@
 # Token-Efficient Coding Agent
 
-Confirmed hackathon FSD implementation. **Version 0.3.0: M3 editor and PR clients.**
-This is not yet the complete hackathon submission. The remaining scope is tracked
-in [STATUS](docs/STATUS.md), with human ownership in [TEAM_PLAN](docs/TEAM_PLAN.md).
+[![CI](https://github.com/sharjeelmajeed/Token-Efficient-Coding-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/sharjeelmajeed/Token-Efficient-Coding-Agent/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB)
+![Node](https://img.shields.io/badge/node-22%2B-339933)
 
-## What works now
+A **policy-enforced, token-efficient coding agent** built around a single Python/FastAPI core that owns security policy, execution, persistence, and budget accounting—paired with thin **CLI**, **VS Code**, and **read-only GitHub PR review** clients.
 
-- Authenticated REST API and resumable SSE events; owner checks on every session endpoint.
-- Persistent SQLite sessions, messages, runs, single-use approvals and accounting.
-- Targeted reads, repository outline, bounded literal search and exact small patches.
-- Diff approval, rejection, feedback, expiry, cancellation and stale-file detection.
-- Immutable confidential classification; core-side local allowlist and loopback gateway check.
-- Atomic per-user budget reservation before provider requests, including concurrent runs.
-- Offline scripted fixture and a Bifrost HTTP adapter with transport-level tests.
-- Interactive CLI and a disposable demo with independent behavior checks.
-- Approved file creation/replacement and an isolated Docker command adapter with no host fallback.
-- Sanitized Tavily research, source/credit/context accounting and a session-scoped cache.
-- History compaction, tool pruning, configured routing, direct-cache controls and fallback metadata.
-- Verified termination only after all configured checks pass on an unchanged sanitized snapshot.
-- `agent doctor` for safe local setup diagnostics. See [M2_USAGE](docs/M2_USAGE.md).
-- Installable VS Code extension with session chat, native diffs, approval decisions,
-  model/budget/privacy status, reconnect, cancel and reports. See [M3_USAGE](docs/M3_USAGE.md).
-- Backend read-only sessions and identities; owner-checked, non-mutating diff previews.
-- Read-only PR analysis of bounded patches/excerpts, complete-read evidence and optional
-  stale-safe comment publisher. The supplied GitHub workflow is disabled until configured.
+All real model traffic routes through [Maxim AI Bifrost](https://www.getmaxim.ai/) (with local Ollama support for confidential repositories), selective public research uses [Tavily](https://tavily.com/), and approved command execution runs inside an ephemeral, network-disabled Docker sandbox with no host fallback.
 
-The fixture is explicitly scripted. It supports `demo: fix calculator addition` only.
-It is not an AI model and its synthetic token counts are not benchmark evidence.
-The real Bifrost adapter is implemented and was exercised live for WS2 acceptance;
-the full benchmark campaign has not run.
+---
 
-## Frozen benchmark suite
+## Architecture
 
-The benchmark task suite is in [`benchmarks/tasks/`](benchmarks/tasks/), frozen at commit
-`7ac9085` (`7ac908565c52a06fb27f10e5b2f6c8f17eb58e50`, the merge of PR #33 into `main`). It
-was revised on 2026-11-13 for Linux portability: TASK-03 removed 21 Windows-only `msvcrt`
-tests from `pass_to_pass` (79 to 58), and `manifest.json` was synced; the prompt and
-reference change are unchanged (PR #50). Record the TASK-03 revision in every benchmark
-report, and revalidate before using any later change to `benchmarks/tasks/`.
+```text
+┌───────────────────┐   ┌────────────────────┐   ┌─────────────────────────┐
+│    CLI Client     │   │  VS Code Extension │   │  Read-Only PR Reviewer  │
+│  (Typer / Rich)   │   │  (TypeScript VSIX) │   │   (GitHub API Runner)   │
+└─────────┬─────────┘   └──────────┬─────────┘   └────────────┬────────────┘
+          │                        │                          │
+          └────────────────────────┼──────────────────────────┘
+                                   ▼
+                 Authenticated REST + Resumable SSE
+                                   │
+┌──────────────────────────────────▼───────────────────────────────────────┐
+│                      Python / FastAPI Agent Core                         │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  │
+│  │   Policy    │  │ Agent Engine │  │ SQLite Store │  │  Context &    │  │
+│  │ (Ownership, │  │ (Step Loop,  │  │ (Append-Only │  │ Optimizations │  │
+│  │  Locality,  │  │  Approvals,  │  │  Events &    │  │  (9 Switches) │  │
+│  │   Budgets)  │  │  Cancel/SSE) │  │  Micro-USD)  │  │               │  │
+│  └─────────────┘  └──────────────┘  └──────────────┘  └───────────────┘  │
+└──────────┬───────────────────────┬──────────────────────────┬────────────┘
+           ▼                       ▼                          ▼
+   Bounded Repo Tools       Docker Sandbox           Bifrost / Ollama &
+   & Checked Patches     (No Network, Digest-         Sanitized Tavily
+                          Pinned, No Fallback)            Research
+```
 
-It defines 18 tasks across 3 repositories (`pallets/click`, `pallets/jinja` and
-`expressjs/express`) and 2 languages (Python, JavaScript), covering bug fixes, small features,
-refactors and test additions. Each task is a real fix from the repository's history. The
-task starts at the commit before the fix, and its automated check is the tests that came with
-the fix. [`benchmarks/validate_tasks.py`](benchmarks/validate_tasks.py) proves that every check
-fails with no agent work and passes with the real fix
-([`validation.json`](benchmarks/tasks/validation.json)).
+No client, prompt, or repository file can grant permissions, change budgets, redirect credentials, or bypass backend policy checks.
 
-Per handoff G01 and FSD 10.3, core optimization features were developed before the suite was
-frozen. These held-out tasks are the fixed ground truth for all comparative evaluations. See
-[`benchmarks/README.md`](benchmarks/README.md) for the task definitions and protocol.
+---
 
-## Install on Windows PowerShell
+## Key Features
 
-Open PowerShell in the extracted `token-efficient-coding-agent` directory.
-Python 3.11+ is declared; Python 3.12 was exercised here. Internet access is needed
-for the initial package installation. No model keys are needed for the fixture.
+### Backend-Enforced Security & Governance
+- **Exact-action human approvals:** File edits, file creations/replacements, command executions, and gated git actions require single-use approval bound to the exact hash/diff/argv. Stale files are rejected before writing.
+- **Sticky confidential routing:** Confidential repository markers promote sessions to local-only mode (loopback gateway + local model allowlist, including fallbacks) and cannot be downgraded by removing the marker.
+- **Atomic budget ledger:** Per-user budgets are tracked in integer micro-USD inside SQLite write transactions, preventing concurrent reservation races.
+- **Isolated command sandbox:** Approved commands run in a digest-pinned, read-only, network-disabled, non-root Docker container with dropped capabilities and resource/time caps. Missing Docker pauses execution rather than falling back to the host.
+- **Resumable, auditable state:** Sessions, messages, runs, approvals, and append-only audit events persist in SQLite. Server restarts expire pending approvals and pause incomplete runs rather than replaying uncertain writes.
 
+### Nine Switchable Token-Efficiency Techniques
+Every optimization technique is independently toggleable in `[optimization]` for controlled ablation studies (see [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md)):
+
+| ID | Technique | Config Switch | Default |
+| --- | --- | --- | --- |
+| TO-01 | Repository structure map | `repo_map` | `true` |
+| TO-02 | Targeted line-range reads & bounded literal grep | `targeted_reads` | `true` |
+| TO-03 | Bounded tool output truncation | `output_truncation` | `true` |
+| TO-04 | Exact small-diff patching (`apply_patch`) | `diff_edits` | `true` |
+| TO-05 | Untrusted-labeled history compaction | `history_compaction` | `true` |
+| TO-06 | Phase-aware tool schema pruning | `tool_pruning` | `true` |
+| TO-07 | Gateway prompt/response cache controls | `gateway_direct_cache` | `false` |
+| TO-08 | Fast/strong tiered model routing | `tiered_routing` | `false` |
+| TO-09 | Verified early termination on passing checks | `early_termination` | `true` |
+
+### Multi-Client Ecosystem
+- **Interactive CLI (`agent`):** Streaming timeline, inline diffs, approve/deny/feedback prompts, budget warnings, `agent status`, `agent resume`, `agent cancel`, and `agent doctor` diagnostics.
+- **VS Code Extension (`clients/vscode/`):** Local-install VSIX with session chat, native before/after diff review, approval cards, status bar model/budget/mode indicators, SecretStorage credentials, reconnect, cancellation, and immutable JSON run reports. See [docs/M3_USAGE.md](docs/M3_USAGE.md).
+- **Read-Only GitHub PR Review:** Fetches bounded patches and excerpts via fixed GitHub API routes, never checks out or executes PR code, and routes through the same read-only core with optional, separately permissioned comment publication.
+
+---
+
+## Quick Start
+
+### Prerequisites
+- **Python 3.11+** (tested on Python 3.12)
+- **Node.js 22+** (for building/testing the VS Code extension)
+- **Docker** (optional; only required when enabling the command sandbox via `agent.sandbox.toml`)
+
+No API keys are needed to run the offline scripted fixture demo.
+
+### 1. Install & Run the Offline Demo
+
+**Windows (PowerShell):**
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-dev.lock
@@ -64,13 +93,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe scripts\demo.py
 ```
 
-Read the diff and enter `a` to approve it once, `d` to deny, or `f` to deny with
-feedback. The demo creates an ephemeral API token in process environment, starts
-a local core, runs the CLI, checks the authored fixture if changed, and shuts down.
-No credential needs to be pasted into chat or saved in source code.
-
-## Install on Linux/macOS
-
+**Linux / macOS:**
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r requirements-dev.lock
@@ -78,15 +101,63 @@ python3 -m venv .venv
 .venv/bin/python scripts/demo.py
 ```
 
-The hash-locked runtime-only dependencies are in `requirements.lock`; development
-dependencies and the build backend are in `requirements-dev.lock`. `uv.lock` is
-also included. Direct dependencies and license review are in [DEPENDENCIES](docs/DEPENDENCIES.md).
+The interactive demo creates an ephemeral token in memory, starts a local fixture core, runs `demo: fix calculator addition` through the CLI, prompts you to approve (`a`), deny (`d`), or deny with feedback (`f`), and shuts down cleanly.
 
-## Verify
+### 2. Run Persistent Local Core & CLI
 
-Install Node 22+ and compile/test the extension first; Python integration tests use its
-actual compiled client. The release includes its compiled output and VSIX, but source
-checkouts build them using these commands on either platform:
+Create the demo repository once, generate a random `AGENT_API_TOKEN` (32+ characters) in your shell environment, and start the core:
+
+```bash
+# Terminal 1 — Start the loopback core
+.venv/bin/python scripts/make_demo.py
+export AGENT_API_TOKEN="$(.venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(40))')"
+.venv/bin/agent serve --config agent.toml
+```
+
+In a second terminal with the same `AGENT_API_TOKEN`:
+
+```bash
+.venv/bin/agent init --repo sandbox-repos/demo
+.venv/bin/agent run "demo: fix calculator addition"
+.venv/bin/agent status
+.venv/bin/agent resume
+.venv/bin/agent cancel
+```
+
+> **Note:** On Windows PowerShell, replace `.venv/bin/...` with `.\.venv\Scripts\...` and set `$env:AGENT_API_TOKEN`. The application intentionally does not auto-load `.env` files; see `.env.example` for environment variable names and `agent doctor --config agent.toml` for local diagnostics.
+
+### 3. Build & Install the VS Code Extension
+
+```bash
+cd clients/vscode
+npm ci --ignore-scripts
+npm test
+npm run package
+code --install-extension token-efficient-coding-agent-0.3.0.vsix
+```
+
+Open `sandbox-repos/demo` in VS Code, run **Token Agent: Configure Connection** (`http://127.0.0.1:8765` + your `AGENT_API_TOKEN`), then run **Token Agent: Start Session**. See [docs/M3_USAGE.md](docs/M3_USAGE.md) and [docs/DEMO_WS3.md](docs/DEMO_WS3.md) for the full walkthrough.
+
+---
+
+## Configuration & Live Providers
+
+- **`agent.toml`**: Default trusted configuration with the Docker sandbox disabled (no image pull required for local/fixture use; command execution pauses instead of running on the host).
+- **`agent.sandbox.toml`**: Enables the Docker sandbox with the digest-pinned benchmark image (`ghcr.io/sharjeelmajeed/token-efficient-coding-agent-bench@sha256:...`).
+- **Live gateway & research**: See [docs/LIVE_INTEGRATION.md](docs/LIVE_INTEGRATION.md) and [docs/M2_USAGE.md](docs/M2_USAGE.md) for configuring Maxim AI Bifrost, local Ollama confidential routing, Tavily public research, and gateway cost reconciliation.
+- **Single-process model**: `agent serve` binds to loopback (`127.0.0.1:8765`) and runs as a single process against its SQLite database.
+
+---
+
+## Frozen Benchmark Suite
+
+The held-out evaluation suite in [`benchmarks/tasks/`](benchmarks/tasks/) is frozen at commit `7ac9085` (with the TASK-03 Linux portability revision in PR #50) and contains **18 tasks** across 3 repositories (`pallets/click`, `pallets/jinja`, `expressjs/express`) and 2 languages (Python, JavaScript). Every task is validated with [`benchmarks/validate_tasks.py`](benchmarks/validate_tasks.py) to fail before the fix and pass with the reference fix ([`validation.json`](benchmarks/tasks/validation.json)). See [`benchmarks/README.md`](benchmarks/README.md) and [docs/BENCHMARK_REPORT.md](docs/BENCHMARK_REPORT.md) for the protocol and current limitations.
+
+---
+
+## Development & Verification
+
+Build and test the VS Code extension first (Python integration tests exercise the compiled Node client):
 
 ```bash
 cd clients/vscode
@@ -97,18 +168,9 @@ npm audit
 cd ../..
 ```
 
-Windows:
+Then run linting, formatting, tests, policy branch coverage, and dependency audits:
 
-```powershell
-.\.venv\Scripts\ruff.exe check src tests scripts
-.\.venv\Scripts\ruff.exe format --check src tests scripts
-.\.venv\Scripts\python.exe -m coverage run --branch --source=token_agent -m pytest
-.\.venv\Scripts\python.exe -m coverage report --include=src/token_agent/policy.py --fail-under=80
-.\.venv\Scripts\python.exe -m pip_audit --skip-editable
-```
-
-Linux/macOS:
-
+**Linux / macOS:**
 ```bash
 .venv/bin/ruff check src tests scripts
 .venv/bin/ruff format --check src tests scripts
@@ -117,87 +179,62 @@ Linux/macOS:
 .venv/bin/python -m pip_audit --skip-editable
 ```
 
-Tests exercise a real loopback HTTP server and a real CLI subprocess. Gateway
-and research tests use deterministic HTTP transports. Container tests use a process
-transport double; the Docker sandbox also has a live acceptance against the pinned
-benchmark image on a GitHub runner. Re-running the dependency audit needs network
-access. CI runs on GitHub, and the benchmark image workflow publishes only a
-validated image.
-
-## Persistent local use
-
-`agent.toml` is the default trusted configuration. It leaves the Docker sandbox off,
-so a fresh clone and the fixture demo need no image; command execution then pauses
-rather than running on the host. `agent.sandbox.toml` is the same configuration with
-the sandbox enabled and the private benchmark image pinned by digest. Use it with
-`--config agent.sandbox.toml` after a one-time `docker pull` with a token that has
-`read:packages` (see [benchmarks/README](benchmarks/README.md)). Run `python scripts/make_demo.py` once to create `sandbox-repos/demo`.
-Supply a random `AGENT_API_TOKEN` (32+ characters) to both server and client
-processes through the environment. `.env.example` documents names; the application
-does not automatically load `.env` files.
-
-Run `agent serve --config agent.toml` in one terminal, then these commands in a
-terminal with the same API token:
-
-```text
-agent init --repo sandbox-repos/demo
-agent run "demo: fix calculator addition"
-agent status
-agent resume
-agent cancel
+**Windows (PowerShell):**
+```powershell
+.\.venv\Scripts\ruff.exe check src tests scripts
+.\.venv\Scripts\ruff.exe format --check src tests scripts
+.\.venv\Scripts\python.exe -m coverage run --branch --source=token_agent -m pytest
+.\.venv\Scripts\python.exe -m coverage report --include=src/token_agent/policy.py --fail-under=80
+.\.venv\Scripts\python.exe -m pip_audit --skip-editable
 ```
 
-Use the platform-specific `.venv` executable path unless the environment is activated.
-`resume` reconnects to an existing run/event cursor; it does not silently restart a
-paused model loop. After resolving a pause, submit another explicit instruction.
-The core saves history and never automatically replays an uncertain write.
+All runtime and development dependencies are hash-locked in `requirements.lock`, `requirements-dev.lock`, `uv.lock`, and `clients/vscode/package-lock.json`. See [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) for the dependency and license review.
 
-`agent serve` binds to loopback and uses one process. Do not run multiple server
-instances against the same SQLite database. An application restart invalidates
-pending approvals and pauses incomplete runs for inspection.
+---
 
-## File map
+## Project Layout
 
-| Path | Purpose |
+| Path | Description |
 | --- | --- |
-| `docs/source/FSD_Token_Efficient_Coding_Agent.pdf` | Accepted source document, unchanged |
-| `docs/SCOPE.md` | Scope, architecture, permissions and milestone boundaries |
-| `src/token_agent/config.py` | Trusted TOML configuration and environment credentials |
-| `src/token_agent/models.py` | Validated request, action and event schemas |
-| `src/token_agent/api.py` | Authentication, ownership and REST/SSE endpoints |
-| `src/token_agent/engine.py` | Persisted agent loop and exact approval lifecycle |
-| `src/token_agent/policy.py` | Classification, repository/model selection and budget arithmetic |
-| `src/token_agent/repo.py` | Bounded repository inspection and checked patches |
-| `src/token_agent/store.py` | SQLite state, append-only events and atomic budget ledger |
-| `src/token_agent/providers.py` | Fixture and Bifrost transport adapters |
-| `src/token_agent/research.py`, `sandbox.py` | Selective public research and approved isolated commands |
-| `src/token_agent/context.py`, `diagnostics.py` | Context optimization and local setup checks |
-| `src/token_agent/cli.py` | Thin terminal client |
-| `clients/vscode/` | TypeScript editor extension, tests and local-install VSIX |
-| `src/token_agent/github_client.py`, `pr_review.py` | Bounded GitHub data snapshot and shared-core read-only review |
-| `.github/workflows/` | Core/extension checks and opt-in read-only PR workflow |
-| `scripts/demo.py` | Isolated interactive demonstration |
-| `tests/` | Policy, API, persistence, gateway and CLI tests |
-| `benchmarks/` | Frozen evaluation task suite and manifests |
-| `docs/openapi.json`, `docs/event.schema.json` | Generated client contracts |
-| `docs/evidence/` | Captured local verification evidence |
+| `src/token_agent/api.py` | Authentication, ownership checks, and REST/SSE endpoints |
+| `src/token_agent/engine.py` | Persisted agent loop and exact-action approval lifecycle |
+| `src/token_agent/policy.py` | Classification, repository/model routing, and micro-USD budget policy |
+| `src/token_agent/repo.py` | Bounded repository inspection, secret checks, and verified patching |
+| `src/token_agent/store.py` | SQLite persistence, append-only audit events, and atomic budget ledger |
+| `src/token_agent/providers.py` | Deterministic fixture and Maxim AI Bifrost transport adapters |
+| `src/token_agent/sandbox.py`, `research.py` | Isolated Docker command execution and sanitized Tavily research |
+| `src/token_agent/context.py`, `diagnostics.py` | Token-efficiency context controls and `agent doctor` checks |
+| `src/token_agent/github_client.py`, `pr_review.py` | Bounded GitHub PR data fetcher and read-only review runner |
+| `src/token_agent/cli.py` | Thin interactive terminal client (`agent`) |
+| `clients/vscode/` | TypeScript VS Code extension, tests, and local-install VSIX |
+| `benchmarks/` | Frozen 18-task benchmark suite, validation, and harness |
+| `docs/` | Architecture, security model, usage guides, API schemas, and evidence |
+| `tests/` | Policy, API, persistence, gateway, sandbox, git, and CLI test suites |
+| `.github/workflows/` | Core/extension CI, benchmark image build, and opt-in PR review workflow |
 
-The CLI only submits requests and displays decisions. The API resolves the authenticated
-owner, the engine asks policy before action, the store records state, and repository
-tools perform only permitted reads or the exact reviewed patch. The gateway adapter
-cannot select a provider URL from a task or repository file.
+---
 
-## Before live integration
+## Current Status & Evidence Boundaries
 
-See [LIVE_INTEGRATION](docs/LIVE_INTEGRATION.md). Bifrost, Ollama and Tavily were
-exercised live for WS2 acceptance. The sandbox is enabled in `agent.sandbox.toml` with the
-owner-approved, digest-pinned benchmark image; the GHCR package is private, so a
-benchmark machine needs a token with `read:packages` and a one-time pull. Missing
-Docker pauses command execution; it never falls back to host execution. Git
-tooling, live acceptance and billing reconciliation remain in scope. M3 client
-source/tests are delivered; real-editor visual acceptance and actual GitHub
-deployment are pending. The benchmark campaign is still blocked by the strict
-snapshot limitation described in [STATUS](docs/STATUS.md).
+This repository is at **v0.3.0**. We maintain strict separation between verified evidence and unmeasured claims:
 
-Read [SECURITY](docs/SECURITY.md) for actual protections and remaining boundaries.
-There are no measured savings or full benchmark results yet.
+- **Offline fixture:** The scripted fixture supports `demo: fix calculator addition` only. Its synthetic token counts demonstrate client and policy behavior and are **never** benchmark evidence.
+- **Live integrations:** Bifrost, local Ollama confidential routing, Tavily research, Docker sandbox isolation (18/18 checks), live CLI git approvals, and a live `completed_verified` scratch run are recorded in `docs/evidence/live/`.
+- **Benchmark campaign:** **No token-saving percentage is claimed yet.** The 594-run comparative benchmark campaign has not been executed due to paid gateway credit requirements and the strict `Repository.snapshot()` limitation documented in [docs/STATUS.md](docs/STATUS.md) and [docs/BENCHMARK_REPORT.md](docs/BENCHMARK_REPORT.md).
+
+See [docs/STATUS.md](docs/STATUS.md) and [docs/RELEASE.md](docs/RELEASE.md) for the full release checklist and known limitations.
+
+---
+
+## Security & Documentation
+
+- **Security Model & Trust Boundaries:** [docs/SECURITY.md](docs/SECURITY.md)
+- **API & Event Contracts:** [docs/API.md](docs/API.md), [docs/openapi.json](docs/openapi.json), [docs/event.schema.json](docs/event.schema.json)
+- **Usage Guides:** [docs/M2_USAGE.md](docs/M2_USAGE.md) (Core/Gateway/Sandbox), [docs/M3_USAGE.md](docs/M3_USAGE.md) (VS Code & PR Review), [docs/GIT_TOOLS.md](docs/GIT_TOOLS.md)
+- **Scope & Specifications:** [docs/SCOPE.md](docs/SCOPE.md)
+
+---
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE).

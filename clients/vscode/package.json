@@ -2,7 +2,7 @@
   "name": "token-efficient-coding-agent",
   "displayName": "Token-Efficient Coding Agent",
   "description": "A thin, approval-aware client for the Token-Efficient Coding Agent core.",
-  "version": "0.3.0", "publisher": "token-agent-hackathon", "license": "UNLICENSED", "private": true,
+  "version": "0.3.0", "publisher": "token-agent-hackathon", "license": "Apache-2.0", "private": true,
   "engines": { "vscode": "^1.144.0", "node": ">=22" },
   "categories": ["Other"], "extensionKind": ["workspace"], "main": "./out/extension.js",
   "capabilities": {
